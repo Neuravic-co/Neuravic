@@ -1,0 +1,5 @@
+# How to report a security problem with the Neuravic website, portal or API.
+# Renew the Expires date at least every six months.
+Contact: mailto:hello@neuravic.com
+Expires: 2027-04-18T00:00:00.000Z
+Preferred-Languages: en
