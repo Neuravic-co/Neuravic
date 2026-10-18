@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, getTableColumns, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import type { AppEnv } from "../../app";
 import { runBatch, schema } from "../../db";
@@ -20,6 +20,13 @@ import {
   updateProjectSchema,
   updateRequestStateSchema,
 } from "./schemas";
+
+/** Request columns plus the requester's display details. */
+const requestColumns = {
+  ...getTableColumns(schema.requests),
+  requesterName: schema.users.name,
+  requesterEmail: schema.users.email,
+};
 
 /** Client portal: projects, requests, approvals, comments and the activity feed. */
 export const portalRoutes = new Hono<AppEnv>();
@@ -94,8 +101,9 @@ portalRoutes.get("/projects/:id/requests", async (c) => {
   requireOrgRole(actor, project.orgId, "viewer");
   const { state, cursor, limit } = parseQuery(c, listRequestsQuery);
   const rows = await deps.db
-    .select()
+    .select(requestColumns)
     .from(schema.requests)
+    .innerJoin(schema.users, eq(schema.users.id, schema.requests.requestedBy))
     .where(and(eq(schema.requests.projectId, project.id), state ? eq(schema.requests.state, state) : undefined, olderThan(schema.requests.createdAt, schema.requests.id, cursor)))
     .orderBy(desc(schema.requests.createdAt), desc(schema.requests.id))
     .limit(limit + 1);
@@ -110,8 +118,9 @@ portalRoutes.get("/orgs/:orgId/requests", async (c) => {
   const { state, cursor, limit } = parseQuery(c, listRequestsQuery);
   const rows = await c
     .get("deps")
-    .db.select()
+    .db.select(requestColumns)
     .from(schema.requests)
+    .innerJoin(schema.users, eq(schema.users.id, schema.requests.requestedBy))
     .where(and(eq(schema.requests.orgId, orgId), state ? eq(schema.requests.state, state) : undefined, olderThan(schema.requests.createdAt, schema.requests.id, cursor)))
     .orderBy(desc(schema.requests.createdAt), desc(schema.requests.id))
     .limit(limit + 1);
@@ -171,16 +180,27 @@ portalRoutes.get("/requests/:id", async (c) => {
   const deps = c.get("deps");
   const request = await loadRequest(deps.db, c.req.param("id"));
   requireOrgRole(actor, request.orgId, "viewer");
-  const [approvals, comments, files] = await Promise.all([
-    deps.db.select().from(schema.approvals).where(eq(schema.approvals.requestId, request.id)).orderBy(asc(schema.approvals.decidedAt)),
-    deps.db.select().from(schema.comments).where(eq(schema.comments.requestId, request.id)).orderBy(asc(schema.comments.createdAt)),
+  const [approvals, comments, files, [requester]] = await Promise.all([
+    deps.db
+      .select({ ...getTableColumns(schema.approvals), approverName: schema.users.name, approverEmail: schema.users.email })
+      .from(schema.approvals)
+      .innerJoin(schema.users, eq(schema.users.id, schema.approvals.approverId))
+      .where(eq(schema.approvals.requestId, request.id))
+      .orderBy(asc(schema.approvals.decidedAt)),
+    deps.db
+      .select({ ...getTableColumns(schema.comments), authorName: schema.users.name, authorEmail: schema.users.email })
+      .from(schema.comments)
+      .innerJoin(schema.users, eq(schema.users.id, schema.comments.authorId))
+      .where(eq(schema.comments.requestId, request.id))
+      .orderBy(asc(schema.comments.createdAt)),
     deps.db
       .select({ id: schema.files.id, name: schema.files.name, size: schema.files.size, mime: schema.files.mime, createdAt: schema.files.createdAt, uploadedBy: schema.files.uploadedBy })
       .from(schema.files)
       .where(eq(schema.files.requestId, request.id))
       .orderBy(asc(schema.files.createdAt)),
+    deps.db.select({ name: schema.users.name, email: schema.users.email }).from(schema.users).where(eq(schema.users.id, request.requestedBy)).limit(1),
   ]);
-  return c.json({ ...request, approvals, comments, files });
+  return c.json({ ...request, requesterName: requester?.name ?? null, requesterEmail: requester?.email ?? null, approvals, comments, files });
 });
 
 /** Requester (or an org admin) can cancel an open request; admins mark approved work completed. */
@@ -274,7 +294,12 @@ portalRoutes.get("/requests/:id/comments", async (c) => {
   const deps = c.get("deps");
   const request = await loadRequest(deps.db, c.req.param("id"));
   requireOrgRole(actor, request.orgId, "viewer");
-  const rows = await deps.db.select().from(schema.comments).where(eq(schema.comments.requestId, request.id)).orderBy(asc(schema.comments.createdAt));
+  const rows = await deps.db
+    .select({ ...getTableColumns(schema.comments), authorName: schema.users.name, authorEmail: schema.users.email })
+    .from(schema.comments)
+    .innerJoin(schema.users, eq(schema.users.id, schema.comments.authorId))
+    .where(eq(schema.comments.requestId, request.id))
+    .orderBy(asc(schema.comments.createdAt));
   return c.json({ items: rows });
 });
 
@@ -290,7 +315,7 @@ portalRoutes.post("/requests/:id/comments", async (c) => {
     deps.db.insert(schema.comments).values(comment),
     auditInsert(deps.db, { actorId: actor.user.id, orgId: request.orgId, action: "comment.added", targetType: "request", targetId: request.id }, now),
   ]);
-  return c.json(comment, 201);
+  return c.json({ ...comment, authorName: actor.user.name, authorEmail: actor.user.email }, 201);
 });
 
 // ---- Activity feed -----------------------------------------------------
@@ -306,11 +331,14 @@ portalRoutes.get("/orgs/:orgId/activity", async (c) => {
       id: schema.auditLog.id,
       createdAt: schema.auditLog.at,
       actorId: schema.auditLog.actorId,
+      actorName: schema.users.name,
+      actorEmail: schema.users.email,
       action: schema.auditLog.action,
       targetType: schema.auditLog.targetType,
       targetId: schema.auditLog.targetId,
     })
     .from(schema.auditLog)
+    .leftJoin(schema.users, eq(schema.users.id, schema.auditLog.actorId))
     .where(and(eq(schema.auditLog.orgId, orgId), olderThan(schema.auditLog.at, schema.auditLog.id, cursor)))
     .orderBy(desc(schema.auditLog.at), desc(schema.auditLog.id))
     .limit(limit + 1);

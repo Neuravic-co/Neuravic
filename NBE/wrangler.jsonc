@@ -16,8 +16,8 @@
   ],
   "vars": {
     "APP_ENV": "development",
-    "APP_URL": "http://localhost:3000",
-    "ALLOWED_ORIGINS": "http://localhost:3000",
+    "APP_URL": "http://localhost:5173",
+    "ALLOWED_ORIGINS": "http://localhost:5173,http://localhost:3000",
     "EMAIL_FROM": "Neuravic <no-reply@neuravic.com>",
     "NOTIFY_TO": "hello@neuravic.com",
     "SSO_KEY_ID": "neuravic-1",

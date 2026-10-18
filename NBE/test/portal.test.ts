@@ -129,3 +129,29 @@ describe("comments and activity", () => {
     expect(actions).toEqual(expect.arrayContaining(["project.created", "request.created", "comment.added"]));
   });
 });
+
+describe("people details for the UI", () => {
+  it("includes names and emails on requests, approvals, comments and activity", async () => {
+    const { ctx, orgId, project } = await setup();
+    const member = await signIn(ctx, "member@acme.dev");
+    const request = await body(await ctx.request(`/api/v1/projects/${project.id}/requests`, asJson(member, "POST", newRequest)));
+    const comment = await body(await ctx.request(`/api/v1/requests/${request.id}/comments`, asJson(member, "POST", { body: "Hello" })));
+    expect(comment.authorEmail).toBe("member@acme.dev");
+
+    const owner = await signIn(ctx, "owner@acme.dev");
+    await ctx.request(`/api/v1/requests/${request.id}/approvals`, asJson(owner, "POST", { decision: "approved" }));
+
+    const detail = await body(await ctx.request(`/api/v1/requests/${request.id}`, as(owner)));
+    expect(detail.requesterEmail).toBe("member@acme.dev");
+    expect(detail.approvals[0].approverEmail).toBe("owner@acme.dev");
+    expect(detail.comments[0].authorEmail).toBe("member@acme.dev");
+
+    const queue = await body(await ctx.request(`/api/v1/orgs/${orgId}/requests`, as(owner)));
+    expect(queue.items[0].requesterEmail).toBe("member@acme.dev");
+    const projectList = await body(await ctx.request(`/api/v1/projects/${project.id}/requests`, as(owner)));
+    expect(projectList.items[0].requesterEmail).toBe("member@acme.dev");
+
+    const feed = await body(await ctx.request(`/api/v1/orgs/${orgId}/activity`, as(owner)));
+    expect(feed.items.some((i: { actorEmail: string }) => i.actorEmail === "member@acme.dev")).toBe(true);
+  });
+});
