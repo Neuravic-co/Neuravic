@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { as, asJson, body, makeTestApp, seedUser, signIn } from "./helpers";
+import { as, asJson, body, createTestDb, makeTestApp, seedUser, signIn } from "./helpers";
 
 describe("public content", () => {
   it("serves the site content that is hard-coded in the frontend today", async () => {
@@ -69,5 +69,23 @@ describe("content admin", () => {
     expect((await ctx.request("/api/v1/admin/content/team/member-3", as(boss, { method: "DELETE" }))).status).toBe(204);
     expect((await ctx.request("/api/v1/admin/content/team/member-3", as(boss, { method: "DELETE" }))).status).toBe(404);
     expect((await body(await ctx.request("/api/v1/content/team"))).items).toHaveLength(2);
+  });
+});
+
+describe("content efficiency", () => {
+  it("serves the whole home page content with a single database query once seeded", async () => {
+    const statements: string[] = [];
+    const ctx = await makeTestApp({ db: await createTestDb((statement) => statements.push(statement)) });
+    await ctx.request("/api/v1/content"); // first call seeds the defaults
+    statements.length = 0;
+
+    const res = await ctx.request("/api/v1/content");
+    expect(res.status).toBe(200);
+    expect((await body(res)).services).toHaveLength(4);
+    expect(statements).toHaveLength(1);
+
+    statements.length = 0;
+    await ctx.request("/api/v1/content/team");
+    expect(statements).toHaveLength(1);
   });
 });

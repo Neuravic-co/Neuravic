@@ -8,12 +8,11 @@ import { parseJson } from "../../lib/validate";
 import { auditInsert } from "../audit/audit";
 import { requireStaff } from "../auth/middleware";
 import { contentDataSchemas, KIND_BY_SEGMENT, slugParam, upsertContentSchema, type Segment } from "./schemas";
-import { ensureSeeded, listContent } from "./service";
+import { ensureSeeded, listAllContent, listContent } from "./service";
 
 /** Public site content (services, projects, process, team, company). */
 export const contentRoutes = new Hono<AppEnv>();
 const CACHE = "public, max-age=60, s-maxage=300, stale-while-revalidate=600";
-const segments = Object.keys(KIND_BY_SEGMENT) as Segment[];
 
 function segmentOf(value: string): Segment {
   if (!(value in KIND_BY_SEGMENT)) throw notFound("Unknown content type");
@@ -23,18 +22,16 @@ function segmentOf(value: string): Segment {
 /** Everything the home page needs in one request. */
 contentRoutes.get("/", async (c) => {
   const deps = c.get("deps");
-  await ensureSeeded(deps.db, deps.now());
-  const entries = await Promise.all(segments.map(async (s) => [s, await listContent(deps.db, s)] as const));
+  const content = await listAllContent(deps.db, deps.now());
   c.header("cache-control", CACHE);
-  return c.json(Object.fromEntries(entries));
+  return c.json(content);
 });
 
 contentRoutes.get("/:segment", async (c) => {
   const deps = c.get("deps");
   const segment = segmentOf(c.req.param("segment"));
-  await ensureSeeded(deps.db, deps.now());
   c.header("cache-control", CACHE);
-  return c.json({ items: await listContent(deps.db, segment) });
+  return c.json({ items: await listContent(deps.db, segment, deps.now()) });
 });
 
 /** Staff admin editing of site content. Mounted under /admin/content. */
@@ -44,8 +41,7 @@ contentAdminRoutes.get("/:segment", async (c) => {
   requireStaff(c, ["admin"]);
   const deps = c.get("deps");
   const segment = segmentOf(c.req.param("segment"));
-  await ensureSeeded(deps.db, deps.now());
-  return c.json({ items: await listContent(deps.db, segment, true) });
+  return c.json({ items: await listContent(deps.db, segment, deps.now(), true) });
 });
 
 contentAdminRoutes.put("/:segment/:slug", async (c) => {

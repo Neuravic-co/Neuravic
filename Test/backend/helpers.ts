@@ -26,11 +26,13 @@ export const testEnv = {
 } as unknown as Env;
 
 /** Fresh in-memory SQLite database with all migrations applied. */
-export async function createTestDb(): Promise<Db> {
+export async function createTestDb(onQuery?: (statement: string) => void): Promise<Db> {
   const client = createClient({ url: ":memory:" });
+  // The logger is attached after migrations so only the queries a test triggers are counted.
   const db = drizzle(client, { schema });
   await migrate(db, { migrationsFolder: MIGRATIONS_DIR });
-  return db as unknown as Db;
+  if (!onQuery) return db as unknown as Db;
+  return drizzle(client, { schema, logger: { logQuery: (statement) => onQuery(statement) } }) as unknown as Db;
 }
 
 export async function makeTestApp(overrides: Partial<Deps> = {}) {
