@@ -60,3 +60,40 @@ export async function body<T = any>(res: Response): Promise<T> {
 export function json(method: string, payload: unknown, headers: Record<string, string> = {}): RequestInit {
   return { method, headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(payload) };
 }
+
+export const ORIGIN = "https://app.test";
+type TestApp = Awaited<ReturnType<typeof makeTestApp>>;
+
+/** Inserts a user directly (bypasses the invite flow). */
+export async function seedUser(
+  ctx: TestApp,
+  email: string,
+  extra: Partial<typeof schema.users.$inferInsert> = {},
+) {
+  const id = `user-${email}`;
+  await ctx.deps.db.insert(schema.users).values({ id, email, status: "active", createdAt: Date.now(), ...extra });
+  return id;
+}
+
+/** Runs the real magic-link flow and returns the session cookie header. */
+export async function signIn(ctx: TestApp, email: string): Promise<string> {
+  const before = ctx.mailer.sent.length;
+  const asked = await ctx.request("/api/v1/auth/magic-link", json("POST", { email }, { origin: ORIGIN }));
+  if (asked.status !== 202) throw new Error(`magic-link failed: ${asked.status}`);
+  const mail = ctx.mailer.sent.slice(before).find((m) => m.to === email);
+  if (!mail) throw new Error("no sign-in email was sent");
+  const token = /token=([^\s&]+)/.exec(mail.text)?.[1];
+  const verified = await ctx.request("/api/v1/auth/verify", json("POST", { token: decodeURIComponent(token!) }));
+  if (verified.status !== 200) throw new Error(`verify failed: ${verified.status}`);
+  const cookie = verified.headers.get("set-cookie")!.split(";")[0]!;
+  return cookie;
+}
+
+/** Request init for a signed-in caller. */
+export function as(cookie: string, init: RequestInit = {}): RequestInit {
+  return { ...init, headers: { origin: ORIGIN, cookie, ...(init.headers as Record<string, string>) } };
+}
+
+export function asJson(cookie: string, method: string, payload: unknown): RequestInit {
+  return as(cookie, json(method, payload));
+}

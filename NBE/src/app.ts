@@ -7,6 +7,9 @@ import type { Deps } from "./deps";
 import type { Env } from "./env";
 import { AppError } from "./lib/errors";
 import { ulid } from "./lib/ids";
+import type { Actor } from "./modules/auth/actor";
+import { loadActor, requireTrustedOrigin } from "./modules/auth/middleware";
+import { authRoutes, meRoutes } from "./modules/auth/routes";
 import { leadsRoutes } from "./modules/leads/routes";
 
 export type AppEnv = {
@@ -14,6 +17,7 @@ export type AppEnv = {
   Variables: {
     deps: Deps;
     requestId: string;
+    actor: Actor | null;
   };
 };
 
@@ -75,10 +79,13 @@ export function createApp(makeDeps: DepsFactory) {
   });
 
   const api = new Hono<AppEnv>();
+  api.use("*", requireTrustedOrigin, loadActor);
 
   api.get("/health", (c) => c.json({ status: "ok" }));
   api.get("/version", (c) => c.json({ version: c.get("deps").config.version }));
 
+  api.route("/auth", authRoutes);
+  api.route("/me", meRoutes);
   api.route("/leads", leadsRoutes);
 
   app.route("/api/v1", api);
