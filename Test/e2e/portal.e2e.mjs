@@ -56,7 +56,8 @@ await run("Client portal", async (browser, errors) => {
   await admin.getByRole("button", { name: "Create project" }).click();
   await admin.getByRole("button", { name: /Dubai access/ }).click();
   await admin.getByRole("heading", { name: "Dubai access" }).waitFor();
-  check("new project has no requests", await admin.getByText("No requests here").isVisible());
+  await admin.getByText("No requests here").waitFor();
+  check("new project has no requests", true);
 
   // The invited owner signs in from the invitation email and submits a request
   const owner = await (await browser.newContext({ viewport: { width: 1280, height: 860 } })).newPage();
@@ -77,7 +78,8 @@ await run("Client portal", async (browser, errors) => {
   await owner.getByLabel("Details").fill("Needs level 2 access to the site for two weeks.");
   await owner.getByRole("button", { name: "Submit request" }).click();
   await owner.getByRole("heading", { name: "Badge for contractor" }).waitFor();
-  check("requester cannot approve their own request", await owner.getByText(/someone else needs to approve/).isVisible());
+  await owner.getByText(/someone else needs to approve/).waitFor();
+  check("requester cannot approve their own request", true);
 
   await owner.getByLabel("Add a comment").fill("Please prioritise this one.");
   await owner.getByRole("button", { name: "Post comment" }).click();

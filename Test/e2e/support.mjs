@@ -60,7 +60,10 @@ export async function waitForLoginToken(email, fromByte) {
     if (token) return decodeURIComponent(token);
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
-  throw new Error(`No sign-in link for ${email} appeared in ${NBE_LOG}`);
+  throw new Error(
+    `No sign-in link for ${email} appeared in ${NBE_LOG}. If you ran the tests several times in the last hour, ` +
+      "the backend's limit of 5 sign-in emails per hour per address was reached: restart the backend (npm run dev) to reset it.",
+  );
 }
 
 /** Signs in through the API and returns the session cookie, for tests that do not exercise the login UI. */
