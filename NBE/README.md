@@ -28,11 +28,12 @@ npm run db:migrate:local            # create the local D1 database
 npm run dev                         # http://localhost:8787/api/v1/health
 ```
 
-In development, emails are printed to the console (including sign-in links), so no mail
+The defaults in `wrangler.jsonc` match the frontend dev server (`http://localhost:5173`), so
+[NFE](../NFE) connects with no extra setup. In development, emails are printed to the console (including sign-in links), so no mail
 provider is needed. Sign in once with your bootstrap email and you are a staff admin.
 
 ```bash
-npm test            # 67 tests, in-memory SQLite, no network
+npm test            # 69 tests, in-memory SQLite, no network
 npm run typecheck
 ```
 
@@ -44,7 +45,7 @@ npm run typecheck
 4. Optional bindings: R2 bucket `BUCKET` (enables file attachments), KV `KV` (shared rate limits). Uncomment them in `wrangler.jsonc`.
 5. `npm run db:migrate:remote`, then `npm run deploy`.
 
-Route the API on the same domain as the site (for example `neuravic.com/api/*`) so the session cookie is first-party.
+Route the API on the same domain as the site (for example `neuravic.com/api/*` to this Worker, everything else to NFE) so the session cookie is first-party and NFE needs no API setting. `APP_URL` must be the public site URL: sign-in links point to `APP_URL/portal/verify`.
 
 ## Schema changes
 

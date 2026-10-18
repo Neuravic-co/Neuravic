@@ -40,25 +40,55 @@ Project-image frames intentionally remain empty until original project photograp
 
 ## Local development
 
-Node.js 22.13 or newer is required.
+Node.js 22.13 or newer is required. The site talks to the Neuravic API in [`../NBE`](../NBE), so run both:
 
 ```bash
-npm install
-npm run dev
+# terminal 1: backend (http://localhost:8787)
+cd NBE && npm install && cp .dev.vars.example .dev.vars && npm run db:migrate:local && npm run dev
+
+# terminal 2: frontend (http://localhost:5173)
+cd NFE && npm install && cp .env.example .env.local && npm run dev
 ```
 
-Create a production build with:
+The site still renders without the backend (built-in content, and the contact form shows
+an error with an email fallback), but the Portal and enquiries need it.
+
+Checks and production build:
 
 ```bash
+npm run lint
+npx tsc --noEmit
 npm run build
 ```
 
+## Connection to the backend
+
+| Setting (`.env.local`) | Purpose |
+|---|---|
+| `NEXT_PUBLIC_API_BASE_URL` | Where the browser reaches the API. Unset in production: it defaults to same-origin `/api/v1`, so route `yourdomain.com/api/*` to the NBE Worker. |
+| `API_ORIGIN` | Where the server reads site content while rendering. Optional; without it the built-in content is used. |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Optional bot check on the contact form (set `TURNSTILE_SECRET` on NBE too). |
+
+What is connected:
+
+- **Contact form** (`components/contact-form.tsx`) posts to `POST /leads`. It validates in the browser, has a honeypot, explains errors, and keeps a `mailto:` fallback.
+- **Site content** (`lib/site-content.ts`) is read from `GET /content`, section by section, and falls back to the built-in copy on any error or timeout. Staff can edit it through the API without redeploying the site.
+- **Portal** (`/portal`) is the client area: passwordless sign-in, projects, requests with approvals, comments and file attachments, activity, members. Staff also get organisations and the enquiries inbox. The email link lands on `/portal/verify`.
+- The API client is `lib/api.ts`; portal state lives in `components/portal/`.
+
+## Accessibility
+
+Small text on dark surfaces uses mixes of the approved palette (see the comment at the top of
+`app/globals.css`) so it meets WCAG AA contrast. Pages were checked with axe-core.
+
 ## Source structure
 
-- `app/page.tsx` — website content and page structure
+- `app/page.tsx` — home page structure (content comes from `lib/site-content.ts`)
+- `app/portal/` — portal routes and styles
+- `lib/` — API client, site content loader, portal types
 - `app/globals.css` — responsive layout, brand styling, and transitions
 - `app/layout.tsx` — document metadata, Adobe Fonts, icons, and viewport settings
-- `components/` — navigation and interaction behavior
+- `components/` — navigation, contact form, scroll effects; `components/portal/` for the client portal
 - `public/assets/` — production image and brand files
 
 © Neuravic. All rights reserved.
