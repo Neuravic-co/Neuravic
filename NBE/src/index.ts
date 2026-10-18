@@ -4,12 +4,18 @@ import { createD1Db } from "./db";
 import type { Deps } from "./deps";
 import type { Env } from "./env";
 import { jsonLogger } from "./lib/logger";
+import { ConsoleMailer, ResendMailer } from "./modules/notifications/mailer";
 
 function buildDeps(env: Env, ctx?: ExecutionContext): Deps {
+  const config = loadConfig(env);
   return {
-    config: loadConfig(env),
+    config,
     db: createD1Db(env.DB),
     log: jsonLogger,
+    http: fetch,
+    mailer: config.resendApiKey
+      ? new ResendMailer(config.resendApiKey, config.emailFrom)
+      : new ConsoleMailer(jsonLogger),
     now: () => Date.now(),
     runInBackground: (task) => {
       const promise = task().catch((error) =>

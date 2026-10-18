@@ -7,6 +7,7 @@ import { schema, type Db } from "../src/db";
 import type { Deps } from "../src/deps";
 import type { Env } from "../src/env";
 import { silentLogger } from "../src/lib/logger";
+import { MemoryMailer } from "../src/modules/notifications/mailer";
 
 export const testEnv = {
   APP_ENV: "development",
@@ -26,10 +27,17 @@ export async function createTestDb(): Promise<Db> {
 }
 
 export async function makeTestApp(overrides: Partial<Deps> = {}) {
+  const mailer = new MemoryMailer();
+  const outbound: { url: string; body: unknown }[] = [];
   const deps: Deps = {
     config: loadConfig(testEnv),
     db: await createTestDb(),
     log: silentLogger,
+    mailer,
+    http: (async (url: string | URL | Request, init?: RequestInit) => {
+      outbound.push({ url: String(url), body: init?.body ? JSON.parse(String(init.body)) : null });
+      return new Response("{}", { status: 200 });
+    }) as typeof fetch,
     now: () => Date.now(),
     runInBackground: async (task) => {
       await task();
@@ -37,7 +45,7 @@ export async function makeTestApp(overrides: Partial<Deps> = {}) {
     ...overrides,
   };
   const app = createApp(() => deps);
-  return { app, deps, request: (path: string, init?: RequestInit) => app.request(path, init, testEnv) };
+  return { app, deps, mailer, outbound, request: (path: string, init?: RequestInit) => app.request(path, init, testEnv) };
 }
 
 /** Parses a JSON response body for assertions. */
