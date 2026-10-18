@@ -84,15 +84,6 @@ export default async function Home() {
                 <span>Cairo</span>
               </div>
             </div>
-
-            <div className="hero__service-index" data-reveal>
-              <span className="hero__service-label">Services</span>
-              {services.map((service) => (
-                <a href="#services" key={service.number}>
-                  {service.title}
-                </a>
-              ))}
-            </div>
           </div>
 
           <a className="hero__scroll" href="#services" aria-label="Scroll to services">
