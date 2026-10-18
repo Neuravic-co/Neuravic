@@ -1,6 +1,7 @@
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
 import { ContactForm } from "@/components/contact-form";
+import { HeroArt } from "@/components/hero-art";
 import { ScrollEffects } from "@/components/scroll-effects";
 import { SiteHeader } from "@/components/site-header";
 import { getSiteContent } from "@/lib/site-content";
@@ -42,15 +43,8 @@ export default async function Home() {
 
       <main id="main-content">
         <section className="hero section-dark" id="home" data-nav-section>
-          <div className="hero__art" aria-hidden="true">
-            <Image
-              src="/assets/hero-art.webp"
-              alt=""
-              fill
-              priority
-              quality={92}
-              sizes="100vw"
-            />
+          <div className="hero__art">
+            <HeroArt />
           </div>
           <div className="hero__veil" aria-hidden="true" />
 
