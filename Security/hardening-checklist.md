@@ -16,7 +16,7 @@ when you set up the real environment; "Gap" means it is not built yet.
 - [ ] **Deploy** Add Cloudflare rate-limiting rules in front of the API for `/api/v1/auth/*` and `/api/v1/leads` (these add to the in-app limits).
 - [ ] **Deploy** Bind an R2 bucket (`BUCKET`) only when you are ready to accept client files, and keep the bucket private.
 - [ ] **Deploy** Enable two-factor authentication on the Cloudflare, GitHub and email-provider accounts. Protect `main` (required reviews and the CI checks).
-- [ ] **Deploy** Run `./Security/scripts/security-check.sh` and the `Test/` suites against the staging environment. Confirm the production build still sends the website security headers (`curl -I https://yourdomain/portal`).
+- [ ] **Deploy** Run `./Security/scripts/security-check.sh` and the `Test/` suites against the staging environment. Confirm the real deployment sends the website security headers (`curl -I https://yourdomain/portal`). They were verified on a local production build in October 2026; static files (images, `security.txt`) do not carry them.
 - [ ] **Deploy** Confirm D1 point-in-time recovery (Time Travel) is available for your plan and do one test restore.
 
 ## B. Before real clients log in
@@ -39,7 +39,7 @@ when you set up the real environment; "Gap" means it is not built yet.
 ## D. Every month
 
 - [ ] Run `./Security/scripts/security-check.sh` (it also runs weekly in CI) and act on findings.
-- [ ] Update dependencies. Plan the framework upgrade that clears the open frontend advisories (see `README.md`).
+- [ ] Merge the weekly Dependabot pull requests after the CI checks pass. Major upgrades (`zod` 4, `typescript` 7) need a deliberate plan.
 - [ ] Renew `NFE/public/.well-known/security.txt` (the `Expires` date) at least every six months.
 - [ ] Review staff accounts (`GET /api/v1/admin/users?staff=true`) and remove people who left.
 - [ ] Review the audit log for unexpected exports, role changes and token issuing.

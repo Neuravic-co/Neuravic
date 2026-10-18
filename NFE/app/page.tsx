@@ -44,7 +44,7 @@ export default async function Home() {
         <section className="hero section-dark" id="home" data-nav-section>
           <div className="hero__art" aria-hidden="true">
             <Image
-              src="/assets/hero-art.png"
+              src="/assets/hero-art.webp"
               alt=""
               fill
               priority

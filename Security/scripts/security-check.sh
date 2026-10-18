@@ -2,8 +2,9 @@
 # Security check for the repository.
 #   1. No secret-looking files are tracked.
 #   2. No secret-looking values appear in tracked files.
-#   3. The backend has no high or critical vulnerabilities in production dependencies.
-#   4. Frontend vulnerabilities are reported (they do not fail the check; see Security/README.md).
+#   3. The backend (NBE) has no high or critical vulnerabilities in production dependencies.
+#   4. The frontend (NFE) has none either.
+# (audit() can also run in "report" mode, which prints findings without failing, for a known and accepted advisory.)
 # Usage: ./Security/scripts/security-check.sh        (run from anywhere)
 set -u
 cd "$(git rev-parse --show-toplevel)"
@@ -46,8 +47,8 @@ audit() { # $1 = folder, $2 = "gate" or "report"
 
 echo "3. Backend dependencies (gate)"
 audit NBE gate
-echo "4. Frontend dependencies (report only)"
-audit NFE report
+echo "4. Frontend dependencies (gate)"
+audit NFE gate
 
 echo
 if [ "$failures" -gt 0 ]; then echo "Security check FAILED ($failures problem(s))"; exit 1; fi

@@ -28,7 +28,12 @@ export type AppEnv = {
   };
 };
 
-export type DepsFactory = (env: Env, ctx?: ExecutionContext) => Deps;
+/** The only part of the Workers execution context the app needs. */
+export interface BackgroundContext {
+  waitUntil(promise: Promise<unknown>): void;
+}
+
+export type DepsFactory = (env: Env, ctx?: BackgroundContext) => Deps;
 
 const PROBLEM_TYPE = "application/problem+json";
 
@@ -54,7 +59,7 @@ export function createApp(makeDeps: DepsFactory) {
     // Only accept a well-formed caller-supplied id; anything else could pollute logs.
     const supplied = c.req.header("x-request-id");
     const requestId = supplied && /^[A-Za-z0-9._-]{8,64}$/.test(supplied) ? supplied : ulid();
-    let ctx: ExecutionContext | undefined;
+    let ctx: BackgroundContext | undefined;
     try {
       ctx = c.executionCtx;
     } catch {

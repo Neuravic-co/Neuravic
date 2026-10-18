@@ -59,7 +59,12 @@ export const sessions = sqliteTable(
     userAgentHash: text("ua_hash"),
     createdAt: integer("created_at").notNull(),
   },
-  (t) => [index("sessions_user").on(t.userId)],
+  (t) => [
+    index("sessions_user").on(t.userId),
+    // The cleanup job deletes expired rows every few minutes; without these it reads the whole table.
+    index("sessions_expires").on(t.expiresAt),
+    index("sessions_absolute_expires").on(t.absoluteExpiresAt),
+  ],
 );
 
 export const authTokens = sqliteTable(
@@ -73,7 +78,7 @@ export const authTokens = sqliteTable(
     usedAt: integer("used_at"),
     createdAt: integer("created_at").notNull(),
   },
-  (t) => [index("auth_tokens_email").on(t.email)],
+  (t) => [index("auth_tokens_email").on(t.email), index("auth_tokens_expires").on(t.expiresAt)],
 );
 
 export const leads = sqliteTable(
@@ -96,7 +101,9 @@ export const leads = sqliteTable(
     updatedAt: integer("updated_at").notNull(),
   },
   (t) => [
-    index("leads_status_created").on(t.status, t.createdAt),
+    // Inbox lists are ordered by (created_at, id) descending, with or without a status filter.
+    index("leads_status_created").on(t.status, t.createdAt, t.id),
+    index("leads_created").on(t.createdAt, t.id),
     index("leads_email_hash").on(t.email, t.messageHash),
   ],
 );
@@ -124,7 +131,7 @@ export const projects = sqliteTable(
     createdBy: text("created_by").notNull().references(() => users.id),
     createdAt: integer("created_at").notNull(),
   },
-  (t) => [index("projects_org").on(t.orgId, t.createdAt)],
+  (t) => [index("projects_org").on(t.orgId, t.createdAt, t.id)],
 );
 
 export const requests = sqliteTable(
@@ -142,7 +149,12 @@ export const requests = sqliteTable(
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),
   },
-  (t) => [index("requests_project").on(t.projectId, t.createdAt), index("requests_org").on(t.orgId, t.state)],
+  (t) => [
+    index("requests_project").on(t.projectId, t.createdAt, t.id),
+    // The approver queue filters by state and shows newest first.
+    index("requests_org_state_created").on(t.orgId, t.state, t.createdAt, t.id),
+    index("requests_org_created").on(t.orgId, t.createdAt, t.id),
+  ],
 );
 
 export const approvals = sqliteTable(
@@ -185,7 +197,7 @@ export const files = sqliteTable(
     uploadedBy: text("uploaded_by").notNull().references(() => users.id),
     createdAt: integer("created_at").notNull(),
   },
-  (t) => [index("files_request").on(t.requestId)],
+  (t) => [index("files_request").on(t.requestId, t.createdAt)],
 );
 
 export const contentItems = sqliteTable(
@@ -230,5 +242,9 @@ export const auditLog = sqliteTable(
     ipHash: text("ip_hash"),
     meta: text("meta", { mode: "json" }).$type<Record<string, unknown>>(),
   },
-  (t) => [index("audit_at").on(t.at), index("audit_org").on(t.orgId, t.at)],
+  (t) => [
+    index("audit_at").on(t.at, t.id),
+    index("audit_org").on(t.orgId, t.at, t.id),
+    index("audit_action").on(t.action, t.at, t.id),
+  ],
 );

@@ -17,17 +17,17 @@
     "sso:keygen": "node scripts/generate-sso-key.mjs"
   },
   "dependencies": {
-    "drizzle-orm": "^0.45.2",
+    "drizzle-orm": "0.45.4",
     "hono": "^4.13.13",
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260515.1",
-    "@libsql/client": "^0.15.15",
-    "@types/node": "^22.19.19",
-    "drizzle-kit": "^0.31.10",
+    "@cloudflare/workers-types": "5.20261018.1",
+    "@libsql/client": "^0.18.0",
+    "@types/node": "22.20.5",
+    "drizzle-kit": "0.31.11",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.7",
-    "wrangler": "^4.92.0"
+    "vitest": "^5.0.5",
+    "wrangler": "4.151.1"
   }
 }
