@@ -33,7 +33,7 @@ The defaults in `wrangler.jsonc` match the frontend dev server (`http://localhos
 provider is needed. Sign in once with your bootstrap email and you are a staff admin.
 
 ```bash
-npm test            # 72 tests (they live in ../Test/backend), in-memory SQLite, no network
+npm test            # 91 tests (they live in ../Test/backend), in-memory SQLite, no network
 npm run typecheck
 ```
 
@@ -46,6 +46,12 @@ npm run typecheck
 5. `npm run db:migrate:remote`, then `npm run deploy`.
 
 Route the API on the same domain as the site (for example `neuravic.com/api/*` to this Worker, everything else to NFE) so the session cookie is first-party and NFE needs no API setting. `APP_URL` must be the public site URL: sign-in links point to `APP_URL/portal/verify`.
+
+## Performance
+
+- **Indexes match the queries.** Each list (leads, requests, projects, activity, audit log, files) has an index in the exact order it is shown, and the cleanup job that runs every 5 minutes has indexes on expiry times. Cloudflare D1 bills and slows by rows read, so `Test/backend/query-plans.test.ts` fails if a change makes any of these queries scan a whole table or sort.
+- **Site content is one query.** `GET /content` reads everything the home page needs in a single query; the frontend caches the result for a minute.
+- **Small bundle.** The Worker is about 465 KiB (93 KiB gzipped).
 
 ## Schema changes
 

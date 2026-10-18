@@ -4,7 +4,7 @@ All tests for Neuravic live here.
 
 ```
 Test/
-  backend/   72 automated tests for the API (Vitest, in-memory database, no network)
+  backend/   91 automated tests for the API (Vitest, in-memory database, no network)
   e2e/       Browser tests: contact form, client portal, accessibility (Playwright + axe-core)
 ```
 
@@ -63,7 +63,8 @@ disposable local database: they create organisations, projects and enquiries. If
 | Organisations and roles | `backend/orgs.test.ts` | Invites, tenant hiding, role limits, last owner |
 | Portal | `backend/portal.test.ts` | Projects, requests, approvals, self-approval block, comments, activity, people details |
 | Files | `backend/files.test.ts` | Type and size limits, access control, safe names, storage failure |
-| Site content | `backend/content.test.ts` | Defaults match the website, editing, validation, publishing |
+| Site content | `backend/content.test.ts` | Defaults match the website, editing, validation, publishing, and that the home page content costs one database query |
+| Database efficiency | `backend/query-plans.test.ts` | Every list and cleanup query uses an index and returns rows already in order (guards Cloudflare D1 read costs) |
 | Admin | `backend/admin.test.ts` | Overview, staff invites, disabling users ends sessions, last admin protected, audit filters |
 | Product single sign-on | `backend/sso.test.ts` | Signature verification, audience, expiry, tampering, membership checks |
 | Maintenance | `backend/maintenance.test.ts` | Retries, expired sessions and tokens, retention rules |
