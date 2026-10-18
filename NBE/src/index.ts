@@ -23,7 +23,7 @@ function buildDeps(env: Env, ctx?: ExecutionContext): Deps {
     blobs: env.BUCKET ? new R2BlobStore(env.BUCKET) : null,
     mailer: config.resendApiKey
       ? new ResendMailer(config.resendApiKey, config.emailFrom)
-      : new ConsoleMailer(jsonLogger),
+      : new ConsoleMailer(jsonLogger, config.environment === "development"),
     rateLimiter: env.KV ? new KvRateLimiter(env.KV) : sharedMemoryLimiter,
     now: () => Date.now(),
     runInBackground: (task) => {
