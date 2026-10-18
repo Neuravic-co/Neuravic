@@ -18,8 +18,8 @@ This folder explains it and checks it.
 ./Security/scripts/security-check.sh
 ```
 
-It fails if a secret-looking file or value is committed, or if the backend has a high or critical
-vulnerability in a production dependency. Frontend findings are printed but do not fail the check (see below).
+It fails if a secret-looking file or value is committed, or if the backend or the frontend has a high or critical
+vulnerability in a production dependency.
 
 ## Status at a glance
 
@@ -33,10 +33,14 @@ database-level backups and exports beyond the platform's own, a full script-sour
 website, and endpoints for data-subject access and deletion requests. Details and priorities are in
 [`hardening-checklist.md`](hardening-checklist.md).
 
-## Known dependency advisories (frontend)
+## Dependency status (18 October 2026)
 
-`npm audit` reports advisories for `next`, `postcss` and `sharp` in NFE. The website runs on `vinext`
-(a Vite-based runtime on Cloudflare Workers), not on the Next.js server, which is where most of the `next`
-advisories apply. The automatic fix would downgrade `eslint-config-next` and move `vinext` off its pinned
-beta, so it needs a planned upgrade with a full test run (`Test/`), not an automatic one. The backend (NBE)
-has no production advisories.
+Both projects have **no known vulnerabilities in production dependencies**. The frontend's earlier advisories
+(`next`, `postcss`, `sharp`) were cleared by updating `next` to 16.4.2.
+
+One finding remains in a development-only tool: `npm audit` in `NBE` reports 4 moderate advisories inside
+`drizzle-kit`'s own bundled build tool (`esbuild`, used only when generating migrations on a developer machine,
+never deployed). `drizzle-kit` is already at its latest release, so there is nothing to update yet.
+
+Dependencies are updated automatically: Dependabot opens a weekly pull request per folder
+(`.github/dependabot.yml`), and the security check runs every Monday.
