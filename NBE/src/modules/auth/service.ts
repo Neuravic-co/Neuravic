@@ -29,6 +29,32 @@ export function loginLink(deps: Deps, token: string): string {
 }
 
 /**
+ * Builds the writes that create a login token and queue its email.
+ * `invitedTo` switches the wording to an invitation.
+ */
+export async function loginLinkWrites(deps: Deps, user: User, now: number, invitedTo?: string) {
+  const token = randomToken();
+  const link = loginLink(deps, token);
+  const text = invitedTo
+    ? `You have been invited to ${invitedTo} on the Neuravic portal.\n\nUse this link to sign in. It works once and expires in 15 minutes.\n\n${link}`
+    : `Use this link to sign in. It works once and expires in 15 minutes.\n\n${link}\n\nIf you did not ask for this, ignore this email.`;
+  return [
+    deps.db.insert(schema.authTokens).values({
+      id: await sha256Hex(token),
+      email: user.email,
+      purpose: user.status === "invited" ? "invite" : "login",
+      expiresAt: now + LOGIN_TOKEN_TTL_MS,
+      createdAt: now,
+    }),
+    emailJob(deps.db, now, {
+      to: user.email,
+      subject: invitedTo ? `You are invited to ${invitedTo}` : "Your Neuravic sign-in link",
+      text,
+    }),
+  ];
+}
+
+/**
  * Emails a single-use login link. Always resolves the same way whether or not
  * the address is known, so callers cannot probe which emails have accounts.
  */
@@ -51,20 +77,8 @@ export async function requestMagicLink(deps: Deps, email: string, ip: string): P
   }
   if (!user || user.status === "disabled") return;
 
-  const token = randomToken();
   await runBatch(deps.db, [
-    deps.db.insert(schema.authTokens).values({
-      id: await sha256Hex(token),
-      email,
-      purpose: user.status === "invited" ? "invite" : "login",
-      expiresAt: now + LOGIN_TOKEN_TTL_MS,
-      createdAt: now,
-    }),
-    emailJob(deps.db, now, {
-      to: email,
-      subject: "Your Neuravic sign-in link",
-      text: `Use this link to sign in. It works once and expires in 15 minutes.\n\n${loginLink(deps, token)}\n\nIf you did not ask for this, ignore this email.`,
-    }),
+    ...(await loginLinkWrites(deps, user, now)),
     auditInsert(deps.db, { actorId: user.id, action: "auth.magic_link_requested" }, now, await hashIdentifier(ip)),
   ]);
   await deps.runInBackground(() => drainOutbox(deps));

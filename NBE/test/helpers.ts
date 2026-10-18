@@ -97,3 +97,18 @@ export function as(cookie: string, init: RequestInit = {}): RequestInit {
 export function asJson(cookie: string, method: string, payload: unknown): RequestInit {
   return as(cookie, json(method, payload));
 }
+
+/** Creates an org with an owner and optional extra members. Returns the org id. */
+export async function seedOrg(
+  ctx: TestApp,
+  slug: string,
+  members: Record<string, "viewer" | "member" | "admin" | "owner">,
+) {
+  const id = `org-${slug}`;
+  await ctx.deps.db.insert(schema.orgs).values({ id, name: slug.toUpperCase(), slug, createdAt: Date.now() });
+  for (const [email, role] of Object.entries(members)) {
+    const userId = await seedUser(ctx, email);
+    await ctx.deps.db.insert(schema.memberships).values({ userId, orgId: id, role, createdAt: Date.now() });
+  }
+  return id;
+}

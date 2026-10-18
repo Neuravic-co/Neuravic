@@ -11,6 +11,7 @@ import type { Actor } from "./modules/auth/actor";
 import { loadActor, requireTrustedOrigin } from "./modules/auth/middleware";
 import { authRoutes, meRoutes } from "./modules/auth/routes";
 import { leadsRoutes } from "./modules/leads/routes";
+import { orgsRoutes } from "./modules/orgs/routes";
 
 export type AppEnv = {
   Bindings: Env;
@@ -87,6 +88,7 @@ export function createApp(makeDeps: DepsFactory) {
   api.route("/auth", authRoutes);
   api.route("/me", meRoutes);
   api.route("/leads", leadsRoutes);
+  api.route("/orgs", orgsRoutes);
 
   app.route("/api/v1", api);
 
