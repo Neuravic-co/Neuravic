@@ -33,7 +33,7 @@ The defaults in `wrangler.jsonc` match the frontend dev server (`http://localhos
 provider is needed. Sign in once with your bootstrap email and you are a staff admin.
 
 ```bash
-npm test            # 100 tests (they live in ../Test/backend), in-memory SQLite, no network
+npm test            # 103 tests (they live in ../Test/backend), in-memory SQLite, no network
 npm run typecheck
 ```
 
@@ -41,7 +41,7 @@ npm run typecheck
 
 1. `wrangler d1 create neuravic-db`, then put the id into `wrangler.jsonc` (`database_id`).
 2. Set production values in `wrangler.jsonc` `vars`: `APP_ENV=production`, `APP_URL`, `ALLOWED_ORIGINS`, `EMAIL_FROM`, `NOTIFY_TO`.
-3. Secrets: `wrangler secret put` for `BOOTSTRAP_ADMIN_EMAIL`, `RESEND_API_KEY`, `TURNSTILE_SECRET`, `SSO_PRIVATE_JWK` (generate with `npm run sso:keygen`), and `SLACK_WEBHOOK_URL` if wanted.
+3. Secrets: `wrangler secret put` for `BOOTSTRAP_ADMIN_EMAIL`, `RESEND_API_KEY`, `TURNSTILE_SECRET`, `PROXY_SECRET` (when the website runs on Vercel), `SSO_PRIVATE_JWK` (generate with `npm run sso:keygen`), and `SLACK_WEBHOOK_URL` if wanted.
 4. Optional binding: R2 bucket `BUCKET` (enables file attachments). Uncomment it in `wrangler.jsonc`.
 5. `npm run db:migrate:remote`, then `npm run deploy`.
 

@@ -18,4 +18,6 @@ export interface Env {
   RESEND_API_KEY?: string;
   SLACK_WEBHOOK_URL?: string;
   SSO_PRIVATE_JWK?: string;
+  /** Shared with the frontend proxy so the real visitor address can be trusted. */
+  PROXY_SECRET?: string;
 }

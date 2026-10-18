@@ -27,6 +27,6 @@
   // "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "neuravic-files" }]
   //
   // Secrets (wrangler secret put <NAME>):
-  // BOOTSTRAP_ADMIN_EMAIL, TURNSTILE_SECRET, RESEND_API_KEY,
+  // BOOTSTRAP_ADMIN_EMAIL, TURNSTILE_SECRET, RESEND_API_KEY, PROXY_SECRET,
   // SLACK_WEBHOOK_URL, SSO_PRIVATE_JWK
 }

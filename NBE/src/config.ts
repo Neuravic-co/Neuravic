@@ -15,6 +15,7 @@ export interface Config {
   ssoAudiences: string[];
   ssoKeyId: string;
   ssoPrivateJwk: string | null;
+  proxySecret: string | null;
   cookieSecure: boolean;
   maxUploadBytes: number;
 }
@@ -54,6 +55,7 @@ export function loadConfig(env: Env): Config {
     ssoAudiences: list(env.SSO_AUDIENCES),
     ssoKeyId: env.SSO_KEY_ID ?? "neuravic-1",
     ssoPrivateJwk: env.SSO_PRIVATE_JWK || null,
+    proxySecret: env.PROXY_SECRET || null,
     cookieSecure: environment !== "development",
     maxUploadBytes: 10 * 1024 * 1024,
   };
