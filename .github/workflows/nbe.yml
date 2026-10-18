@@ -6,6 +6,15 @@ on:
   pull_request:
     paths: ["NBE/**", "Test/backend/**", ".github/workflows/nbe.yml"]
 
+# Least privilege: these jobs only read the repository.
+permissions:
+  contents: read
+
+# A newer push to the same branch cancels the run that is now out of date.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     runs-on: ubuntu-latest
