@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { schema } from "../src/db";
-import { emailJob } from "../src/modules/notifications/outbox";
-import { RETENTION, runMaintenance } from "../src/modules/maintenance/service";
+import { schema } from "../../NBE/src/db";
+import { emailJob } from "../../NBE/src/modules/notifications/outbox";
+import { RETENTION, runMaintenance } from "../../NBE/src/modules/maintenance/service";
 import { makeTestApp } from "./helpers";
 
 const DAY = 24 * 3_600_000;

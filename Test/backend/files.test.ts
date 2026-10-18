@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MemoryBlobStore } from "../src/modules/files/blob-store";
+import { MemoryBlobStore } from "../../NBE/src/modules/files/blob-store";
 import { as, asJson, body, makeTestApp, seedOrg, signIn } from "./helpers";
 
 async function setup() {

@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { schema } from "../src/db";
+import { schema } from "../../NBE/src/db";
 import { as, asJson, body, json, makeTestApp, ORIGIN, seedUser, signIn } from "./helpers";
 
 describe("auth", () => {

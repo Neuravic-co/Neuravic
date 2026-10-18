@@ -2,9 +2,9 @@ name: NBE
 
 on:
   push:
-    paths: ["NBE/**", ".github/workflows/nbe.yml"]
+    paths: ["NBE/**", "Test/backend/**", ".github/workflows/nbe.yml"]
   pull_request:
-    paths: ["NBE/**", ".github/workflows/nbe.yml"]
+    paths: ["NBE/**", "Test/backend/**", ".github/workflows/nbe.yml"]
 
 jobs:
   check:

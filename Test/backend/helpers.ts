@@ -1,16 +1,20 @@
+import { fileURLToPath } from "node:url";
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
-import { createApp } from "../src/app";
-import { loadConfig } from "../src/config";
-import { schema, type Db } from "../src/db";
-import type { Deps } from "../src/deps";
-import type { Env } from "../src/env";
-import { silentLogger } from "../src/lib/logger";
-import { MemoryRateLimiter } from "../src/lib/rate-limit";
-import { MemoryBlobStore } from "../src/modules/files/blob-store";
-import { createJwtSigner } from "../src/modules/sso/jwt";
-import { MemoryMailer } from "../src/modules/notifications/mailer";
+import { createApp } from "../../NBE/src/app";
+import { loadConfig } from "../../NBE/src/config";
+import { schema, type Db } from "../../NBE/src/db";
+import type { Deps } from "../../NBE/src/deps";
+import type { Env } from "../../NBE/src/env";
+import { silentLogger } from "../../NBE/src/lib/logger";
+import { MemoryRateLimiter } from "../../NBE/src/lib/rate-limit";
+import { MemoryBlobStore } from "../../NBE/src/modules/files/blob-store";
+import { createJwtSigner } from "../../NBE/src/modules/sso/jwt";
+import { MemoryMailer } from "../../NBE/src/modules/notifications/mailer";
+
+/** Absolute path, so the tests work from any working directory. */
+const MIGRATIONS_DIR = fileURLToPath(new URL("../../NBE/migrations", import.meta.url));
 
 export const testEnv = {
   APP_ENV: "development",
@@ -25,7 +29,7 @@ export const testEnv = {
 export async function createTestDb(): Promise<Db> {
   const client = createClient({ url: ":memory:" });
   const db = drizzle(client, { schema });
-  await migrate(db, { migrationsFolder: "./migrations" });
+  await migrate(db, { migrationsFolder: MIGRATIONS_DIR });
   return db as unknown as Db;
 }
 

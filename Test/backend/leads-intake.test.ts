@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { schema } from "../src/db";
+import { schema } from "../../NBE/src/db";
 import { body, json, makeTestApp } from "./helpers";
 
 const valid = {

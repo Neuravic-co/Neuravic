@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { schema } from "../src/db";
-import { drainOutbox, emailJob, RETRY_DELAYS_MS, slackJob } from "../src/modules/notifications/outbox";
+import { schema } from "../../NBE/src/db";
+import { drainOutbox, emailJob, RETRY_DELAYS_MS, slackJob } from "../../NBE/src/modules/notifications/outbox";
 import { makeTestApp } from "./helpers";
 
 describe("outbox", () => {

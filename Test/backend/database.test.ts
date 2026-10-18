@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { schema } from "../src/db";
-import { runBatch } from "../src/db";
-import { recentAudit, writeAudit } from "../src/modules/audit/audit";
+import { schema } from "../../NBE/src/db";
+import { runBatch } from "../../NBE/src/db";
+import { recentAudit, writeAudit } from "../../NBE/src/modules/audit/audit";
 import { createTestDb } from "./helpers";
 
 describe("database", () => {

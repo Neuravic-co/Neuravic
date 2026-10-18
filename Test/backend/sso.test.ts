@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { verifyJwt } from "../src/modules/sso/jwt";
+import { verifyJwt } from "../../NBE/src/modules/sso/jwt";
 import { as, asJson, body, enableSso, makeTestApp, seedOrg, seedUser, signIn } from "./helpers";
 
 async function setup() {
