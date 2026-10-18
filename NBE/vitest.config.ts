@@ -1,10 +1,9 @@
 import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
 /** Any file inside this package resolves bare imports from here, even test files kept in ../Test. */
-const packageJson = fileURLToPath(new URL("./package.json", import.meta.url));
-const testDir = fileURLToPath(new URL("../Test/", import.meta.url));
+const packageJson = resolve(import.meta.dirname, "package.json");
+const testDir = resolve(import.meta.dirname, "../Test") + "/";
 
 export default defineConfig({
   plugins: [
