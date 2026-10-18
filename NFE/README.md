@@ -31,7 +31,8 @@ Typography is Termina in weights 300, 400, and 500, loaded from the Adobe Fonts 
 
 All imagery used by the current production site is committed under `public/assets/`:
 
-- `hero-art.png` — hero artwork
+- `hero-art.png` — hero artwork (master file, 2.8 MB)
+- `hero-art.webp` — the version the site serves (362 KB, quality 90). Re-create it from the PNG when the artwork changes: `python3 -c "from PIL import Image; Image.open('public/assets/hero-art.png').convert('RGB').save('public/assets/hero-art.webp', 'WEBP', quality=90, method=6)"`
 - `neuravic-logo.png` — primary wordmark
 - `neuravic-mark.png` — standalone brand mark and favicon source
 - `neuravic-pattern.svg` — exact original Neuravic pattern
