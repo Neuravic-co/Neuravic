@@ -123,3 +123,14 @@ describe("production cookies", () => {
     expect(me.status).toBe(200);
   });
 });
+
+describe("bootstrap admin sign-in", () => {
+  it("creates the admin once when two sign-in requests arrive together", async () => {
+    const ctx = await makeTestApp();
+    ctx.deps.config.bootstrapAdminEmail = "founder@test.dev";
+    const send = () => ctx.request("/api/v1/auth/magic-link", json("POST", { email: "founder@test.dev" }));
+    const statuses = (await Promise.all([send(), send()])).map((r) => r.status);
+    expect(statuses).toEqual([202, 202]);
+    expect(await ctx.deps.db.select().from(schema.users)).toHaveLength(1);
+  });
+});

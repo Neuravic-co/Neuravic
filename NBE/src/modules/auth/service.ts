@@ -65,14 +65,11 @@ export async function requestMagicLink(deps: Deps, email: string, ip: string): P
 
   let user = await findUserByEmail(deps, email);
   if (!user && deps.config.bootstrapAdminEmail === email) {
-    const id = ulid(now);
-    await deps.db.insert(schema.users).values({
-      id,
-      email,
-      status: "invited",
-      staffRole: "admin",
-      createdAt: now,
-    });
+    // A concurrent request may create the same user first; the insert then does nothing.
+    await deps.db
+      .insert(schema.users)
+      .values({ id: ulid(now), email, status: "invited", staffRole: "admin", createdAt: now })
+      .onConflictDoNothing();
     user = await findUserByEmail(deps, email);
   }
   if (!user || user.status === "disabled") return;

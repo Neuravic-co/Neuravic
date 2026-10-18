@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import type { AppEnv } from "../../app";
 import { runBatch, schema, type Db } from "../../db";
@@ -16,11 +16,11 @@ import { addMemberSchema, changeRoleSchema, createOrgSchema, slugify } from "./s
 export const orgsRoutes = new Hono<AppEnv>();
 
 async function ownerCount(db: Db, orgId: string): Promise<number> {
-  const owners = await db
-    .select({ userId: schema.memberships.userId })
+  const [row] = await db
+    .select({ total: count() })
     .from(schema.memberships)
     .where(and(eq(schema.memberships.orgId, orgId), eq(schema.memberships.role, "owner")));
-  return owners.length;
+  return row?.total ?? 0;
 }
 
 /** Staff admin creates a client organisation, optionally inviting its first owner. */

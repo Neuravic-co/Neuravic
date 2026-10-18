@@ -1,5 +1,6 @@
 import { and, desc, eq, gte, lte, type SQL } from "drizzle-orm";
 import { Hono } from "hono";
+import { z } from "zod";
 import type { AppEnv } from "../../app";
 import { runBatch, schema } from "../../db";
 import { notFound } from "../../lib/errors";
@@ -9,6 +10,11 @@ import { parseJson, parseQuery } from "../../lib/validate";
 import { auditInsert } from "../audit/audit";
 import { requireStaff } from "../auth/middleware";
 import { leadNoteSchema, listLeadsQuery, updateLeadSchema } from "./schemas";
+
+const exportQuery = z.object({
+  from: z.coerce.number().int().min(0).default(0),
+  to: z.coerce.number().int().min(0).default(Number.MAX_SAFE_INTEGER),
+});
 
 /** Lead inbox for Neuravic staff (admin and sales roles). */
 export const leadsAdminRoutes = new Hono<AppEnv>();
@@ -36,8 +42,7 @@ leadsAdminRoutes.get("/", async (c) => {
 /** CSV export of leads, optionally limited to a date range (epoch ms). */
 leadsAdminRoutes.get("/export.csv", async (c) => {
   requireStaff(c, INBOX_ROLES);
-  const from = Number(c.req.query("from") ?? 0);
-  const to = Number(c.req.query("to") ?? Number.MAX_SAFE_INTEGER);
+  const { from, to } = parseQuery(c, exportQuery);
   const rows = await c
     .get("deps")
     .db.select()
@@ -103,7 +108,8 @@ leadsAdminRoutes.post("/:id/notes", async (c) => {
   const leadId = c.req.param("id");
   const [lead] = await deps.db.select({ id: schema.leads.id }).from(schema.leads).where(eq(schema.leads.id, leadId)).limit(1);
   if (!lead) throw notFound("Lead not found");
-  const note = { id: ulid(deps.now()), leadId, authorId: actor.user.id, body, createdAt: deps.now() };
+  const now = deps.now();
+  const note = { id: ulid(now), leadId, authorId: actor.user.id, body, createdAt: now };
   await deps.db.insert(schema.leadNotes).values(note);
   return c.json(note, 201);
 });

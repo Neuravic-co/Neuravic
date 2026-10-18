@@ -6,7 +6,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { ZodError } from "zod";
 import type { Deps } from "./deps";
 import type { Env } from "./env";
-import { AppError } from "./lib/errors";
+import { AppError, isUniqueViolation } from "./lib/errors";
 import { ulid } from "./lib/ids";
 import type { Actor } from "./modules/auth/actor";
 import { loadActor, requireTrustedOrigin } from "./modules/auth/middleware";
@@ -136,6 +136,8 @@ export function createApp(makeDeps: DepsFactory) {
         errors: error.issues.map((issue) => ({ path: issue.path.join("."), message: issue.message })),
       });
     }
+    // Two requests raced past a "does it exist?" check and the unique index caught the loser.
+    if (isUniqueViolation(error)) return problem(c, 409, "conflict", "This already exists");
     c.get("deps")?.log.error("unhandled_error", {
       requestId: c.get("requestId"),
       error: error instanceof Error ? error.message : String(error),

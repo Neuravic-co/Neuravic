@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { asc, count, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import type { AppEnv } from "../../app";
 import { runBatch, schema } from "../../db";
@@ -55,8 +55,11 @@ filesRoutes.put("/requests/:id/files", async (c) => {
   if (data.byteLength === 0) throw badRequest("File is empty");
   if (data.byteLength > deps.config.maxUploadBytes) throw new AppError(413, "payload_too_large", "File is too large");
 
-  const existing = await deps.db.select({ id: schema.files.id }).from(schema.files).where(eq(schema.files.requestId, request.id));
-  if (existing.length >= MAX_FILES_PER_REQUEST) throw new AppError(409, "conflict", "Too many files on this request");
+  const [{ total: attached } = { total: 0 }] = await deps.db
+    .select({ total: count() })
+    .from(schema.files)
+    .where(eq(schema.files.requestId, request.id));
+  if (attached >= MAX_FILES_PER_REQUEST) throw new AppError(409, "conflict", "Too many files on this request");
 
   const now = deps.now();
   const id = ulid(now);
@@ -138,9 +141,10 @@ filesRoutes.delete("/files/:id", async (c) => {
   if (file.uploadedBy !== actor.user.id && !isAdmin) throw forbidden();
   const now = deps.now();
   await runBatch(deps.db, [
-    deps.db.delete(schema.files).where(and(eq(schema.files.id, file.id))),
+    deps.db.delete(schema.files).where(eq(schema.files.id, file.id)),
     auditInsert(deps.db, { actorId: actor.user.id, orgId: file.orgId, action: "file.deleted", targetType: "file", targetId: file.id }, now),
   ]);
-  await blobs.delete(file.storageKey);
+  // The record is already gone, so a failed object delete must not turn into an error for the caller.
+  await blobs.delete(file.storageKey).catch((error) => deps.log.warn("blob_delete_failed", { fileId: file.id, error: String(error) }));
   return c.body(null, 204);
 });

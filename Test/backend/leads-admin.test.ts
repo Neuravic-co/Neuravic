@@ -54,6 +54,7 @@ describe("lead inbox", () => {
     expect(detail.status).toBe("qualified");
     expect(detail.notes).toHaveLength(1);
 
+    expect((await ctx.request("/api/v1/leads/export.csv?from=abc", as(sales))).status).toBe(400);
     const csv = await ctx.request("/api/v1/leads/export.csv", as(sales));
     expect(csv.headers.get("content-type")).toContain("text/csv");
     const text = await csv.text();

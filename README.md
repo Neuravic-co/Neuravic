@@ -3,7 +3,7 @@
 ```
 NFE/        Frontend: marketing site and client portal (Next.js on Cloudflare Workers)
 NBE/        Backend: TypeScript API (Hono, Cloudflare D1) that serves both
-Test/       All tests: 95 backend tests and browser end-to-end and accessibility tests
+Test/       All tests: 99 backend tests and browser end-to-end and accessibility tests
 Security/   Security policy, threat model, go-live checklist and the automated security check
 Docs/       Company profile (Word), backend architecture design (PDF) and the API reference
 README.md   This file
@@ -42,7 +42,7 @@ bootstrap email. In development the sign-in link is printed in the backend termi
 ## Checks
 
 ```bash
-cd NBE && npm run typecheck && npm test                  # backend: types and 95 tests
+cd NBE && npm run typecheck && npm test                  # backend: types and 99 tests
 cd NFE && npm run lint && npm run typecheck && npm run build
 ./Security/scripts/security-check.sh                     # secrets and vulnerable dependencies
 cd Test && npm install && npm run e2e                    # browser tests (both apps running; see Test/README.md)

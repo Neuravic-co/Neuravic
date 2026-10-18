@@ -155,3 +155,44 @@ describe("people details for the UI", () => {
     expect(feed.items.some((i: { actorEmail: string }) => i.actorEmail === "member@acme.dev")).toBe(true);
   });
 });
+
+describe("requests under concurrent changes", () => {
+  it("approves a request needing two approvals when both approvers decide at the same moment", async () => {
+    const { ctx, project } = await setup();
+    const member = await signIn(ctx, "member@acme.dev");
+    const request = await body(
+      await ctx.request(`/api/v1/projects/${project.id}/requests`, asJson(member, "POST", { ...newRequest, requiredApprovals: 2 })),
+    );
+    const admin = await signIn(ctx, "admin@acme.dev");
+    const owner = await signIn(ctx, "owner@acme.dev");
+    const decide = (who: typeof admin) =>
+      ctx.request(`/api/v1/requests/${request.id}/approvals`, asJson(who, "POST", { decision: "approved" }));
+    const results = await Promise.all([decide(admin), decide(owner)]);
+    expect(results.map((r) => r.status)).toEqual([201, 201]);
+    const after = await body(await ctx.request(`/api/v1/requests/${request.id}`, as(owner)));
+    expect(after.state).toBe("approved");
+    expect(ctx.mailer.sent.filter((m) => m.subject.startsWith("Your request was approved"))).toHaveLength(1);
+  });
+
+  it("answers 409 when the same approver decides twice at once", async () => {
+    const { ctx, project } = await setup();
+    const member = await signIn(ctx, "member@acme.dev");
+    const request = await body(await ctx.request(`/api/v1/projects/${project.id}/requests`, asJson(member, "POST", newRequest)));
+    const admin = await signIn(ctx, "admin@acme.dev");
+    const decide = () => ctx.request(`/api/v1/requests/${request.id}/approvals`, asJson(admin, "POST", { decision: "approved" }));
+    const statuses = (await Promise.all([decide(), decide()])).map((r) => r.status).sort();
+    expect(statuses).toEqual([201, 409]);
+  });
+
+  it("does not report a cancel that lost the race with a decision", async () => {
+    const { ctx, project } = await setup();
+    const member = await signIn(ctx, "member@acme.dev");
+    const request = await body(await ctx.request(`/api/v1/projects/${project.id}/requests`, asJson(member, "POST", newRequest)));
+    const admin = await signIn(ctx, "admin@acme.dev");
+    await ctx.request(`/api/v1/requests/${request.id}/approvals`, asJson(admin, "POST", { decision: "approved" }));
+    const cancel = await ctx.request(`/api/v1/requests/${request.id}`, asJson(member, "PATCH", { state: "cancelled" }));
+    expect(cancel.status).toBe(409);
+    const after = await body(await ctx.request(`/api/v1/requests/${request.id}`, as(member)));
+    expect(after.state).toBe("approved");
+  });
+});
