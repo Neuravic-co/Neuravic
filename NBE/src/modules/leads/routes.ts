@@ -4,6 +4,7 @@ import { unprocessable } from "../../lib/errors";
 import { rateLimit } from "../../lib/rate-limit";
 import { clientIp } from "../../lib/request";
 import { parseJson } from "../../lib/validate";
+import { leadsAdminRoutes } from "./admin";
 import { createLeadSchema } from "./schemas";
 import { createLead } from "./service";
 import { verifyTurnstile } from "./turnstile";
@@ -22,3 +23,5 @@ leadsRoutes.post("/", rateLimit({ name: "leads", limit: 5, windowSeconds: 3600 }
   const created = await createLead(deps, input, ip);
   return c.json(created, 202);
 });
+
+leadsRoutes.route("/", leadsAdminRoutes);

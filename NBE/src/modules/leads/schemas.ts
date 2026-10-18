@@ -20,3 +20,12 @@ export const createLeadSchema = z.object({
 export type CreateLeadInput = z.infer<typeof createLeadSchema>;
 
 export const leadStatusSchema = z.enum(LEAD_STATUSES);
+
+export const listLeadsQuery = z.object({
+  status: leadStatusSchema.optional(),
+  cursor: z.string().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+});
+
+export const updateLeadSchema = z.object({ status: leadStatusSchema });
+export const leadNoteSchema = z.object({ body: z.string().trim().min(1).max(4000) });
