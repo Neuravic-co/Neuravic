@@ -10,6 +10,8 @@ import { ulid } from "./lib/ids";
 import type { Actor } from "./modules/auth/actor";
 import { loadActor, requireTrustedOrigin } from "./modules/auth/middleware";
 import { authRoutes, meRoutes } from "./modules/auth/routes";
+import { adminRoutes } from "./modules/admin/routes";
+import { contentRoutes } from "./modules/content/routes";
 import { filesRoutes } from "./modules/files/routes";
 import { leadsRoutes } from "./modules/leads/routes";
 import { orgsRoutes } from "./modules/orgs/routes";
@@ -89,6 +91,8 @@ export function createApp(makeDeps: DepsFactory) {
 
   api.route("/auth", authRoutes);
   api.route("/me", meRoutes);
+  api.route("/content", contentRoutes);
+  api.route("/admin", adminRoutes);
   api.route("/leads", leadsRoutes);
   api.route("/orgs", orgsRoutes);
   api.route("/", portalRoutes);
