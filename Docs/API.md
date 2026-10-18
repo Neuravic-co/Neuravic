@@ -9,6 +9,12 @@ Base path `/api/v1`. JSON in and out. Errors are `application/problem+json`:
 
 Lists use cursor pagination: `?limit=25&cursor=<nextCursor>` and return `{ "items": [...], "nextCursor": "..." | null }`.
 
+**Request ids.** Every response has an `x-request-id` header. You may send your own (8 to 64 characters from `A-Z a-z 0-9 . _ -`); anything else is replaced. Quote it when reporting a problem.
+
+**Limits.** JSON bodies are limited to 256 KB (`413` beyond that). File uploads have their own 10 MB limit.
+
+**Caching.** API responses are sent with `Cache-Control: no-store`, except the public content endpoints, which are cacheable for up to 5 minutes.
+
 **Sessions.** `POST /auth/verify` sets an HttpOnly cookie. Browser calls must use `credentials: "include"`,
 and state-changing requests must come from an origin listed in `ALLOWED_ORIGINS`, otherwise `403`.
 
@@ -77,6 +83,10 @@ Products must verify the signature with the JWKS and check `iss`, `aud` and `exp
 | `POST /requests/:id/approvals` `{ decision, comment? }` | admin+, not the requester |
 | `GET/POST /requests/:id/comments` | viewer+ read, member+ write |
 | `GET /orgs/:orgId/activity` | viewer+ |
+
+Lists and details include people details so a UI never needs a second lookup: requests carry `requesterName` and
+`requesterEmail`, approvals `approverName` and `approverEmail`, comments `authorName` and `authorEmail`, and activity
+items `actorName` and `actorEmail`.
 
 Request types: `access`, `change`, `support`, `other`. States: `open`, `approved`, `rejected`, `cancelled`, `completed`.
 A rejection closes the request at once; it is approved when `requiredApprovals` (1 to 3) approvals are in.
