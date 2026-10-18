@@ -287,8 +287,7 @@ section {
   gap: clamp(1.5rem, 3vw, 3.2rem);
 }
 
-.desktop-nav a,
-.desktop-nav__portal {
+.desktop-nav a {
   position: relative;
   padding: 0.8rem 0;
   border: 0;
@@ -320,41 +319,43 @@ section {
   color: var(--paper);
 }
 
-.desktop-nav__portal {
-  min-width: 5.6rem;
-  padding: 0.68rem 1.15rem;
-  border: 1px solid color-mix(in srgb, var(--blue) 78%, transparent);
-  border-radius: 0.25rem;
-  color: var(--paper);
-  transition:
-    background-color 240ms var(--ease-out),
-    border-color 240ms var(--ease-out),
-    color 220ms var(--ease-out);
-}
-
-.desktop-nav a.desktop-nav__portal {
-  display: inline-flex;
-  justify-content: center;
-}
-
-.desktop-nav a.desktop-nav__portal::after {
-  display: none;
-}
-
-.desktop-nav__portal:hover {
-  border-color: var(--blue);
-  background: color-mix(in srgb, var(--blue) 16%, transparent);
-}
-
 .desktop-nav a:hover::after,
 .desktop-nav a.is-active::after {
   transform: scaleX(1);
   transform-origin: left;
 }
 
+/* Right side of the header: where we work, then the portal tab. */
+.site-header__aside {
+  display: flex;
+  justify-self: end;
+  align-items: center;
+  gap: clamp(1.1rem, 2vw, 1.75rem);
+}
+
+.site-header__portal {
+  display: inline-flex;
+  min-width: 5.6rem;
+  justify-content: center;
+  padding: 0.68rem 1.15rem;
+  border: 1px solid color-mix(in srgb, var(--blue) 78%, transparent);
+  border-radius: 0.25rem;
+  color: var(--paper);
+  font-size: 0.7rem;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  transition:
+    background-color 240ms var(--ease-out),
+    border-color 240ms var(--ease-out);
+}
+
+.site-header__portal:hover {
+  border-color: var(--blue);
+  background: color-mix(in srgb, var(--blue) 16%, transparent);
+}
+
 .site-header__presence {
   display: inline-flex;
-  justify-self: end;
   align-items: center;
   gap: 0.7rem;
   color: color-mix(in srgb, var(--paper) 62%, transparent);
@@ -488,6 +489,21 @@ section {
   color: var(--muted);
   font-size: 0.63rem;
   letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* The portal is not one of the four page sections: it gets its own button under the list. */
+.mobile-nav a.mobile-nav__portal {
+  display: flex;
+  min-height: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1.75rem;
+  padding: 0 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--blue) 78%, transparent);
+  border-radius: 0.25rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -1527,7 +1543,7 @@ section {
 
   .desktop-nav,
   .portal-button,
-  .site-header__presence {
+  .site-header__aside {
     display: none;
   }
 

@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 
 const navItems = [
-  { label: "Home", href: "#home", section: "home", type: "link" },
-  { label: "Services", href: "#services", section: "services", type: "link" },
-  { label: "Portal", href: "/portal", section: "portal", type: "portal" },
-  { label: "About us", href: "#about", section: "about", type: "link" },
-  { label: "Contact us", href: "#contact", section: "contact", type: "link" },
+  { label: "Home", href: "#home", section: "home" },
+  { label: "Services", href: "#services", section: "services" },
+  { label: "About us", href: "#about", section: "about" },
+  { label: "Contact us", href: "#contact", section: "contact" },
 ] as const;
+
+const portalHref = "/portal";
 
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -63,29 +64,28 @@ export function SiteHeader() {
           </a>
 
           <nav className="desktop-nav" aria-label="Primary navigation">
-            {navItems.map((item) =>
-              item.type === "portal" ? (
-                <a className="desktop-nav__portal" href={item.href} key={item.section}>
-                  {item.label}
-                </a>
-              ) : (
-                <a
-                  className={activeSection === item.section ? "is-active" : ""}
-                  href={item.href}
-                  key={item.section}
-                >
-                  {item.label}
-                </a>
-              ),
-            )}
+            {navItems.map((item) => (
+              <a
+                className={activeSection === item.section ? "is-active" : ""}
+                href={item.href}
+                key={item.section}
+              >
+                {item.label}
+              </a>
+            ))}
           </nav>
 
-          <div
-            className="site-header__presence"
-            aria-label="Neuravic operates from Dubai and Cairo"
-          >
-            <span className="site-header__presence-dot" aria-hidden="true" />
-            <span>Dubai · Cairo</span>
+          <div className="site-header__aside">
+            <div
+              className="site-header__presence"
+              aria-label="Neuravic operates from Dubai and Cairo"
+            >
+              <span className="site-header__presence-dot" aria-hidden="true" />
+              <span>Dubai · Cairo</span>
+            </div>
+            <a className="site-header__portal" href={portalHref}>
+              Portal
+            </a>
           </div>
 
           <button
@@ -106,21 +106,19 @@ export function SiteHeader() {
           id="mobile-navigation"
           aria-hidden={!menuOpen}
         >
-          <nav aria-label="Mobile navigation">
-            {navItems.map((item, index) =>
-              item.type === "portal" ? (
-                <a href={item.href} key={item.section}>
-                  <span>0{index + 1}</span>
-                  {item.label}
-                </a>
-              ) : (
+          <div>
+            <nav aria-label="Mobile navigation">
+              {navItems.map((item, index) => (
                 <a href={item.href} onClick={closeMenu} key={item.section}>
                   <span>0{index + 1}</span>
                   {item.label}
                 </a>
-              ),
-            )}
-          </nav>
+              ))}
+            </nav>
+            <a className="mobile-nav__portal" href={portalHref}>
+              Portal
+            </a>
+          </div>
           <p>Dubai / Cairo</p>
         </div>
       </header>
