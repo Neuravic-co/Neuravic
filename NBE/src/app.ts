@@ -12,6 +12,7 @@ import { loadActor, requireTrustedOrigin } from "./modules/auth/middleware";
 import { authRoutes, meRoutes } from "./modules/auth/routes";
 import { leadsRoutes } from "./modules/leads/routes";
 import { orgsRoutes } from "./modules/orgs/routes";
+import { portalRoutes } from "./modules/portal/routes";
 
 export type AppEnv = {
   Bindings: Env;
@@ -89,6 +90,7 @@ export function createApp(makeDeps: DepsFactory) {
   api.route("/me", meRoutes);
   api.route("/leads", leadsRoutes);
   api.route("/orgs", orgsRoutes);
+  api.route("/", portalRoutes);
 
   app.route("/api/v1", api);
 
