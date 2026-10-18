@@ -4,7 +4,10 @@ import { createD1Db } from "./db";
 import type { Deps } from "./deps";
 import type { Env } from "./env";
 import { jsonLogger } from "./lib/logger";
+import { KvRateLimiter, MemoryRateLimiter } from "./lib/rate-limit";
 import { ConsoleMailer, ResendMailer } from "./modules/notifications/mailer";
+
+const sharedMemoryLimiter = new MemoryRateLimiter();
 
 function buildDeps(env: Env, ctx?: ExecutionContext): Deps {
   const config = loadConfig(env);
@@ -16,6 +19,7 @@ function buildDeps(env: Env, ctx?: ExecutionContext): Deps {
     mailer: config.resendApiKey
       ? new ResendMailer(config.resendApiKey, config.emailFrom)
       : new ConsoleMailer(jsonLogger),
+    rateLimiter: env.KV ? new KvRateLimiter(env.KV) : sharedMemoryLimiter,
     now: () => Date.now(),
     runInBackground: (task) => {
       const promise = task().catch((error) =>

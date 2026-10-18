@@ -7,6 +7,7 @@ import type { Deps } from "./deps";
 import type { Env } from "./env";
 import { AppError } from "./lib/errors";
 import { ulid } from "./lib/ids";
+import { leadsRoutes } from "./modules/leads/routes";
 
 export type AppEnv = {
   Bindings: Env;
@@ -77,6 +78,8 @@ export function createApp(makeDeps: DepsFactory) {
 
   api.get("/health", (c) => c.json({ status: "ok" }));
   api.get("/version", (c) => c.json({ version: c.get("deps").config.version }));
+
+  api.route("/leads", leadsRoutes);
 
   app.route("/api/v1", api);
 

@@ -18,8 +18,11 @@ export async function hashIdentifier(value: string | null | undefined): Promise<
   return value ? (await sha256Hex(value)).slice(0, 32) : null;
 }
 
-/** Builds (does not run) the insert so it can join an atomic batch. */
-export async function auditInsert(db: Db, entry: AuditEntry, now: number) {
+/**
+ * Builds (does not run) the insert so it can join an atomic batch.
+ * Synchronous on purpose: returning a query from an async function would execute it.
+ */
+export function auditInsert(db: Db, entry: AuditEntry, now: number, ipHash: string | null = null) {
   return db.insert(schema.auditLog).values({
     id: ulid(now),
     at: now,
@@ -28,13 +31,13 @@ export async function auditInsert(db: Db, entry: AuditEntry, now: number) {
     action: entry.action,
     targetType: entry.targetType ?? null,
     targetId: entry.targetId ?? null,
-    ipHash: await hashIdentifier(entry.ip),
+    ipHash,
     meta: entry.meta ?? null,
   });
 }
 
 export async function writeAudit(db: Db, entry: AuditEntry, now: number): Promise<void> {
-  await (await auditInsert(db, entry, now));
+  await auditInsert(db, entry, now, await hashIdentifier(entry.ip));
 }
 
 export async function recentAudit(db: Db, limit = 100) {

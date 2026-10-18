@@ -7,6 +7,7 @@ import { schema, type Db } from "../src/db";
 import type { Deps } from "../src/deps";
 import type { Env } from "../src/env";
 import { silentLogger } from "../src/lib/logger";
+import { MemoryRateLimiter } from "../src/lib/rate-limit";
 import { MemoryMailer } from "../src/modules/notifications/mailer";
 
 export const testEnv = {
@@ -34,6 +35,7 @@ export async function makeTestApp(overrides: Partial<Deps> = {}) {
     db: await createTestDb(),
     log: silentLogger,
     mailer,
+    rateLimiter: new MemoryRateLimiter(),
     http: (async (url: string | URL | Request, init?: RequestInit) => {
       outbound.push({ url: String(url), body: init?.body ? JSON.parse(String(init.body)) : null });
       return new Response("{}", { status: 200 });
@@ -52,4 +54,9 @@ export async function makeTestApp(overrides: Partial<Deps> = {}) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function body<T = any>(res: Response): Promise<T> {
   return (await res.json()) as T;
+}
+
+/** Builds a JSON request init. */
+export function json(method: string, payload: unknown, headers: Record<string, string> = {}): RequestInit {
+  return { method, headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(payload) };
 }
