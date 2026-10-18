@@ -102,3 +102,24 @@ describe("auth", () => {
     expect(header).toMatch(/SameSite=Lax/i);
   });
 });
+
+describe("production cookies", () => {
+  it("uses a __Host- prefixed Secure cookie and still authenticates", async () => {
+    const ctx = await makeTestApp();
+    ctx.deps.config.cookieSecure = true;
+    await seedUser(ctx, "a@test.dev");
+    await ctx.request("/api/v1/auth/magic-link", json("POST", { email: "a@test.dev" }));
+    const token = decodeURIComponent(/token=([^\s&]+)/.exec(ctx.mailer.sent[0]!.text)![1]!);
+    const res = await ctx.request("/api/v1/auth/verify", json("POST", { token }));
+    expect(res.status).toBe(200);
+    const header = res.headers.get("set-cookie")!;
+    expect(header).toMatch(/^__Host-nv_session=/);
+    expect(header).toMatch(/Secure/i);
+    expect(header).toMatch(/Path=\//);
+    expect(header).not.toMatch(/Domain=/i);
+
+    const cookie = header.split(";")[0]!;
+    const me = await ctx.request("/api/v1/me", as(cookie));
+    expect(me.status).toBe(200);
+  });
+});
