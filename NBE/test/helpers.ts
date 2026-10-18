@@ -9,6 +9,7 @@ import type { Env } from "../src/env";
 import { silentLogger } from "../src/lib/logger";
 import { MemoryRateLimiter } from "../src/lib/rate-limit";
 import { MemoryBlobStore } from "../src/modules/files/blob-store";
+import { createJwtSigner } from "../src/modules/sso/jwt";
 import { MemoryMailer } from "../src/modules/notifications/mailer";
 
 export const testEnv = {
@@ -36,6 +37,7 @@ export async function makeTestApp(overrides: Partial<Deps> = {}) {
     db: await createTestDb(),
     log: silentLogger,
     mailer,
+    sso: null,
     blobs: new MemoryBlobStore(),
     rateLimiter: new MemoryRateLimiter(),
     http: (async (url: string | URL | Request, init?: RequestInit) => {
@@ -113,4 +115,11 @@ export async function seedOrg(
     await ctx.deps.db.insert(schema.memberships).values({ userId, orgId: id, role, createdAt: Date.now() });
   }
   return id;
+}
+
+/** Enables SSO on a test app with a freshly generated Ed25519 key. */
+export async function enableSso(ctx: TestApp) {
+  const pair = (await crypto.subtle.generateKey({ name: "Ed25519" }, true, ["sign", "verify"])) as CryptoKeyPair;
+  const jwk = await crypto.subtle.exportKey("jwk", pair.privateKey);
+  ctx.deps.sso = createJwtSigner(JSON.stringify(jwk), ctx.deps.config.ssoKeyId);
 }

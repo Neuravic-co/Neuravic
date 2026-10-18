@@ -15,6 +15,7 @@ import { contentRoutes } from "./modules/content/routes";
 import { filesRoutes } from "./modules/files/routes";
 import { leadsRoutes } from "./modules/leads/routes";
 import { orgsRoutes } from "./modules/orgs/routes";
+import { jwksRoutes, ssoRoutes } from "./modules/sso/routes";
 import { portalRoutes } from "./modules/portal/routes";
 
 export type AppEnv = {
@@ -91,6 +92,7 @@ export function createApp(makeDeps: DepsFactory) {
 
   api.route("/auth", authRoutes);
   api.route("/me", meRoutes);
+  api.route("/token", ssoRoutes);
   api.route("/content", contentRoutes);
   api.route("/admin", adminRoutes);
   api.route("/leads", leadsRoutes);
@@ -99,6 +101,7 @@ export function createApp(makeDeps: DepsFactory) {
   api.route("/", filesRoutes);
 
   app.route("/api/v1", api);
+  app.route("/.well-known/jwks.json", jwksRoutes);
 
   app.notFound((c) => problem(c, 404, "not_found", "Not found"));
 
