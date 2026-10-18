@@ -1247,18 +1247,23 @@ section {
 }
 
 .contact-form__services {
-  display: grid;
-  gap: 0.9rem;
   min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
+/* A legend is not a grid item, so the fieldset's gap never applied to it: space it like the field labels. */
+.contact-form__services legend {
+  padding: 0;
+  margin-bottom: 0.9rem;
+}
+
+/* Two equal columns that line up with the two columns of fields above. */
 .contact-form__services > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem 1.75rem;
 }
 
 .contact-form__services label {
@@ -1275,9 +1280,10 @@ section {
 }
 
 .contact-form__services label > span {
-  display: inline-flex;
-  min-height: 2.6rem;
+  display: flex;
+  min-height: 2.9rem;
   align-items: center;
+  justify-content: center;
   padding: 0 1.1rem;
   border: 1px solid color-mix(in srgb, var(--paper) 25%, transparent);
   border-radius: 0.25rem;
@@ -1378,6 +1384,11 @@ section {
 @media (max-width: 40rem) {
   .contact-form__row {
     grid-template-columns: 1fr;
+  }
+
+  /* Keep the chips in two columns on phones too; only the gap tightens. */
+  .contact-form__services > div {
+    column-gap: 0.6rem;
   }
 }
 
