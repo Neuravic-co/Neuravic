@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, sql, type SQL } from "drizzle-orm";
 import { Hono } from "hono";
 import type { AppEnv } from "../../app";
 import { runBatch, schema, type Db } from "../../db";
@@ -15,13 +15,19 @@ import { addMemberSchema, changeRoleSchema, createOrgSchema, slugify } from "./s
 
 export const orgsRoutes = new Hono<AppEnv>();
 
-async function ownerCount(db: Db, orgId: string): Promise<number> {
-  const [row] = await db
-    .select({ total: count() })
-    .from(schema.memberships)
-    .where(and(eq(schema.memberships.orgId, orgId), eq(schema.memberships.role, "owner")));
-  return row?.total ?? 0;
+/**
+ * SQL condition that is true unless the statement would remove the organisation's last owner.
+ * It runs inside the same statement as the change, so two owners cannot remove each other at once.
+ */
+function keepsAnOwner(orgId: string, staysOwner: boolean): SQL {
+  if (staysOwner) return sql`1 = 1`;
+  return sql`(${schema.memberships.role} <> 'owner' OR (SELECT count(*) FROM memberships WHERE org_id = ${orgId} AND role = 'owner') > 1)`;
 }
+
+const memberOf = (orgId: string, userId: string) =>
+  and(eq(schema.memberships.orgId, orgId), eq(schema.memberships.userId, userId));
+
+const LAST_OWNER_MESSAGE = "An organisation must keep at least one owner";
 
 /** Staff admin creates a client organisation, optionally inviting its first owner. */
 orgsRoutes.post("/", async (c) => {
@@ -148,20 +154,20 @@ orgsRoutes.patch("/:orgId/members/:userId", async (c) => {
   const [target] = await deps.db
     .select()
     .from(schema.memberships)
-    .where(and(eq(schema.memberships.orgId, orgId), eq(schema.memberships.userId, userId)))
+    .where(memberOf(orgId, userId))
     .limit(1);
   if (!target) throw notFound("Member not found");
   if (ROLE_RANK[role] > ROLE_RANK[callerRole] || ROLE_RANK[target.role] > ROLE_RANK[callerRole]) {
     throw forbidden("You cannot change a role higher than your own");
   }
-  if (target.role === "owner" && role !== "owner" && (await ownerCount(deps.db, orgId)) <= 1) {
-    throw conflict("An organisation must keep at least one owner");
-  }
   const now = deps.now();
-  await runBatch(deps.db, [
-    deps.db.update(schema.memberships).set({ role }).where(and(eq(schema.memberships.orgId, orgId), eq(schema.memberships.userId, userId))),
-    auditInsert(deps.db, { actorId: actor.user.id, orgId, action: "org.member_role_changed", targetType: "user", targetId: userId, meta: { from: target.role, to: role } }, now),
-  ]);
+  const changed = await deps.db
+    .update(schema.memberships)
+    .set({ role })
+    .where(and(memberOf(orgId, userId), keepsAnOwner(orgId, role === "owner")))
+    .returning({ userId: schema.memberships.userId });
+  if (changed.length === 0) throw conflict(LAST_OWNER_MESSAGE);
+  await auditInsert(deps.db, { actorId: actor.user.id, orgId, action: "org.member_role_changed", targetType: "user", targetId: userId, meta: { from: target.role, to: role } }, now);
   return c.json({ userId, role });
 });
 
@@ -175,17 +181,16 @@ orgsRoutes.delete("/:orgId/members/:userId", async (c) => {
   const [target] = await deps.db
     .select()
     .from(schema.memberships)
-    .where(and(eq(schema.memberships.orgId, orgId), eq(schema.memberships.userId, userId)))
+    .where(memberOf(orgId, userId))
     .limit(1);
   if (!target) throw notFound("Member not found");
   if (!leavingSelf && ROLE_RANK[target.role] > ROLE_RANK[callerRole]) throw forbidden();
-  if (target.role === "owner" && (await ownerCount(deps.db, orgId)) <= 1) {
-    throw conflict("An organisation must keep at least one owner");
-  }
   const now = deps.now();
-  await runBatch(deps.db, [
-    deps.db.delete(schema.memberships).where(and(eq(schema.memberships.orgId, orgId), eq(schema.memberships.userId, userId))),
-    auditInsert(deps.db, { actorId: actor.user.id, orgId, action: "org.member_removed", targetType: "user", targetId: userId }, now),
-  ]);
+  const removed = await deps.db
+    .delete(schema.memberships)
+    .where(and(memberOf(orgId, userId), keepsAnOwner(orgId, false)))
+    .returning({ userId: schema.memberships.userId });
+  if (removed.length === 0) throw conflict(LAST_OWNER_MESSAGE);
+  await auditInsert(deps.db, { actorId: actor.user.id, orgId, action: "org.member_removed", targetType: "user", targetId: userId }, now);
   return c.body(null, 204);
 });
