@@ -1,10 +1,21 @@
 # Neuravic
 
-| Folder | What it is |
+```
+NFE/        Frontend: marketing site and client portal (Next.js on Cloudflare Workers)
+NBE/        Backend: TypeScript API (Hono, Cloudflare D1) that serves both
+Test/       All tests: 72 backend tests and browser end-to-end and accessibility tests
+Security/   Security policy, threat model, go-live checklist and the automated security check
+Docs/       Company profile (Word), backend architecture design (PDF) and the API reference
+README.md   This file
+```
+
+| Folder | Start here |
 |---|---|
-| [`NFE/`](NFE) | Frontend: marketing site and client portal (Next.js on Cloudflare Workers) |
-| [`NBE/`](NBE) | Backend: TypeScript API (Hono, Cloudflare D1) that serves both |
-| [`docs/`](docs) | Company profile (Word) and backend architecture design (PDF) |
+| [`NFE/`](NFE) | [`NFE/README.md`](NFE/README.md): brand, structure, how the site connects to the API |
+| [`NBE/`](NBE) | [`NBE/README.md`](NBE/README.md): running, deploying and how the backend is built |
+| [`Test/`](Test) | [`Test/README.md`](Test/README.md): how to run each kind of test and what they cover |
+| [`Security/`](Security) | [`Security/README.md`](Security/README.md): what is protected, how, and what is still missing |
+| [`Docs/`](Docs) | [`Docs/README.md`](Docs/README.md): documents and the API reference |
 
 ## Run everything locally
 
@@ -31,8 +42,10 @@ bootstrap email. In development the sign-in link is printed in the backend termi
 ## Checks
 
 ```bash
-cd NBE && npm run typecheck && npm test      # 69 tests
+cd NBE && npm run typecheck && npm test                  # backend: types and 72 tests
 cd NFE && npm run lint && npx tsc --noEmit && npm run build
+./Security/scripts/security-check.sh                     # secrets and vulnerable dependencies
+cd Test && npm install && npm run e2e                    # browser tests (both apps running; see Test/README.md)
 ```
 
-Both run in CI (`.github/workflows`).
+The first three run in CI (`.github/workflows`), and the security check also runs every week.

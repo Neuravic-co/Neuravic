@@ -76,10 +76,16 @@ What is connected:
 - **Portal** (`/portal`) is the client area: passwordless sign-in, projects, requests with approvals, comments and file attachments, activity, members. Staff also get organisations and the enquiries inbox. The email link lands on `/portal/verify`.
 - The API client is `lib/api.ts`; portal state lives in `components/portal/`.
 
+## Security headers
+
+Every page is sent with `Content-Security-Policy` (`frame-ancestors 'none'`, `base-uri`, `form-action`, `object-src`),
+`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, COOP and HSTS, configured in
+`next.config.ts`. `public/.well-known/security.txt` says how to report a problem. See [`../Security`](../Security/README.md).
+
 ## Accessibility
 
 Small text on dark surfaces uses mixes of the approved palette (see the comment at the top of
-`app/globals.css`) so it meets WCAG AA contrast. Pages were checked with axe-core.
+`app/globals.css`) so it meets WCAG AA contrast. Pages are checked with axe-core in [`../Test`](../Test/README.md).
 
 ## Source structure
 

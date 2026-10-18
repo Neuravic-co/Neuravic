@@ -14,7 +14,7 @@ It is a modular monolith: one deployable, one folder per feature under `src/modu
 | Staff running the business | Lead inbox and CSV export, user and content management, audit log, overview |
 | DARKAGENT and COOLACCESS_DXB | `POST /token/exchange` and `/.well-known/jwks.json` (single sign-on) |
 
-Full endpoint list: [docs/API.md](docs/API.md). Design background: [../docs/Neuravic_Backend_Architecture.pdf](../docs/Neuravic_Backend_Architecture.pdf).
+Full endpoint list: [../Docs/API.md](../Docs/API.md). Design background: [../Docs/Neuravic_Backend_Architecture.pdf](../Docs/Neuravic_Backend_Architecture.pdf). Security: [../Security](../Security/README.md).
 
 ## Run it locally
 
@@ -33,7 +33,7 @@ The defaults in `wrangler.jsonc` match the frontend dev server (`http://localhos
 provider is needed. Sign in once with your bootstrap email and you are a staff admin.
 
 ```bash
-npm test            # 69 tests, in-memory SQLite, no network
+npm test            # 72 tests (they live in ../Test/backend), in-memory SQLite, no network
 npm run typecheck
 ```
 
@@ -69,7 +69,7 @@ outbox  -> sent after the response, retried by the 5-minute cron (backoff, then 
 These are in the architecture PDF but intentionally not in this first version:
 
 - Passkeys (WebAuthn) and TOTP for staff. Staff are protected by short sessions and email links only.
-- OpenAPI generation. The API is described by hand in `docs/API.md`.
+- OpenAPI generation. The API is described by hand in `../Docs/API.md`.
 - Virus scanning for uploads. Files are stored with `scan_state = pending`; the download endpoint already blocks `infected`.
 - Cloudflare Queues. The outbox is drained after each request and by the cron trigger instead, which is enough at this scale.
 - A Turnstile widget on the site. The API verifies tokens as soon as `TURNSTILE_SECRET` is set.
