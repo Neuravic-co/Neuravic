@@ -82,4 +82,14 @@ describe("organisations", () => {
     const owner = await signIn(ctx, "owner@acme.dev");
     expect((await ctx.request("/api/v1/orgs", as(owner))).status).toBe(403);
   });
+
+  it("never leaves an organisation without an owner when two owners leave at once", async () => {
+    const ctx = await makeTestApp();
+    const orgId = await seedOrg(ctx, "duo", { "a@duo.dev": "owner", "b@duo.dev": "owner" });
+    const [a, b] = await Promise.all([signIn(ctx, "a@duo.dev"), signIn(ctx, "b@duo.dev")]);
+    const leave = (who: typeof a, email: string) =>
+      ctx.request(`/api/v1/orgs/${orgId}/members/user-${email}`, as(who, { method: "DELETE" }));
+    const statuses = (await Promise.all([leave(a, "a@duo.dev"), leave(b, "b@duo.dev")])).map((r) => r.status).sort();
+    expect(statuses).toEqual([204, 409]);
+  });
 });

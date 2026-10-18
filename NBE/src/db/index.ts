@@ -24,9 +24,7 @@ export function createD1Db(binding: D1Database): Db {
 export async function runBatch(db: Db, queries: any[]): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const batchable = db as any;
-  if (typeof batchable.batch === "function") {
-    await batchable.batch(queries);
-    return;
-  }
-  for (const query of queries) await query;
+  // Never fall back to running the statements one by one: that would silently lose atomicity.
+  if (typeof batchable.batch !== "function") throw new Error("This database driver cannot run atomic batches");
+  await batchable.batch(queries);
 }

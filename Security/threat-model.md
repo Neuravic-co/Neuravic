@@ -28,7 +28,7 @@ Backend tests are in `Test/backend`, browser tests in `Test/e2e`.
 
 ```
 Browser  --HTTPS-->  Cloudflare edge  -->  NFE (website)         [no secrets, no direct database access]
-Browser  --HTTPS-->  Cloudflare edge  -->  NBE (API)  --> D1 (data), R2 (files), KV (rate limits)
+Browser  --HTTPS-->  Cloudflare edge  -->  NBE (API)  --> D1 (data), R2 (files); rate limits are counted in D1
 NBE  -->  email provider, Slack, Turnstile          (outbound, credentials held as Worker secrets)
 DARKAGENT / COOLACCESS_DXB  -->  NBE /.well-known/jwks.json   (they verify our tokens, never the reverse)
 ```
@@ -44,7 +44,7 @@ DARKAGENT / COOLACCESS_DXB  -->  NBE /.well-known/jwks.json   (they verify our t
 | 5 | A client reading or changing another organisation's data | Every route checks the caller's role in the organisation that owns the object; non-members get `404` so ids cannot be probed; staff roles are separate | `NBE/src/modules/orgs/policy.ts`; `orgs.test.ts`, `portal.test.ts` ("isolates tenants"), `files.test.ts` | Relies on every new route calling the policy: review each addition |
 | 6 | Privilege escalation inside an organisation | Cannot grant a role above your own; last owner cannot be removed or demoted; requesters cannot approve their own requests | `orgs/routes.ts`, `portal/routes.ts`; `orgs.test.ts`, `portal.test.ts` | None known |
 | 7 | Injection (SQL, script, header, spreadsheet formulas) | Parameterised queries only (Drizzle); every input validated with zod; React escapes output; email subjects strip line breaks; CSV exports neutralise formulas | `NBE/src/modules/*/schemas.ts`; `leads-admin.test.ts` (CSV) | None known |
-| 8 | Spam and bots on the contact form | Honeypot field, heuristic spam score (quarantines instead of emailing), limit of 5 per hour per client, optional Cloudflare Turnstile (fails closed when configured) | `NBE/src/modules/leads/*`; `leads-intake.test.ts`; `Test/e2e/contact.e2e.mjs` | Without `TURNSTILE_SECRET` a determined bot can still submit up to the rate limit. Without a bound KV namespace the limit is per server instance only |
+| 8 | Spam and bots on the contact form | Honeypot field, heuristic spam score (quarantines instead of emailing), limit of 5 per hour per client, optional Cloudflare Turnstile (fails closed when configured) | `NBE/src/modules/leads/*`; `leads-intake.test.ts`; `Test/e2e/contact.e2e.mjs` | Without `TURNSTILE_SECRET` a determined bot can still submit up to the rate limit. |
 | 9 | Malicious uploads | Only PDF, PNG, JPEG, WebP, text, CSV, DOCX, XLSX; 10 MB and 20 files per request; names sanitised; always served as a download with `nosniff` and `no-store`; storage keys include the organisation | `NBE/src/modules/files/routes.ts`; `files.test.ts` | **No virus scanning.** Office files can carry macros; the scan state exists (`pending`) but no scanner is connected |
 | 10 | Oversized or malformed requests | JSON bodies limited to 256 KB; uploads to 10 MB; request ids from callers must be well-formed | `NBE/src/app.ts`; `health.test.ts` | Platform limits still apply to floods; use Cloudflare rate-limiting rules |
 | 11 | Forged or replayed product tokens | Ed25519 signatures; 5-minute lifetime; `aud` allow-list; `jti`; public key only at `/.well-known/jwks.json` | `NBE/src/modules/sso/*`; `sso.test.ts` | Tokens cannot be revoked inside their 5 minutes. No key rotation procedure has been exercised yet |

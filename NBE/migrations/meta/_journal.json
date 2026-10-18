@@ -15,6 +15,13 @@
       "when": 1792325633233,
       "tag": "0001_add_query_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792332304793,
+      "tag": "0002_add_rate_limits",
+      "breakpoints": true
     }
   ]
 }

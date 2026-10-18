@@ -1,8 +1,9 @@
-import { and, asc, count, desc, eq, getTableColumns, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import type { AppEnv } from "../../app";
 import { runBatch, schema } from "../../db";
-import { conflict, forbidden, unprocessable } from "../../lib/errors";
+import type { Deps } from "../../deps";
+import { conflict, forbidden } from "../../lib/errors";
 import { ulid } from "../../lib/ids";
 import { olderThan, pageQuery, toPage } from "../../lib/pagination";
 import { parseJson, parseQuery } from "../../lib/validate";
@@ -20,6 +21,11 @@ import {
   updateProjectSchema,
   updateRequestStateSchema,
 } from "./schemas";
+
+const MAX_APPROVER_NOTIFICATIONS = 10;
+
+/** Collapses line breaks so user text cannot inject extra email headers. */
+const oneLine = (value: string) => value.replace(/[\r\n]+/g, " ");
 
 /** Request columns plus the requester's display details. */
 const requestColumns = {
@@ -154,14 +160,15 @@ portalRoutes.post("/projects/:id/requests", async (c) => {
     .select({ email: schema.users.email })
     .from(schema.memberships)
     .innerJoin(schema.users, eq(schema.users.id, schema.memberships.userId))
-    .where(and(eq(schema.memberships.orgId, project.orgId), inArray(schema.memberships.role, ["admin", "owner"])));
+    .where(and(eq(schema.memberships.orgId, project.orgId), inArray(schema.memberships.role, ["admin", "owner"])))
+    .limit(MAX_APPROVER_NOTIFICATIONS + 1);
   const notifications = approvers
     .filter((a) => a.email !== actor.user.email)
-    .slice(0, 10)
+    .slice(0, MAX_APPROVER_NOTIFICATIONS)
     .map((a) =>
       emailJob(deps.db, now, {
         to: a.email,
-        subject: `Approval needed: ${request.title.replace(/[\r\n]+/g, " ")}`,
+        subject: `Approval needed: ${request.title}`,
         text: `${actor.user.name ?? actor.user.email} submitted a ${request.type} request in "${project.name}".\n\nOpen the portal to review: ${deps.config.appUrl}/portal`,
       }),
     );
@@ -220,10 +227,14 @@ portalRoutes.patch("/requests/:id", async (c) => {
     if (request.state !== "approved") throw conflict("Only approved requests can be completed");
   }
   const now = deps.now();
-  await runBatch(deps.db, [
-    deps.db.update(schema.requests).set({ state, updatedAt: now }).where(eq(schema.requests.id, request.id)),
-    auditInsert(deps.db, { actorId: actor.user.id, orgId: request.orgId, action: `request.${state}`, targetType: "request", targetId: request.id }, now),
-  ]);
+  // Only move the request if nobody changed it since we read it (for example a concurrent approval).
+  const moved = await deps.db
+    .update(schema.requests)
+    .set({ state, updatedAt: now })
+    .where(and(eq(schema.requests.id, request.id), eq(schema.requests.state, request.state)))
+    .returning({ id: schema.requests.id });
+  if (moved.length === 0) throw conflict("This request was just changed by someone else. Reload and try again");
+  await auditInsert(deps.db, { actorId: actor.user.id, orgId: request.orgId, action: `request.${state}`, targetType: "request", targetId: request.id }, now);
   return c.json({ id: request.id, state });
 });
 
@@ -245,17 +256,16 @@ portalRoutes.post("/requests/:id/approvals", async (c) => {
     .limit(1);
   if (already) throw conflict("You have already decided on this request");
 
-  const [{ approved }] = (await deps.db
-    .select({ approved: count() })
-    .from(schema.approvals)
-    .where(and(eq(schema.approvals.requestId, request.id), eq(schema.approvals.decision, "approved")))) as [{ approved: number }];
-
   const now = deps.now();
-  const state =
-    input.decision === "rejected" ? "rejected" : approved + 1 >= request.requiredApprovals ? "approved" : "open";
-  const [requester] = await deps.db.select({ email: schema.users.email }).from(schema.users).where(eq(schema.users.id, request.requestedBy)).limit(1);
+  // The outcome is decided inside the database, in the same transaction as the insert. Counting in
+  // application code first would let two approvers who decide at the same moment both see "one
+  // approval so far" and leave a fully approved request stuck open.
+  const nextState = sql<string>`CASE
+    WHEN EXISTS (SELECT 1 FROM approvals WHERE request_id = ${request.id} AND decision = 'rejected') THEN 'rejected'
+    WHEN (SELECT count(*) FROM approvals WHERE request_id = ${request.id} AND decision = 'approved') >= ${schema.requests.requiredApprovals} THEN 'approved'
+    ELSE 'open' END`;
 
-  const writes: unknown[] = [
+  await runBatch(deps.db, [
     deps.db.insert(schema.approvals).values({
       id: ulid(now),
       requestId: request.id,
@@ -264,28 +274,36 @@ portalRoutes.post("/requests/:id/approvals", async (c) => {
       comment: input.comment ?? null,
       decidedAt: now,
     }),
-    deps.db.update(schema.requests).set({ state, updatedAt: now }).where(eq(schema.requests.id, request.id)),
+    deps.db
+      .update(schema.requests)
+      .set({ state: nextState, updatedAt: now })
+      .where(and(eq(schema.requests.id, request.id), eq(schema.requests.state, "open"))),
     auditInsert(deps.db, { actorId: actor.user.id, orgId: request.orgId, action: `request.${input.decision}`, targetType: "request", targetId: request.id }, now),
-  ];
-  if (requester && state !== "open") {
-    writes.push(
-      emailJob(deps.db, now, {
-        to: requester.email,
-        subject: `Your request was ${state}: ${request.title.replace(/[\r\n]+/g, " ")}`,
-        text: `Your request "${request.title}" is now ${state}.${input.comment ? `\n\nComment: ${input.comment}` : ""}\n\n${deps.config.appUrl}/portal`,
-      }),
-    );
-  }
-  try {
-    await runBatch(deps.db, writes);
-  } catch (error) {
-    // The unique (request, approver) index closes the race between two clicks.
-    if (String(error).includes("UNIQUE")) throw unprocessable("You have already decided on this request");
-    throw error;
-  }
-  if (state !== "open") await deps.runInBackground(() => drainOutbox(deps));
+  ]);
+
+  const [decided] = await deps.db.select({ state: schema.requests.state }).from(schema.requests).where(eq(schema.requests.id, request.id)).limit(1);
+  const state = decided?.state ?? request.state;
+  if (state !== "open") await notifyRequester(deps, request, state, input.comment, now);
   return c.json({ requestId: request.id, decision: input.decision, state }, 201);
 });
+
+/** Emails the person who made the request once it is approved or rejected. */
+async function notifyRequester(
+  deps: Deps,
+  request: typeof schema.requests.$inferSelect,
+  state: string,
+  comment: string | undefined,
+  now: number,
+) {
+  const [requester] = await deps.db.select({ email: schema.users.email }).from(schema.users).where(eq(schema.users.id, request.requestedBy)).limit(1);
+  if (!requester) return;
+  await emailJob(deps.db, now, {
+    to: requester.email,
+    subject: `Your request was ${state}: ${oneLine(request.title)}`,
+    text: `Your request "${request.title}" is now ${state}.${comment ? `\n\nComment: ${comment}` : ""}\n\n${deps.config.appUrl}/portal`,
+  });
+  await deps.runInBackground(() => drainOutbox(deps));
+}
 
 // ---- Comments ----------------------------------------------------------
 

@@ -20,6 +20,7 @@ export interface MaintenanceReport {
   tokensRemoved: number;
   leadsRemoved: number;
   outboxRemoved: number;
+  rateLimitsRemoved: number;
 }
 
 /** Runs on the cron trigger (every 5 minutes): retries, housekeeping and retention. */
@@ -65,12 +66,18 @@ export async function runMaintenance(deps: Deps): Promise<MaintenanceReport> {
     )
     .returning({ id: schema.outbox.id });
 
+  const limits = await db
+    .delete(schema.rateLimits)
+    .where(lt(schema.rateLimits.expiresAt, now))
+    .returning({ key: schema.rateLimits.key });
+
   const report = {
     emailsSent: sent,
     sessionsRemoved: sessions.length,
     tokensRemoved: tokens.length,
     leadsRemoved: staleIds.length,
     outboxRemoved: outbox.length,
+    rateLimitsRemoved: limits.length,
   };
   deps.log.info("maintenance_completed", report);
   return report;
