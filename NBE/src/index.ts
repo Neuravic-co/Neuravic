@@ -5,6 +5,7 @@ import type { Deps } from "./deps";
 import type { Env } from "./env";
 import { jsonLogger } from "./lib/logger";
 import { KvRateLimiter, MemoryRateLimiter } from "./lib/rate-limit";
+import { R2BlobStore } from "./modules/files/blob-store";
 import { ConsoleMailer, ResendMailer } from "./modules/notifications/mailer";
 
 const sharedMemoryLimiter = new MemoryRateLimiter();
@@ -16,6 +17,7 @@ function buildDeps(env: Env, ctx?: ExecutionContext): Deps {
     db: createD1Db(env.DB),
     log: jsonLogger,
     http: fetch,
+    blobs: env.BUCKET ? new R2BlobStore(env.BUCKET) : null,
     mailer: config.resendApiKey
       ? new ResendMailer(config.resendApiKey, config.emailFrom)
       : new ConsoleMailer(jsonLogger),

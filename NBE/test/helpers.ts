@@ -8,6 +8,7 @@ import type { Deps } from "../src/deps";
 import type { Env } from "../src/env";
 import { silentLogger } from "../src/lib/logger";
 import { MemoryRateLimiter } from "../src/lib/rate-limit";
+import { MemoryBlobStore } from "../src/modules/files/blob-store";
 import { MemoryMailer } from "../src/modules/notifications/mailer";
 
 export const testEnv = {
@@ -35,6 +36,7 @@ export async function makeTestApp(overrides: Partial<Deps> = {}) {
     db: await createTestDb(),
     log: silentLogger,
     mailer,
+    blobs: new MemoryBlobStore(),
     rateLimiter: new MemoryRateLimiter(),
     http: (async (url: string | URL | Request, init?: RequestInit) => {
       outbound.push({ url: String(url), body: init?.body ? JSON.parse(String(init.body)) : null });
