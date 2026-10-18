@@ -5,6 +5,9 @@
   --portal-line: color-mix(in srgb, var(--paper) 14%, transparent);
   --portal-line-strong: color-mix(in srgb, var(--paper) 30%, transparent);
   --portal-text-2: color-mix(in srgb, var(--paper) 68%, transparent);
+  /* Approved muted gray is too dark for small text on ink; see globals.css. */
+  --muted: color-mix(in srgb, var(--paper) 62%, var(--ink));
+  --blue-text: color-mix(in srgb, var(--blue) 72%, var(--paper));
   min-height: 100vh;
   background: var(--ink);
   color: var(--paper);
@@ -463,7 +466,6 @@
   margin-left: 0.6em;
   font-style: normal;
   letter-spacing: 0.06em;
-  opacity: 0.75;
   text-transform: none;
 }
 

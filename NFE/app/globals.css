@@ -14,6 +14,21 @@
   --font-brand: "termina", sans-serif;
 }
 
+/*
+ * Small text on dark surfaces. The approved muted gray (#667085) is about 3.9:1 on ink and
+ * the electric blue (#365bff) about 3.9:1, both below the 4.5:1 minimum for small text.
+ * On dark surfaces these resolve to mixes of the approved colours that reach 5.5:1 or more.
+ */
+.section-dark,
+.site-header,
+.mobile-nav,
+.footer,
+.project,
+.team-card__portrait {
+  --muted: color-mix(in srgb, var(--paper) 62%, var(--ink));
+  --blue-text: color-mix(in srgb, var(--blue) 72%, var(--paper));
+}
+
 * {
   box-sizing: border-box;
 }
@@ -738,7 +753,7 @@ section {
 }
 
 .service-row__arrow {
-  color: var(--blue);
+  color: var(--blue-text, var(--blue));
   transition: transform 350ms var(--ease-out);
 }
 
@@ -802,7 +817,7 @@ section {
 
 .project__name {
   margin: 0 0 3.5rem;
-  color: var(--blue);
+  color: var(--blue-text, var(--blue));
   font-size: 0.65rem;
   font-weight: 500;
   letter-spacing: 0.2em;
@@ -909,7 +924,7 @@ section {
 }
 
 .process-step > span {
-  color: var(--blue);
+  color: var(--blue-text, var(--blue));
   font-size: 0.65rem;
   letter-spacing: 0.16em;
 }
@@ -1005,7 +1020,7 @@ section {
 }
 
 .about__locations span {
-  color: var(--blue);
+  color: var(--blue-text, var(--blue));
   font-size: 0.6rem;
   letter-spacing: 0.12em;
 }
@@ -1109,7 +1124,7 @@ section {
 }
 
 .team__footer svg {
-  color: var(--blue);
+  color: var(--blue-text, var(--blue));
 }
 
 /* Contact & footer */
@@ -1174,7 +1189,6 @@ section {
   margin-left: 0.5em;
   font-style: normal;
   letter-spacing: 0.08em;
-  opacity: 0.7;
   text-transform: none;
 }
 
@@ -1225,7 +1239,7 @@ section {
 
 .contact-form__error::before {
   content: "— ";
-  color: var(--blue);
+  color: var(--blue-text, var(--blue));
 }
 
 .contact-form__error--form {
@@ -1416,7 +1430,7 @@ section {
 }
 
 .footer__places span:first-child {
-  color: var(--blue);
+  color: var(--blue-text, var(--blue));
 }
 
 .footer__bottom {

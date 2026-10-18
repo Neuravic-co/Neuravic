@@ -173,6 +173,7 @@ function Shell() {
       </nav>
 
       <main className="portal-main" id="portal-content">
+        <h1 className="sr-only">Neuravic client portal</h1>
         {orgsLoading ? <Loading label="Loading organisations" /> : null}
         {orgsError ? <ErrorNote error={orgsError} onRetry={reloadOrgs} /> : null}
         {!orgsLoading && !orgsError && availableTabs.length === 0 ? (
