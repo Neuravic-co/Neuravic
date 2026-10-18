@@ -1,0 +1,9 @@
+# Copy to .dev.vars for local development (never commit .dev.vars).
+# The first sign-in with this email creates the staff admin account.
+BOOTSTRAP_ADMIN_EMAIL=you@example.com
+
+# Optional in development
+# TURNSTILE_SECRET=
+# RESEND_API_KEY=
+# SLACK_WEBHOOK_URL=
+# SSO_PRIVATE_JWK=   (generate with: npm run sso:keygen)
