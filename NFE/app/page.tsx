@@ -1,84 +1,9 @@
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
-import { SiteEffects } from "@/components/site-effects";
+import { ContactForm } from "@/components/contact-form";
+import { ScrollEffects } from "@/components/scroll-effects";
 import { SiteHeader } from "@/components/site-header";
-
-const services = [
-  {
-    number: "01",
-    title: "AI Systems & Automation",
-    description:
-      "Inspectable agents, retrieval, document intelligence and computer vision.",
-  },
-  {
-    number: "02",
-    title: "Software Platforms",
-    description:
-      "Web applications, APIs, databases and integrations engineered for daily operation.",
-  },
-  {
-    number: "03",
-    title: "Product Experience",
-    description:
-      "Clear UX, interfaces and design systems that make complex technology usable.",
-  },
-  {
-    number: "04",
-    title: "Deployment & Operations",
-    description:
-      "Secure delivery, monitoring, testing, access control and long-term support.",
-  },
-];
-
-const projects = [
-  {
-    number: "01",
-    name: "DARKAGENT",
-    eyebrow: "Work, made operational.",
-    title: "Governed AI mission control.",
-    description:
-      "A bounded multi-agent platform built for human authority, live inspection and reliable execution.",
-    surface: "ink",
-  },
-  {
-    number: "02",
-    name: "COOLACCESS_DXB",
-    eyebrow: "Access, made effortless.",
-    title: "Access operations, made clear.",
-    description:
-      "A unified workflow platform for requests, approvals and access visibility across Dubai operations.",
-    surface: "slate",
-  },
-];
-
-const process = [
-  {
-    number: "01",
-    title: "Discover",
-    description: "Map the workflow, constraints and real decision points.",
-  },
-  {
-    number: "02",
-    title: "Design",
-    description: "Shape the product, experience and system architecture.",
-  },
-  {
-    number: "03",
-    title: "Engineer",
-    description: "Build the platform, intelligence and integrations.",
-  },
-  {
-    number: "04",
-    title: "Deploy & support",
-    description: "Ship securely, observe performance and keep improving.",
-  },
-];
-
-const team = [
-  { number: "01", city: "Cairo", label: "Name / role to be added" },
-  { number: "02", city: "Cairo", label: "Name / role to be added" },
-  { number: "03", city: "Dubai", label: "Name / role to be added" },
-];
+import { getSiteContent } from "@/lib/site-content";
 
 function ArrowLink({ children, href }: { children: React.ReactNode; href: string }) {
   return (
@@ -104,10 +29,12 @@ function ProjectVisual({ number, name }: { number: string; name: string }) {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const { services, projects, process: processSteps, team, company } = await getSiteContent();
+
   return (
     <>
-      <SiteEffects />
+      <ScrollEffects />
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
@@ -135,9 +62,7 @@ export default function Home() {
                 <span>Product design</span>
               </div>
 
-              <h1 data-reveal>
-                We turn complex operations into intelligent systems.
-              </h1>
+              <h1 data-reveal>{company.headline}</h1>
 
               <p className="hero__intro" data-reveal>
                 From discovery and design to engineering, deployment and support—one
@@ -263,7 +188,7 @@ export default function Home() {
             </div>
 
             <div className="process-list">
-              {process.map((step) => (
+              {processSteps.map((step) => (
                 <article className="process-step" data-reveal key={step.number}>
                   <span>{step.number}</span>
                   <h3>{step.title}</h3>
@@ -288,23 +213,19 @@ export default function Home() {
             <div className="about__copy" data-reveal>
               <p className="eyebrow">About / Neuravic</p>
               <h2>Different disciplines. One accountable team.</h2>
-              <p>
-                Neuravic is a multidisciplinary engineering company working across
-                Dubai and Cairo. We combine AI, software, product design and operations
-                to build systems people can actually run.
-              </p>
+              <p>{company.about}</p>
               <ArrowLink href="#team">About Neuravic</ArrowLink>
             </div>
 
             <div className="about__locations" data-reveal>
-              <div>
-                <span>01</span>
-                <p>Dubai / United Arab Emirates</p>
-              </div>
-              <div>
-                <span>02</span>
-                <p>Cairo / Egypt</p>
-              </div>
+              {company.locations.map((location, index) => (
+                <div key={location.city}>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <p>
+                    {location.city} / {location.country}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -360,13 +281,7 @@ export default function Home() {
                 Tell us where the operation breaks down. We’ll help define the right
                 system—and take it through design, engineering, deployment and support.
               </p>
-              <a
-                className="button button--primary button--large"
-                href="mailto:hello@neuravic.com?subject=Start%20a%20project%20with%20Neuravic"
-              >
-                <span>Start a Conversation</span>
-                <ArrowUpRight aria-hidden="true" size={18} strokeWidth={1.5} />
-              </a>
+              <ContactForm fallbackEmail={company.contactEmail} />
             </div>
           </div>
 
@@ -392,8 +307,9 @@ export default function Home() {
               </nav>
 
               <div className="footer__places">
-                <span>Dubai</span>
-                <span>Cairo</span>
+                {company.locations.map((location) => (
+                  <span key={location.city}>{location.city}</span>
+                ))}
               </div>
             </div>
 

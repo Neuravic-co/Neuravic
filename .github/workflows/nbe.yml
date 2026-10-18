@@ -1,0 +1,32 @@
+name: NBE
+
+on:
+  push:
+    paths: ["NBE/**", "Test/backend/**", ".github/workflows/nbe.yml"]
+  pull_request:
+    paths: ["NBE/**", "Test/backend/**", ".github/workflows/nbe.yml"]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: NBE
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: NBE/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Migrations are up to date
+        run: |
+          npx drizzle-kit generate --name ci_check
+          if [ -n "$(git status --porcelain -- migrations)" ]; then
+            echo "Schema changed without a committed migration. Run: npm run db:generate"
+            git status --porcelain -- migrations
+            exit 1
+          fi

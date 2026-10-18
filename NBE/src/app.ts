@@ -1,0 +1,142 @@
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { bodyLimit } from "hono/body-limit";
+import { secureHeaders } from "hono/secure-headers";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { ZodError } from "zod";
+import type { Deps } from "./deps";
+import type { Env } from "./env";
+import { AppError } from "./lib/errors";
+import { ulid } from "./lib/ids";
+import type { Actor } from "./modules/auth/actor";
+import { loadActor, requireTrustedOrigin } from "./modules/auth/middleware";
+import { authRoutes, meRoutes } from "./modules/auth/routes";
+import { adminRoutes } from "./modules/admin/routes";
+import { contentRoutes } from "./modules/content/routes";
+import { filesRoutes } from "./modules/files/routes";
+import { leadsRoutes } from "./modules/leads/routes";
+import { orgsRoutes } from "./modules/orgs/routes";
+import { jwksRoutes, ssoRoutes } from "./modules/sso/routes";
+import { portalRoutes } from "./modules/portal/routes";
+
+export type AppEnv = {
+  Bindings: Env;
+  Variables: {
+    deps: Deps;
+    requestId: string;
+    actor: Actor | null;
+  };
+};
+
+export type DepsFactory = (env: Env, ctx?: ExecutionContext) => Deps;
+
+const PROBLEM_TYPE = "application/problem+json";
+
+function problem(
+  c: { json: (body: unknown, status: ContentfulStatusCode, headers: Record<string, string>) => Response; get: (key: "requestId") => string },
+  status: number,
+  code: string,
+  title: string,
+  extra: Record<string, unknown> = {},
+) {
+  return c.json(
+    { type: "about:blank", title, status, code, requestId: c.get("requestId"), ...extra },
+    status as ContentfulStatusCode,
+    { "content-type": PROBLEM_TYPE },
+  );
+}
+
+export function createApp(makeDeps: DepsFactory) {
+  const app = new Hono<AppEnv>();
+
+  // Request id, dependency injection and access log.
+  app.use("*", async (c, next) => {
+    // Only accept a well-formed caller-supplied id; anything else could pollute logs.
+    const supplied = c.req.header("x-request-id");
+    const requestId = supplied && /^[A-Za-z0-9._-]{8,64}$/.test(supplied) ? supplied : ulid();
+    let ctx: ExecutionContext | undefined;
+    try {
+      ctx = c.executionCtx;
+    } catch {
+      ctx = undefined;
+    }
+    const deps = makeDeps(c.env, ctx);
+    c.set("requestId", requestId);
+    c.set("deps", deps);
+    const started = deps.now();
+    await next();
+    c.header("x-request-id", requestId);
+    deps.log.info("request", {
+      requestId,
+      method: c.req.method,
+      path: new URL(c.req.url).pathname,
+      status: c.res.status,
+      ms: deps.now() - started,
+    });
+  });
+
+  app.use("*", secureHeaders());
+  app.use("*", async (c, next) => {
+    const { allowedOrigins } = c.get("deps").config;
+    return cors({
+      origin: (origin) => (allowedOrigins.includes(origin) ? origin : null),
+      credentials: true,
+      allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      allowHeaders: ["content-type", "idempotency-key", "x-request-id"],
+      maxAge: 600,
+    })(c, next);
+  });
+
+  const api = new Hono<AppEnv>();
+  // JSON bodies are small. File uploads (PUT .../files) have their own, larger limit in the files module.
+  const MAX_JSON_BYTES = 256 * 1024;
+  api.use("*", async (c, next) => {
+    if (c.req.method === "PUT" && /\/requests\/[^/]+\/files$/.test(c.req.path)) return next();
+    return bodyLimit({
+      maxSize: MAX_JSON_BYTES,
+      onError: (ctx) => problem(ctx, 413, "payload_too_large", "Request body is too large"),
+    })(c, next);
+  });
+  api.use("*", requireTrustedOrigin, loadActor);
+  // Responses can contain personal or tenant data: never cache them unless a route opts in (public content does).
+  api.use("*", async (c, next) => {
+    await next();
+    if (!c.res.headers.has("cache-control")) c.header("cache-control", "no-store");
+  });
+
+  api.get("/health", (c) => c.json({ status: "ok" }));
+  api.get("/version", (c) => c.json({ version: c.get("deps").config.version }));
+
+  api.route("/auth", authRoutes);
+  api.route("/me", meRoutes);
+  api.route("/token", ssoRoutes);
+  api.route("/content", contentRoutes);
+  api.route("/admin", adminRoutes);
+  api.route("/leads", leadsRoutes);
+  api.route("/orgs", orgsRoutes);
+  api.route("/", portalRoutes);
+  api.route("/", filesRoutes);
+
+  app.route("/api/v1", api);
+  app.route("/.well-known/jwks.json", jwksRoutes);
+
+  app.notFound((c) => problem(c, 404, "not_found", "Not found"));
+
+  app.onError((error, c) => {
+    if (error instanceof AppError) {
+      return problem(c, error.status, error.code, error.message, error.details ? { errors: error.details } : {});
+    }
+    if (error instanceof ZodError) {
+      return problem(c, 400, "validation_failed", "Validation failed", {
+        errors: error.issues.map((issue) => ({ path: issue.path.join("."), message: issue.message })),
+      });
+    }
+    c.get("deps")?.log.error("unhandled_error", {
+      requestId: c.get("requestId"),
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return problem(c, 500, "internal_error", "Internal server error");
+  });
+
+  return app;
+}

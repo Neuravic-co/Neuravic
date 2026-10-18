@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "neuravic-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-05-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "neuravic-db",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    "APP_ENV": "development",
+    "APP_URL": "http://localhost:5173",
+    "ALLOWED_ORIGINS": "http://localhost:5173,http://localhost:3000",
+    "EMAIL_FROM": "Neuravic <no-reply@neuravic.com>",
+    "NOTIFY_TO": "hello@neuravic.com",
+    "SSO_KEY_ID": "neuravic-1",
+    "SSO_AUDIENCES": "darkagent,coolaccess_dxb"
+  }
+  // Optional bindings, create them and uncomment:
+  // "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "neuravic-files" }],
+  // "kv_namespaces": [{ "binding": "KV", "id": "REPLACE_WITH_KV_ID" }]
+  //
+  // Secrets (wrangler secret put <NAME>):
+  // BOOTSTRAP_ADMIN_EMAIL, TURNSTILE_SECRET, RESEND_API_KEY,
+  // SLACK_WEBHOOK_URL, SSO_PRIVATE_JWK
+}
