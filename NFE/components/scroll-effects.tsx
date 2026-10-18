@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-export function SiteEffects() {
+export function ScrollEffects() {
   useEffect(() => {
     document.documentElement.classList.add("js");
 

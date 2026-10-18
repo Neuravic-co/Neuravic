@@ -1,6 +1,6 @@
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
-import { SiteEffects } from "@/components/site-effects";
+import { ScrollEffects } from "@/components/scroll-effects";
 import { SiteHeader } from "@/components/site-header";
 
 const services = [
@@ -107,7 +107,7 @@ function ProjectVisual({ number, name }: { number: string; name: string }) {
 export default function Home() {
   return (
     <>
-      <SiteEffects />
+      <ScrollEffects />
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
