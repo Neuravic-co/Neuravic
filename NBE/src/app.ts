@@ -86,6 +86,11 @@ export function createApp(makeDeps: DepsFactory) {
 
   const api = new Hono<AppEnv>();
   api.use("*", requireTrustedOrigin, loadActor);
+  // Responses can contain personal or tenant data: never cache them unless a route opts in (public content does).
+  api.use("*", async (c, next) => {
+    await next();
+    if (!c.res.headers.has("cache-control")) c.header("cache-control", "no-store");
+  });
 
   api.get("/health", (c) => c.json({ status: "ok" }));
   api.get("/version", (c) => c.json({ version: c.get("deps").config.version }));

@@ -27,3 +27,12 @@ describe("health", () => {
     expect(denied.headers.get("access-control-allow-origin")).toBeNull();
   });
 });
+
+describe("caching", () => {
+  it("never caches API responses unless a route opts in", async () => {
+    const { request } = await makeTestApp();
+    expect((await request("/api/v1/me")).headers.get("cache-control")).toBe("no-store");
+    expect((await request("/api/v1/health")).headers.get("cache-control")).toBe("no-store");
+    expect((await request("/api/v1/content")).headers.get("cache-control")).toContain("s-maxage");
+  });
+});
