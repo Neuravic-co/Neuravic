@@ -39,6 +39,9 @@ Add these environment variables (Settings, Environment Variables):
 
 Leave `NEXT_PUBLIC_API_BASE_URL` unset. Redeploy after adding the variables.
 
+The client portal (`/portal`) shows an "Under construction" page until you add `NEXT_PUBLIC_PORTAL_OPEN` = `true`
+(then redeploy). Do that when the backend is live and you are ready for clients to sign in.
+
 ## 3. Check it works
 
 1. Send a message through the contact form. It arrives at `NOTIFY_TO`.

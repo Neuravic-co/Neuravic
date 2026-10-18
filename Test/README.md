@@ -30,7 +30,7 @@ npm run db:migrate:local
 npm run dev 2>&1 | tee /tmp/nbe.log
 
 # terminal 2: frontend
-cd NFE && cp .env.example .env.local && npm run dev
+cd NFE && cp .env.example .env.local && npm run dev   # .env.example turns the portal on (NEXT_PUBLIC_PORTAL_OPEN=true), which the portal tests need
 
 # terminal 3: the tests
 cd Test && npm install
