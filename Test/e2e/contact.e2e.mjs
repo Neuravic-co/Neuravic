@@ -14,12 +14,13 @@ await run("Contact form", async (browser, errors) => {
   await page.waitForTimeout(800);
 
   await form.getByRole("button", { name: /Start a Conversation/ }).click();
-  check("empty submit shows 4 field errors", (await page.locator(".contact-form__error").count()) === 4);
+  check("empty submit shows 5 field errors", (await page.locator(".contact-form__error").count()) === 5);
   const nameField = form.getByLabel("Name", { exact: true });
   check("error text is not part of the field label", (await nameField.count()) === 1);
 
-  await nameField.fill("E2E Tester");
-  check("an error clears as soon as the field is edited", (await page.locator(".contact-form__error").count()) === 3);
+  await nameField.fill("E2E");
+  check("an error clears as soon as the field is edited", (await page.locator(".contact-form__error").count()) === 4);
+  await form.getByLabel("Last name", { exact: true }).fill("Tester");
 
   const stamp = Date.now();
   await form.getByLabel("Email").fill(`e2e-${stamp}@example.com`);
@@ -32,6 +33,7 @@ await run("Contact form", async (browser, errors) => {
     page.waitForResponse((r) => r.url().includes("/leads") && r.request().method() === "POST"),
     form.getByRole("button", { name: /Start a Conversation/ }).click(),
   ]);
+  check("first and last name are sent as one full name", JSON.parse(response.request().postData() ?? "{}").name === "E2E Tester");
   check("POST /leads is accepted", response.status() === 202, `status ${response.status()} (429 means the rate limit: restart the backend)`);
   await page.waitForSelector(".contact-form--sent");
   check("confirmation shown", /Message received/.test(await page.textContent(".contact-form--sent")));

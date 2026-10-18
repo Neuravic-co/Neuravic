@@ -5,7 +5,7 @@
 Please report security problems privately, not in a public issue.
 
 - Use GitHub's **Report a vulnerability** button on the repository's Security tab (private reporting), or
-- email **hello@neuravic.com** with the subject `Security`.
+- email **neuravic2026@gmail.com** with the subject `Security`.
 
 > Neuravic does not have a dedicated security mailbox yet. Create `security@` on the company domain, then
 > update this file and the `contact` line in the site's `/.well-known/security.txt` when you do.

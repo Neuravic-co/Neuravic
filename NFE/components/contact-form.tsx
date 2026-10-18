@@ -16,7 +16,8 @@ type ServiceValue = (typeof SERVICES)[number]["value"];
 
 /** Mirrors the API validation so mistakes are caught before a request is sent. */
 const formSchema = z.object({
-  name: z.string().trim().min(1, "Tell us your name").max(120, "Name is too long"),
+  firstName: z.string().trim().min(1, "Tell us your name").max(60, "Name is too long"),
+  lastName: z.string().trim().min(1, "Tell us your last name").max(59, "Last name is too long"),
   email: z.string().trim().email("Enter a valid email address").max(254),
   company: z.string().trim().max(160, "Company name is too long").optional(),
   message: z
@@ -27,7 +28,7 @@ const formSchema = z.object({
   consent: z.literal(true, { error: "Please agree so we can reply to you" }),
 });
 
-type FieldName = "name" | "email" | "company" | "message" | "consent" | "form";
+type FieldName = "firstName" | "lastName" | "email" | "company" | "message" | "consent" | "form";
 type Errors = Partial<Record<FieldName, string>>;
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -100,7 +101,8 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
     if (status === "sending") return;
     const form = new FormData(event.currentTarget);
     const values = {
-      name: String(form.get("name") ?? ""),
+      firstName: String(form.get("firstName") ?? ""),
+      lastName: String(form.get("lastName") ?? ""),
       email: String(form.get("email") ?? ""),
       company: String(form.get("company") ?? "").trim() || undefined,
       message: String(form.get("message") ?? ""),
@@ -126,10 +128,13 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
     setErrors({});
     setStatus("sending");
     try {
+      const { firstName, lastName, ...details } = parsed.data;
       await api("/leads", {
         method: "POST",
         body: {
-          ...parsed.data,
+          ...details,
+          // The API stores one full name.
+          name: `${firstName} ${lastName}`,
           serviceInterest: services,
           turnstileToken: token || undefined,
           website: String(form.get("website") ?? ""),
@@ -143,7 +148,11 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
       setToken("");
       if (error instanceof ApiError && error.status === 400 && error.fieldErrors.length) {
         const next: Errors = {};
-        for (const item of error.fieldErrors) next[item.path as FieldName] ??= item.message;
+        for (const item of error.fieldErrors) {
+          // The API has one "name" field; show its message under the first name box.
+          const key = (item.path === "name" ? "firstName" : item.path) as FieldName;
+          next[key] ??= item.message;
+        }
         setErrors(next);
       } else if (error instanceof ApiError && error.status === 429) {
         setErrors({ form: "Too many messages from this connection. Please try again in a little while." });
@@ -188,23 +197,30 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
     >
       <div className="contact-form__row">
         <div className="contact-form__field">
-          <label htmlFor={`${uid}-name`}>Name</label>
-          <input type="text" autoComplete="name" maxLength={120} {...field("name")} />
-          {fieldError("name")}
+          <label htmlFor={`${uid}-firstName`}>Name</label>
+          <input type="text" autoComplete="given-name" maxLength={60} {...field("firstName")} />
+          {fieldError("firstName")}
         </div>
+        <div className="contact-form__field">
+          <label htmlFor={`${uid}-lastName`}>Last name</label>
+          <input type="text" autoComplete="family-name" maxLength={59} {...field("lastName")} />
+          {fieldError("lastName")}
+        </div>
+      </div>
+
+      <div className="contact-form__row">
         <div className="contact-form__field">
           <label htmlFor={`${uid}-email`}>Email</label>
           <input type="email" autoComplete="email" maxLength={254} {...field("email")} />
           {fieldError("email")}
         </div>
-      </div>
-
-      <div className="contact-form__field">
-        <label htmlFor={`${uid}-company`}>
-          Company <em>optional</em>
-        </label>
-        <input type="text" autoComplete="organization" maxLength={160} {...field("company")} />
-        {fieldError("company")}
+        <div className="contact-form__field">
+          <label htmlFor={`${uid}-company`}>
+            Company <em>optional</em>
+          </label>
+          <input type="text" autoComplete="organization" maxLength={160} {...field("company")} />
+          {fieldError("company")}
+        </div>
       </div>
 
       <fieldset className="contact-form__services">
