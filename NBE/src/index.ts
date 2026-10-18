@@ -5,6 +5,7 @@ import type { Deps } from "./deps";
 import type { Env } from "./env";
 import { jsonLogger } from "./lib/logger";
 import { KvRateLimiter, MemoryRateLimiter } from "./lib/rate-limit";
+import { runMaintenance } from "./modules/maintenance/service";
 import { R2BlobStore } from "./modules/files/blob-store";
 import { createJwtSigner } from "./modules/sso/jwt";
 import { ConsoleMailer, ResendMailer } from "./modules/notifications/mailer";
@@ -38,4 +39,8 @@ const app = createApp(buildDeps);
 
 export default {
   fetch: app.fetch,
+  /** Cron trigger (see wrangler.jsonc): outbox retries, cleanup and data retention. */
+  scheduled(_controller, env, ctx) {
+    ctx.waitUntil(runMaintenance(buildDeps(env, ctx)));
+  },
 } satisfies ExportedHandler<Env>;
