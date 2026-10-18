@@ -1,4 +1,4 @@
-import { createApp } from "./app";
+import { createApp, type BackgroundContext } from "./app";
 import { loadConfig } from "./config";
 import { createD1Db } from "./db";
 import type { Deps } from "./deps";
@@ -12,7 +12,7 @@ import { ConsoleMailer, ResendMailer } from "./modules/notifications/mailer";
 
 const sharedMemoryLimiter = new MemoryRateLimiter();
 
-function buildDeps(env: Env, ctx?: ExecutionContext): Deps {
+function buildDeps(env: Env, ctx?: BackgroundContext): Deps {
   const config = loadConfig(env);
   return {
     config,
