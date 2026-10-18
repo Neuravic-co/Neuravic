@@ -1,0 +1,25 @@
+# Keeps dependencies and CI actions up to date with weekly pull requests.
+# Minor and patch updates are grouped into one PR per folder; major updates arrive separately for review.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /NBE
+    schedule: { interval: weekly, day: monday }
+    groups:
+      minor-and-patch: { update-types: [minor, patch] }
+    open-pull-requests-limit: 5
+  - package-ecosystem: npm
+    directory: /NFE
+    schedule: { interval: weekly, day: monday }
+    groups:
+      minor-and-patch: { update-types: [minor, patch] }
+    open-pull-requests-limit: 5
+  - package-ecosystem: npm
+    directory: /Test
+    schedule: { interval: weekly, day: monday }
+    groups:
+      minor-and-patch: { update-types: [minor, patch] }
+    open-pull-requests-limit: 3
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly, day: monday }
