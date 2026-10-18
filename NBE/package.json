@@ -1,0 +1,33 @@
+{
+  "name": "neuravic-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply neuravic-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply neuravic-db --remote",
+    "sso:keygen": "node scripts/generate-sso-key.mjs"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.13.13",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260515.1",
+    "@libsql/client": "^0.15.15",
+    "@types/node": "^22.19.19",
+    "drizzle-kit": "^0.31.10",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7",
+    "wrangler": "^4.92.0"
+  }
+}
