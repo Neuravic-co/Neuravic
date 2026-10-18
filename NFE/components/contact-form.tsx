@@ -24,7 +24,7 @@ const formSchema = z.object({
     .trim()
     .min(10, "Please write at least a sentence")
     .max(4000, "Message is too long (4000 characters maximum)"),
-  consent: z.literal(true, { errorMap: () => ({ message: "Please agree so we can reply to you" }) }),
+  consent: z.literal(true, { error: "Please agree so we can reply to you" }),
 });
 
 type FieldName = "name" | "email" | "company" | "message" | "consent" | "form";

@@ -1,4 +1,4 @@
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
@@ -14,7 +14,7 @@ import { createJwtSigner } from "../../NBE/src/modules/sso/jwt";
 import { MemoryMailer } from "../../NBE/src/modules/notifications/mailer";
 
 /** Absolute path, so the tests work from any working directory. */
-const MIGRATIONS_DIR = fileURLToPath(new URL("../../NBE/migrations", import.meta.url));
+const MIGRATIONS_DIR = resolve(import.meta.dirname, "../../NBE/migrations");
 
 export const testEnv = {
   APP_ENV: "development",

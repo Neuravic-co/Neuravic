@@ -12,7 +12,7 @@ export const createLeadSchema = z.object({
   serviceInterest: z.array(z.enum(SERVICE_INTERESTS)).max(SERVICE_INTERESTS.length).default([]),
   budgetBand: z.string().trim().max(60).optional(),
   source: z.string().trim().max(60).default("website"),
-  consent: z.literal(true, { errorMap: () => ({ message: "Consent is required" }) }),
+  consent: z.literal(true, { error: "Consent is required" }),
   turnstileToken: z.string().max(2048).optional(),
   /** Honeypot. Real users never fill this in. */
   website: z.string().max(200).optional(),

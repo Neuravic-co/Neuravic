@@ -42,7 +42,7 @@ export const KIND_BY_SEGMENT = {
 export type Segment = keyof typeof KIND_BY_SEGMENT;
 
 export const upsertContentSchema = z.object({
-  data: z.record(z.unknown()),
+  data: z.record(z.string(), z.unknown()),
   position: z.number().int().min(0).max(1000).default(0),
   published: z.boolean().default(true),
 });

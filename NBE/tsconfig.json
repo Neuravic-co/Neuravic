@@ -17,7 +17,6 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "baseUrl": ".",
     "paths": {
       "vitest": [
         "./node_modules/vitest"

@@ -43,7 +43,7 @@ bootstrap email. In development the sign-in link is printed in the backend termi
 
 ```bash
 cd NBE && npm run typecheck && npm test                  # backend: types and 91 tests
-cd NFE && npm run lint && npx tsc --noEmit && npm run build
+cd NFE && npm run lint && npm run typecheck && npm run build
 ./Security/scripts/security-check.sh                     # secrets and vulnerable dependencies
 cd Test && npm install && npm run e2e                    # browser tests (both apps running; see Test/README.md)
 ```
