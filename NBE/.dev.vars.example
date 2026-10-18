@@ -6,4 +6,5 @@ BOOTSTRAP_ADMIN_EMAIL=you@example.com
 # TURNSTILE_SECRET=
 # RESEND_API_KEY=
 # SLACK_WEBHOOK_URL=
+# PROXY_SECRET=     (only to test the website proxy locally; must equal API_PROXY_SECRET on NFE)
 # SSO_PRIVATE_JWK=   (generate with: npm run sso:keygen)

@@ -4,7 +4,7 @@ All tests for Neuravic live here.
 
 ```
 Test/
-  backend/   100 automated tests for the API (Vitest, in-memory database, no network)
+  backend/   103 automated tests for the API (Vitest, in-memory database, no network)
   e2e/       Browser tests: contact form, client portal, accessibility (Playwright + axe-core)
 ```
 
