@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { bodyLimit } from "hono/body-limit";
 import { secureHeaders } from "hono/secure-headers";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { ZodError } from "zod";
@@ -50,7 +51,9 @@ export function createApp(makeDeps: DepsFactory) {
 
   // Request id, dependency injection and access log.
   app.use("*", async (c, next) => {
-    const requestId = c.req.header("x-request-id") ?? ulid();
+    // Only accept a well-formed caller-supplied id; anything else could pollute logs.
+    const supplied = c.req.header("x-request-id");
+    const requestId = supplied && /^[A-Za-z0-9._-]{8,64}$/.test(supplied) ? supplied : ulid();
     let ctx: ExecutionContext | undefined;
     try {
       ctx = c.executionCtx;
@@ -85,6 +88,15 @@ export function createApp(makeDeps: DepsFactory) {
   });
 
   const api = new Hono<AppEnv>();
+  // JSON bodies are small. File uploads (PUT .../files) have their own, larger limit in the files module.
+  const MAX_JSON_BYTES = 256 * 1024;
+  api.use("*", async (c, next) => {
+    if (c.req.method === "PUT" && /\/requests\/[^/]+\/files$/.test(c.req.path)) return next();
+    return bodyLimit({
+      maxSize: MAX_JSON_BYTES,
+      onError: (ctx) => problem(ctx, 413, "payload_too_large", "Request body is too large"),
+    })(c, next);
+  });
   api.use("*", requireTrustedOrigin, loadActor);
   // Responses can contain personal or tenant data: never cache them unless a route opts in (public content does).
   api.use("*", async (c, next) => {
