@@ -61,7 +61,7 @@ export const DEFAULT_CONTENT: DefaultContent[] = [
         { city: "Dubai", country: "United Arab Emirates" },
         { city: "Cairo", country: "Egypt" },
       ],
-      contactEmail: "hello@neuravic.com",
+      contactEmail: "neuravic2026@gmail.com",
     },
   },
 ];
