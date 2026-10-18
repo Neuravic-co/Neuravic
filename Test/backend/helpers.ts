@@ -8,7 +8,7 @@ import { schema, type Db } from "../../NBE/src/db";
 import type { Deps } from "../../NBE/src/deps";
 import type { Env } from "../../NBE/src/env";
 import { silentLogger } from "../../NBE/src/lib/logger";
-import { MemoryRateLimiter } from "../../NBE/src/lib/rate-limit";
+import { DbRateLimiter } from "../../NBE/src/lib/rate-limit";
 import { MemoryBlobStore } from "../../NBE/src/modules/files/blob-store";
 import { createJwtSigner } from "../../NBE/src/modules/sso/jwt";
 import { MemoryMailer } from "../../NBE/src/modules/notifications/mailer";
@@ -38,14 +38,15 @@ export async function createTestDb(onQuery?: (statement: string) => void): Promi
 export async function makeTestApp(overrides: Partial<Deps> = {}) {
   const mailer = new MemoryMailer();
   const outbound: { url: string; body: unknown }[] = [];
+  const db = await createTestDb();
   const deps: Deps = {
     config: loadConfig(testEnv),
-    db: await createTestDb(),
+    db,
     log: silentLogger,
     mailer,
     sso: null,
     blobs: new MemoryBlobStore(),
-    rateLimiter: new MemoryRateLimiter(),
+    rateLimiter: new DbRateLimiter(db),
     http: (async (url: string | URL | Request, init?: RequestInit) => {
       outbound.push({ url: String(url), body: init?.body ? JSON.parse(String(init.body)) : null });
       return new Response("{}", { status: 200 });

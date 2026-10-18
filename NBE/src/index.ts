@@ -4,19 +4,18 @@ import { createD1Db } from "./db";
 import type { Deps } from "./deps";
 import type { Env } from "./env";
 import { jsonLogger } from "./lib/logger";
-import { KvRateLimiter, MemoryRateLimiter } from "./lib/rate-limit";
+import { DbRateLimiter } from "./lib/rate-limit";
 import { runMaintenance } from "./modules/maintenance/service";
 import { R2BlobStore } from "./modules/files/blob-store";
 import { createJwtSigner } from "./modules/sso/jwt";
 import { ConsoleMailer, ResendMailer } from "./modules/notifications/mailer";
 
-const sharedMemoryLimiter = new MemoryRateLimiter();
-
 function buildDeps(env: Env, ctx?: BackgroundContext): Deps {
   const config = loadConfig(env);
+  const db = createD1Db(env.DB);
   return {
     config,
-    db: createD1Db(env.DB),
+    db,
     log: jsonLogger,
     http: fetch,
     sso: config.ssoPrivateJwk ? createJwtSigner(config.ssoPrivateJwk, config.ssoKeyId) : null,
@@ -24,7 +23,7 @@ function buildDeps(env: Env, ctx?: BackgroundContext): Deps {
     mailer: config.resendApiKey
       ? new ResendMailer(config.resendApiKey, config.emailFrom)
       : new ConsoleMailer(jsonLogger, config.environment === "development"),
-    rateLimiter: env.KV ? new KvRateLimiter(env.KV) : sharedMemoryLimiter,
+    rateLimiter: new DbRateLimiter(db),
     now: () => Date.now(),
     runInBackground: (task) => {
       const promise = task().catch((error) =>

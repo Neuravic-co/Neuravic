@@ -248,3 +248,14 @@ export const auditLog = sqliteTable(
     index("audit_action").on(t.action, t.at, t.id),
   ],
 );
+
+/** Fixed-window counters for rate limiting. One row per key and window; old rows are removed by the cron job. */
+export const rateLimits = sqliteTable(
+  "rate_limits",
+  {
+    key: text("key").primaryKey(),
+    count: integer("count").notNull(),
+    expiresAt: integer("expires_at").notNull(),
+  },
+  (t) => [index("rate_limits_expires").on(t.expiresAt)],
+);

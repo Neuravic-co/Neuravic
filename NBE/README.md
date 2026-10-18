@@ -1,7 +1,7 @@
 # NBE — Neuravic Backend
 
 TypeScript API for the Neuravic website and client portal. Runs on Cloudflare Workers
-(Hono) with D1 (SQLite) through Drizzle, plus optional R2 (files) and KV (rate limits).
+(Hono) with D1 (SQLite) through Drizzle, plus optional R2 (files). Rate limits are counted in D1, so they are exact and shared by every server instance.
 It is a modular monolith: one deployable, one folder per feature under `src/modules/`.
 
 ## What it serves for NFE
@@ -33,7 +33,7 @@ The defaults in `wrangler.jsonc` match the frontend dev server (`http://localhos
 provider is needed. Sign in once with your bootstrap email and you are a staff admin.
 
 ```bash
-npm test            # 91 tests (they live in ../Test/backend), in-memory SQLite, no network
+npm test            # 95 tests (they live in ../Test/backend), in-memory SQLite, no network
 npm run typecheck
 ```
 
@@ -42,7 +42,7 @@ npm run typecheck
 1. `wrangler d1 create neuravic-db`, then put the id into `wrangler.jsonc` (`database_id`).
 2. Set production values in `wrangler.jsonc` `vars`: `APP_ENV=production`, `APP_URL`, `ALLOWED_ORIGINS`, `EMAIL_FROM`, `NOTIFY_TO`.
 3. Secrets: `wrangler secret put` for `BOOTSTRAP_ADMIN_EMAIL`, `RESEND_API_KEY`, `TURNSTILE_SECRET`, `SSO_PRIVATE_JWK` (generate with `npm run sso:keygen`), and `SLACK_WEBHOOK_URL` if wanted.
-4. Optional bindings: R2 bucket `BUCKET` (enables file attachments), KV `KV` (shared rate limits). Uncomment them in `wrangler.jsonc`.
+4. Optional binding: R2 bucket `BUCKET` (enables file attachments). Uncomment it in `wrangler.jsonc`.
 5. `npm run db:migrate:remote`, then `npm run deploy`.
 
 Route the API on the same domain as the site (for example `neuravic.com/api/*` to this Worker, everything else to NFE) so the session cookie is first-party and NFE needs no API setting. `APP_URL` must be the public site URL: sign-in links point to `APP_URL/portal/verify`.

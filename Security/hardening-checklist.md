@@ -8,7 +8,6 @@ when you set up the real environment; "Gap" means it is not built yet.
 - [ ] **Deploy** Set `APP_ENV=production` on the API. This turns on `Secure` and `__Host-` session cookies.
 - [ ] **Deploy** Set `APP_URL` to the public site address and `ALLOWED_ORIGINS` to exactly that origin. Nothing else.
 - [ ] **Deploy** Route `yourdomain/api/*` to the API Worker and everything else to the website, so the session cookie is first-party.
-- [ ] **Deploy** Bind a **KV namespace** (`KV`) to the API. Without it the sign-in and contact rate limits only count per server instance and are easy to bypass.
 - [ ] **Deploy** Set the secrets with `wrangler secret put`: `BOOTSTRAP_ADMIN_EMAIL`, `RESEND_API_KEY`, `TURNSTILE_SECRET`, `SSO_PRIVATE_JWK`, and `SLACK_WEBHOOK_URL` if used. Never put them in `wrangler.jsonc`.
 - [ ] **Deploy** Create the SSO signing key with `npm run sso:keygen` in `NBE`, store the private value only as the secret, and give DARKAGENT and COOLACCESS_DXB the JWKS URL.
 - [ ] **Deploy** Turn on Cloudflare Turnstile: set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` on the website and `TURNSTILE_SECRET` on the API.

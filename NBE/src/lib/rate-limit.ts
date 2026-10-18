@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import type { MiddlewareHandler } from "hono";
 import type { AppEnv } from "../app";
+import { schema, type Db } from "../db";
 import { tooManyRequests } from "./errors";
 import { clientIp } from "./request";
 
@@ -8,20 +10,26 @@ export interface RateLimiter {
   hit(key: string, limit: number, windowSeconds: number, now: number): Promise<boolean>;
 }
 
-/** Fixed-window limiter on Workers KV. Approximate by design (KV is eventually consistent). */
-export class KvRateLimiter implements RateLimiter {
-  constructor(private readonly kv: KVNamespace) {}
+/**
+ * Fixed-window limiter stored in the database. The upsert is a single atomic statement,
+ * so the count is exact and shared by every server instance (unlike KV or in-memory counters).
+ */
+export class DbRateLimiter implements RateLimiter {
+  constructor(private readonly db: Db) {}
 
   async hit(key: string, limit: number, windowSeconds: number, now: number): Promise<boolean> {
     const bucket = Math.floor(now / 1000 / windowSeconds);
-    const storageKey = `rl:${key}:${bucket}`;
-    const count = Number((await this.kv.get(storageKey)) ?? 0) + 1;
-    await this.kv.put(storageKey, String(count), { expirationTtl: Math.max(windowSeconds, 60) });
-    return count <= limit;
+    const expiresAt = (bucket + 1) * windowSeconds * 1000;
+    const [row] = await this.db
+      .insert(schema.rateLimits)
+      .values({ key: `${key}:${bucket}`, count: 1, expiresAt })
+      .onConflictDoUpdate({ target: schema.rateLimits.key, set: { count: sql`${schema.rateLimits.count} + 1` } })
+      .returning({ count: schema.rateLimits.count });
+    return (row?.count ?? 1) <= limit;
   }
 }
 
-/** Per-isolate limiter. Used when no KV namespace is bound (local dev, tests). */
+/** Per-isolate limiter, for unit tests that do not need a database. */
 export class MemoryRateLimiter implements RateLimiter {
   private readonly counts = new Map<string, number>();
 
