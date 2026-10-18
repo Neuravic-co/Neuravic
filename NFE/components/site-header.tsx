@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { UserRound } from "lucide-react";
 
 const navItems = [
   { label: "Home", href: "#home", section: "home" },
@@ -76,15 +77,11 @@ export function SiteHeader() {
           </nav>
 
           <div className="site-header__aside">
-            <div
-              className="site-header__presence"
-              aria-label="Neuravic operates from Dubai and Cairo"
-            >
-              <span className="site-header__presence-dot" aria-hidden="true" />
-              <span>Dubai · Cairo</span>
-            </div>
             <a className="site-header__portal" href={portalHref}>
               Portal
+            </a>
+            <a className="site-header__profile" href={portalHref} aria-label="Your profile: sign in to the client portal">
+              <UserRound aria-hidden="true" size={18} strokeWidth={1.5} />
             </a>
           </div>
 
@@ -116,6 +113,7 @@ export function SiteHeader() {
               ))}
             </nav>
             <a className="mobile-nav__portal" href={portalHref}>
+              <UserRound aria-hidden="true" size={18} strokeWidth={1.5} />
               Portal
             </a>
           </div>

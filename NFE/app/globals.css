@@ -354,25 +354,36 @@ section {
   background: color-mix(in srgb, var(--blue) 16%, transparent);
 }
 
-.site-header__presence {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.7rem;
-  color: color-mix(in srgb, var(--paper) 62%, transparent);
-  font-size: 0.58rem;
-  font-weight: 400;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  white-space: nowrap;
+/* Round profile button: a gradient ring around a dark disc, with a soft glow on hover. */
+.site-header__profile {
+  display: grid;
+  width: 2.7rem;
+  height: 2.7rem;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background:
+    linear-gradient(var(--ink), var(--ink)) padding-box,
+    linear-gradient(135deg, var(--blue), #8b5cf6 55%, #22d3ee) border-box;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--blue) 0%, transparent);
+  color: var(--paper);
+  transition:
+    box-shadow 280ms var(--ease-out),
+    transform 280ms var(--ease-out);
 }
 
-.site-header__presence-dot {
-  width: 0.36rem;
-  height: 0.36rem;
-  border-radius: 50%;
-  background: var(--blue);
-  box-shadow: 0 0 0 0.22rem color-mix(in srgb, var(--blue) 12%, transparent);
+.site-header__profile:hover {
+  box-shadow: 0 0 1.4rem color-mix(in srgb, var(--blue) 55%, transparent);
+  transform: translateY(-1px);
 }
+
+.site-header__profile:focus-visible,
+.site-header__portal:focus-visible {
+  outline: 2px solid var(--blue-text, var(--blue));
+  outline-offset: 3px;
+}
+
+
 
 .portal-button {
   display: inline-flex;
@@ -495,6 +506,7 @@ section {
 /* The portal is not one of the four page sections: it gets its own button under the list. */
 .mobile-nav a.mobile-nav__portal {
   display: flex;
+  gap: 0.75rem;
   min-height: 3.5rem;
   align-items: center;
   justify-content: center;
