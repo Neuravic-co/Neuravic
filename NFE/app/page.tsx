@@ -81,7 +81,6 @@ export default async function Home() {
           </div>
 
           <a className="hero__scroll" href="#services" aria-label="Scroll to services">
-            <span>Scroll</span>
             <i aria-hidden="true" />
           </a>
         </section>

@@ -3,11 +3,9 @@
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { useId, useState, type FormEvent } from "react";
-import { z } from "zod";
 import { ApiError, api } from "@/lib/api";
+import { emailError } from "@/lib/validation";
 import { Field } from "./ui";
-
-const emailSchema = z.string().trim().email("Enter a valid email address").max(254);
 
 export function SignIn({ notice }: { notice?: string }) {
   const id = useId();
@@ -18,15 +16,15 @@ export function SignIn({ notice }: { notice?: string }) {
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     if (status === "sending") return;
-    const parsed = emailSchema.safeParse(email);
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Enter a valid email address");
+    const invalid = emailError(email);
+    if (invalid) {
+      setError(invalid);
       return;
     }
     setError("");
     setStatus("sending");
     try {
-      await api("/auth/magic-link", { method: "POST", body: { email: parsed.data } });
+      await api("/auth/magic-link", { method: "POST", body: { email: email.trim() } });
       setStatus("sent");
     } catch (caught) {
       setStatus("idle");

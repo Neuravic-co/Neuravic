@@ -2,6 +2,17 @@
 @import "tw-animate-css";
 @import "../vendor/shadcn-tailwind-4.13.0.css";
 
+/*
+ * Until the brand font (Termina) has loaded, text is drawn in a stand-in. Termina is about 38% wider than
+ * Arial, so without this the headline would re-wrap and the page would jump when the real font arrives.
+ * This stand-in is Arial stretched to Termina's width, so the layout barely moves.
+ */
+@font-face {
+  font-family: "termina-fallback";
+  src: local("Arial"), local("Helvetica Neue"), local("Helvetica"), local("Liberation Sans"), local("Arimo"), local("Roboto"), local("Segoe UI");
+  size-adjust: 138%;
+}
+
 :root {
   --ink: #070a12;
   --slate: #121824;
@@ -11,7 +22,7 @@
   --page-gutter: clamp(1.5rem, 5.75vw, 6.5rem);
   --header-height: 5.5rem;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --font-brand: "termina", sans-serif;
+  --font-brand: "termina", "termina-fallback", sans-serif;
 }
 
 /*
@@ -34,6 +45,8 @@
 }
 
 html {
+  /* Normal size up to about 2600px wide, then it grows with the screen so a 4K display is not left with tiny content. */
+  font-size: max(100%, 0.62vw);
   background: var(--ink);
   color: var(--paper);
   scroll-behavior: smooth;
@@ -43,7 +56,8 @@ html {
 }
 
 body {
-  min-width: 20rem;
+  /* 280px is the narrowest phone in common use (a folded foldable); below that nothing is promised. */
+  min-width: 17.5rem;
   margin: 0;
   overflow-x: clip;
   background: var(--ink);
@@ -128,7 +142,7 @@ section {
 .eyebrow {
   margin: 0 0 2rem;
   color: var(--muted);
-  font-size: 0.67rem;
+  font-size: 0.7rem;
   font-weight: 500;
   letter-spacing: 0.2em;
   line-height: 1.4;
@@ -498,7 +512,7 @@ section {
 .mobile-nav button span,
 .mobile-nav > p {
   color: var(--muted);
-  font-size: 0.63rem;
+  font-size: 0.7rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
@@ -567,39 +581,122 @@ section {
 }
 
 .hero-art__logo {
+  --logo-size: clamp(18rem, 32vw, 36rem);
   position: absolute;
   top: 50%;
   right: 10%;
-  width: clamp(18rem, 32vw, 36rem);
-  height: auto;
+  width: var(--logo-size);
   aspect-ratio: 1;
-  overflow: visible;
+  /* Its own compositing layer: the still glow is drawn once; only the layers inside it move. */
+  will-change: transform;
   transform: translateY(-50%);
 }
 
-/*
- * The beam of light: the band is rotated once in the SVG, and this slides it across the mark in about three
- * seconds, then it rests for four. It starts and ends outside the mark, so the restart cannot be seen.
- */
-.hero-art__sweep {
-  animation: hero-light-sweep 7s ease-in-out infinite;
-  transform: translateY(-160px);
+.hero-art__base {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
 
-@keyframes hero-light-sweep {
+.hero-art__defs {
+  position: absolute;
+  pointer-events: none;
+}
+
+/*
+ * The beam of light. Every moving part below changes only `transform`, so the graphics chip slides ready-made
+ * layers and nothing is redrawn. A cycle is 7 seconds: about 3 seconds of travel, then a rest. The strip starts
+ * and ends outside the logo, so the restart cannot be seen. Distances are fractions of the logo size.
+ */
+.hero-art__beam,
+.hero-art__core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 220%;
+  margin-left: -110%;
+  transform-origin: 50% 50%;
+  animation: hero-beam-move 7s ease-in-out infinite;
+}
+
+/* A soft-edged strip about half the logo wide; the fade is a fixed mask that travels with the strip. */
+.hero-art__beam {
+  height: 47%;
+  margin-top: -23.5%;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgb(0 0 0 / 0.55) 38%, #000 50%, rgb(0 0 0 / 0.55) 62%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, rgb(0 0 0 / 0.55) 38%, #000 50%, rgb(0 0 0 / 0.55) 62%, transparent 100%);
+}
+
+/* The lit copy of the logo slides the opposite way, so it stays exactly over the real logo. */
+.hero-art__lit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--logo-size);
+  height: var(--logo-size);
+  margin: calc(var(--logo-size) / -2) 0 0 calc(var(--logo-size) / -2);
+  overflow: visible;
+  transform-origin: 50% 50%;
+  animation: hero-lit-counter 7s ease-in-out infinite;
+}
+
+.hero-art__core-clip {
+  position: absolute;
+  inset: 0;
+  clip-path: url("#hero-pieces");
+}
+
+.hero-art__core {
+  height: calc(var(--logo-size) * 0.0195);
+  margin-top: calc(var(--logo-size) * -0.00977);
+  background: linear-gradient(to bottom, transparent, #fff 50%, transparent);
+  opacity: 0.9;
+}
+
+@keyframes hero-beam-move {
   0% {
-    transform: translateY(-160px);
+    transform: rotate(-45deg) translateY(calc(var(--logo-size) * -0.625));
   }
   43%,
   100% {
-    transform: translateY(250px);
+    transform: rotate(-45deg) translateY(calc(var(--logo-size) * 0.977));
   }
 }
 
+@keyframes hero-lit-counter {
+  0% {
+    transform: translateY(calc(var(--logo-size) * 0.625)) rotate(45deg);
+  }
+  43%,
+  100% {
+    transform: translateY(calc(var(--logo-size) * -0.977)) rotate(45deg);
+  }
+}
+
+/* Do not animate what nobody can see: scroll-effects.tsx marks the hero when it is off screen. */
+.hero.is-offscreen .hero-art__beam,
+.hero.is-offscreen .hero-art__lit,
+.hero.is-offscreen .hero-art__core {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .hero-art__sweep {
+  .hero-art__beam,
+  .hero-art__lit,
+  .hero-art__core {
     animation: none;
-    transform: translateY(-160px);
+  }
+
+  /* At rest the strip sits outside the logo, so the logo is shown still. */
+  .hero-art__beam,
+  .hero-art__core {
+    transform: rotate(-45deg) translateY(calc(var(--logo-size) * -0.625));
+  }
+
+  .hero-art__lit {
+    transform: translateY(calc(var(--logo-size) * 0.625)) rotate(45deg);
   }
 }
 
@@ -639,7 +736,7 @@ section {
   gap: 1.7rem;
   margin-bottom: 2rem;
   color: var(--muted);
-  font-size: 0.62rem;
+  font-size: 0.7rem;
   font-weight: 500;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -686,24 +783,27 @@ section {
   gap: 2rem;
   margin-top: 2.4rem;
   color: color-mix(in srgb, var(--paper) 72%, transparent);
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
 .hero__scroll {
   position: absolute;
-  right: 1.2rem;
+  right: 2.2rem;
   bottom: 2.2rem;
   display: flex;
   align-items: center;
   gap: 0.7rem;
   color: var(--muted);
-  font-size: 0.58rem;
+  font-size: 0.7rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  transform: rotate(90deg) translateX(100%);
+  /* The line stands upright and ends at the bottom-right corner (it used to hang off the screen edge). */
+  transform: rotate(90deg);
   transform-origin: right bottom;
+  /* After the turn this becomes width: it makes the link at least 24px wide to tap. */
+  padding-block: 0.9rem;
 }
 
 .hero__scroll i {
@@ -768,7 +868,7 @@ section {
 
 .service-row__number {
   color: var(--muted);
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   letter-spacing: 0.16em;
 }
 
@@ -853,7 +953,7 @@ section {
 .project__name {
   margin: 0 0 3.5rem;
   color: var(--blue-text, var(--blue));
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   font-weight: 500;
   letter-spacing: 0.2em;
 }
@@ -901,7 +1001,7 @@ section {
   justify-content: space-between;
   gap: 1rem;
   color: color-mix(in srgb, var(--muted) 92%, transparent);
-  font-size: 0.58rem;
+  font-size: 0.7rem;
   letter-spacing: 0.13em;
   text-transform: uppercase;
 }
@@ -926,7 +1026,7 @@ section {
 .project-visual figcaption {
   position: absolute;
   inset: auto 1.4rem 1.25rem;
-  font-size: 0.58rem;
+  font-size: 0.7rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
 }
@@ -960,7 +1060,7 @@ section {
 
 .process-step > span {
   color: var(--blue-text, var(--blue));
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   letter-spacing: 0.16em;
 }
 
@@ -1056,14 +1156,14 @@ section {
 
 .about__locations span {
   color: var(--blue-text, var(--blue));
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   letter-spacing: 0.12em;
 }
 
 .about__locations p {
   margin: 0;
   color: color-mix(in srgb, var(--paper) 76%, transparent);
-  font-size: 0.64rem;
+  font-size: 0.7rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -1110,7 +1210,7 @@ section {
   display: flex;
   justify-content: space-between;
   color: var(--muted);
-  font-size: 0.55rem;
+  font-size: 0.7rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -1141,7 +1241,7 @@ section {
 
 .team-card__meta span {
   color: var(--muted);
-  font-size: 0.61rem;
+  font-size: 0.7rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
@@ -1153,7 +1253,7 @@ section {
   gap: 0.7rem;
   margin-top: 4.5rem;
   color: var(--muted);
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   letter-spacing: 0.13em;
   text-transform: uppercase;
 }
@@ -1214,7 +1314,7 @@ section {
 .contact-form__field > label,
 .contact-form__services legend {
   color: var(--muted);
-  font-size: 0.67rem;
+  font-size: 0.7rem;
   font-weight: 500;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -1362,9 +1462,9 @@ section {
 
 .contact-form__consent input {
   flex: none;
-  width: 1.1rem;
-  height: 1.1rem;
-  margin: 0.15rem 0 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: -0.1rem 0 0;
   accent-color: var(--blue);
 }
 
@@ -1380,6 +1480,7 @@ section {
 }
 
 .contact-form__mailto {
+  padding-block: 0.4rem;
   color: var(--muted);
   font-size: 0.85rem;
   border-bottom: 1px solid transparent;
@@ -1418,7 +1519,7 @@ section {
 
 @media (max-width: 40rem) {
   .contact-form__row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   /* Keep the chips in two columns on phones too; only the gap tightens. */
@@ -1448,7 +1549,7 @@ section {
   max-width: 27rem;
   margin: 2rem 0 0;
   color: var(--muted);
-  font-size: 0.64rem;
+  font-size: 0.7rem;
   letter-spacing: 0.14em;
   line-height: 1.6;
   text-transform: uppercase;
@@ -1458,14 +1559,16 @@ section {
 .footer__places {
   display: grid;
   align-content: start;
-  gap: 0.9rem;
+  gap: 0.35rem;
 }
 
 .footer nav a,
 .footer__places span {
   width: fit-content;
+  /* Links are at least 24px tall so they are easy to tap. */
+  padding-block: 0.3rem;
   color: color-mix(in srgb, var(--paper) 70%, transparent);
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   transition: color 220ms var(--ease-out);
@@ -1479,14 +1582,19 @@ section {
   color: var(--blue-text, var(--blue));
 }
 
+.footer__bottom a {
+  padding-block: 0.4rem;
+}
+
 .footer__bottom {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding-top: 1.3rem;
   padding-bottom: 1.3rem;
   border-top: 1px solid color-mix(in srgb, var(--paper) 12%, transparent);
   color: var(--muted);
-  font-size: 0.58rem;
+  font-size: 0.7rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -1572,8 +1680,8 @@ section {
   }
 
   .hero-art__logo {
+    --logo-size: clamp(16rem, 38vw, 26rem);
     right: 4%;
-    width: clamp(16rem, 38vw, 26rem);
   }
 
   .hero-art__halo {
@@ -1603,7 +1711,7 @@ section {
   .section-heading,
   .project__heading,
   .contact__inner {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .section-heading,
@@ -1628,7 +1736,7 @@ section {
   }
 
   .work-intro__grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .work-intro .section-lede {
@@ -1723,8 +1831,8 @@ section {
   }
 
   .hero-art__logo {
+    --logo-size: 19rem;
     right: -3.5rem;
-    width: 19rem;
   }
 
   .hero__veil {
@@ -1750,7 +1858,7 @@ section {
   .hero__tags {
     gap: 0.85rem 1.25rem;
     margin-bottom: 1.4rem;
-    font-size: 0.55rem;
+    font-size: 0.7rem;
   }
 
   .hero h1 {
@@ -1861,7 +1969,7 @@ section {
   }
 
   .about__locations {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     margin-top: 6rem;
   }
 
@@ -1876,7 +1984,7 @@ section {
   }
 
   .team-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 3rem;
   }
 
@@ -2149,8 +2257,8 @@ section {
   }
 
   .hero-art__logo {
+    --logo-size: 17rem;
     right: -5rem;
-    width: 17rem;
   }
 
   .hero__veil {
@@ -2389,7 +2497,7 @@ section {
   }
 
   .about__locations {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     margin-top: 7.5rem;
   }
 
@@ -2412,7 +2520,7 @@ section {
   }
 
   .team-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 5rem;
   }
 
@@ -2471,7 +2579,7 @@ section {
   }
 
   .footer__top {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 4.5rem;
     padding-top: 3rem;
     padding-bottom: 6rem;
@@ -2509,6 +2617,18 @@ section {
   .hero__actions .button--primary {
     max-width: 13rem;
   }
+
+  /* On the narrowest phones a long word in a big heading must still fit the screen. */
+  h1,
+  h2 {
+    overflow-wrap: break-word;
+  }
+
+  .section-heading h2,
+  .team__heading h2,
+  .work-intro h2 {
+    font-size: clamp(1.9rem, 10.4vw, 2.35rem);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2528,5 +2648,44 @@ section {
   .js [data-reveal] {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* Folded foldables and other screens under about 300px wide: keep the biggest word of the headline on one line. */
+@media (max-width: 19rem) {
+  .hero h1 {
+    font-size: 1.85rem;
+  }
+}
+
+/* Phones held sideways: the screen is wide but only about 300px tall, so size things by height, not width. */
+@media (max-height: 32rem) and (orientation: landscape) {
+  .hero,
+  .hero__inner {
+    min-height: 100svh;
+  }
+
+  .hero__inner {
+    padding-top: 6.5rem;
+    padding-bottom: 2rem;
+  }
+
+  .hero h1 {
+    max-width: 38rem;
+    font-size: clamp(2rem, 9vh, 3.2rem);
+    line-height: 1;
+  }
+
+  .hero__tags {
+    margin-bottom: 1rem;
+  }
+
+  .hero__intro {
+    margin-top: 1rem;
+    font-size: 0.95rem;
+  }
+
+  .hero__copy {
+    width: min(38rem, 62%);
   }
 }
