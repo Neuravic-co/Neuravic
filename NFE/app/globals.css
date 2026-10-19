@@ -3164,3 +3164,41 @@ section {
     transform: none;
   }
 }
+
+/* Services: same navy as the home page */
+
+.services {
+  background:
+    radial-gradient(55% 55% at 50% 38%, color-mix(in srgb, var(--blue) 22%, transparent), transparent 70%),
+    var(--ink);
+}
+
+.services .eyebrow {
+  color: var(--muted);
+}
+
+.services .service-card {
+  border-color: color-mix(in srgb, var(--paper) 12%, transparent);
+  background: linear-gradient(
+    color-mix(in srgb, var(--paper) 6%, transparent),
+    color-mix(in srgb, var(--paper) 2%, transparent)
+  );
+  color: var(--paper);
+}
+
+.services .service-card:hover,
+.services .service-card:focus-within {
+  border-color: var(--blue);
+  box-shadow:
+    0 1.5rem 3.5rem -1.5rem color-mix(in srgb, var(--blue) 70%, transparent),
+    0 0 0 1px var(--blue);
+}
+
+.services .service-card__icon,
+.services .service-card:hover .service-card__number {
+  color: var(--blue-text);
+}
+
+.services .service-card p {
+  color: var(--muted);
+}
