@@ -3580,3 +3580,52 @@ main.landing > section {
     display: none;
   }
 }
+
+/* Footer polish: layered blue gradients, a glowing top edge and glass pills */
+
+.site-footer {
+  border-top: 0;
+  background:
+    radial-gradient(55% 110% at 50% 0%, color-mix(in srgb, var(--blue) 22%, transparent), transparent 72%),
+    radial-gradient(80% 90% at 50% 135%, color-mix(in srgb, var(--blue) 32%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--ink), #0a1226);
+}
+
+.site-footer::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 1px;
+  content: "";
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--blue) 90%, white), transparent);
+  box-shadow: 0 0 1.5rem 0.1rem color-mix(in srgb, var(--blue) 45%, transparent);
+}
+
+.site-footer__word {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--paper) 62%, transparent) 0%,
+    color-mix(in srgb, #8fa6ff 45%, transparent) 52%,
+    color-mix(in srgb, var(--blue) 14%, transparent) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 0 2.2rem color-mix(in srgb, var(--blue) 30%, transparent));
+}
+
+.site-footer__tabs button {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(color-mix(in srgb, #0c1428 92%, var(--blue)), color-mix(in srgb, #0c1428 92%, var(--blue))) padding-box,
+    linear-gradient(135deg, color-mix(in srgb, var(--blue) 75%, white), rgb(255 255 255 / 0.1) 45%, color-mix(in srgb, var(--blue) 55%, transparent)) border-box;
+}
+
+.site-footer__tabs button:hover,
+.site-footer__tabs button:focus-visible {
+  border-color: transparent;
+  background:
+    linear-gradient(color-mix(in srgb, #0c1428 70%, var(--blue)), color-mix(in srgb, #0c1428 70%, var(--blue))) padding-box,
+    linear-gradient(135deg, #fff, var(--blue)) border-box;
+  box-shadow: 0 0 1.4rem -0.2rem color-mix(in srgb, var(--blue) 70%, transparent);
+}
