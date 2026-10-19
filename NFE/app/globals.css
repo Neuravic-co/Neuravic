@@ -994,48 +994,12 @@ section {
   padding: clamp(8rem, 14vw, 14rem) 0;
 }
 
-.process__heading {
-  margin-bottom: clamp(7rem, 12vw, 12rem);
-}
 
-.process__heading h2 {
-  max-width: 48rem;
-}
 
-.process-list {
-  border-top: 1px solid var(--muted);
-}
 
-.process-step {
-  display: grid;
-  min-height: 8.6rem;
-  grid-template-columns: 5rem minmax(15rem, 1fr) minmax(18rem, 0.85fr);
-  gap: clamp(2rem, 5vw, 5rem);
-  align-items: center;
-  border-bottom: 1px solid color-mix(in srgb, var(--muted) 48%, transparent);
-}
 
-.process-step > span {
-  color: var(--blue-text, var(--blue));
-  font-size: 0.7rem;
-  letter-spacing: 0.16em;
-}
 
-.process-step h3 {
-  margin: 0;
-  font-size: clamp(1.65rem, 3vw, 3.2rem);
-  font-weight: 400;
-  letter-spacing: -0.04em;
-  text-transform: uppercase;
-}
 
-.process-step p {
-  max-width: 27rem;
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-  line-height: 1.55;
-}
 
 
 
@@ -1485,15 +1449,7 @@ section {
     max-width: 44rem;
   }
 
-  .process-step {
-    grid-template-columns: 3.2rem minmax(12rem, 1fr);
-    gap: 1.5rem;
-    padding: 2rem 0;
-  }
 
-  .process-step p {
-    grid-column: 2;
-  }
 
 
 
@@ -1597,9 +1553,7 @@ section {
   .team {
     padding-block: 7rem;
   }
-
   .services__heading,
-  .process__heading,
   .team__heading {
     margin-bottom: 5.5rem;
   }
@@ -1642,14 +1596,7 @@ section {
     inset: auto 1rem 0.9rem;
   }
 
-  .process-step {
-    grid-template-columns: 2.2rem minmax(0, 1fr);
-    gap: 1rem;
-  }
 
-  .process-step h3 {
-    font-size: 1.55rem;
-  }
 
 
 
@@ -1973,9 +1920,7 @@ section {
   .team {
     padding-block: 8rem;
   }
-
   .services__heading,
-  .process__heading,
   .team__heading {
     gap: 2.75rem;
     margin-bottom: 6rem;
@@ -2041,34 +1986,10 @@ section {
     inset: auto 1rem 1.1rem;
   }
 
-  .process__heading h2 {
-    max-width: 20rem;
-  }
 
-  .process-step {
-    grid-template-columns: 2.25rem minmax(0, 1fr);
-    gap: 0.9rem 1rem;
-    padding: 2.35rem 0;
-  }
 
-  .process-step > span {
-    align-self: start;
-    padding-top: 0.25rem;
-    font-size: 0.72rem;
-  }
 
-  .process-step h3 {
-    font-size: 1.4rem;
-    letter-spacing: -0.025em;
-    line-height: 1.35;
-  }
 
-  .process-step p {
-    grid-column: 2;
-    max-width: 19rem;
-    font-size: 0.95rem;
-    line-height: 1.7;
-  }
 
 
 
@@ -2248,23 +2169,13 @@ section {
   .section-heading {
     gap: clamp(2rem, 6vw, 6rem);
   }
-
-  /* Services and process: heading, then four rows */
+/* Services and process: heading, then four rows */
   .services__heading,
-  .process__heading,
   .team__heading {
     margin-bottom: var(--fit-gap);
   }
 
 
-
-  .process-step {
-    min-height: clamp(3.8rem, 10.5vh, 6.4rem);
-  }
-
-  .process-step h3 {
-    font-size: clamp(1.35rem, min(2.5vw, 4.4vh), 2.5rem);
-  }
 
   /* Work: the opening slide, then one slide per project */
   .project > .page-shell {
@@ -2737,7 +2648,8 @@ section {
 }
 
 @media (max-width: 58rem) {
-  .services {
+  .services,
+  .process {
     padding-block: 6rem;
   }
 
