@@ -11,12 +11,14 @@ Lists use cursor pagination: `?limit=25&cursor=<nextCursor>` and return `{ "item
 
 **Request ids.** Every response has an `x-request-id` header. You may send your own (8 to 64 characters from `A-Z a-z 0-9 . _ -`); anything else is replaced. Quote it when reporting a problem.
 
+**Content type.** Requests with a JSON body must send `Content-Type: application/json`, otherwise `415`.
+
 **Limits.** JSON bodies are limited to 256 KB (`413` beyond that). File uploads have their own 10 MB limit.
 
 **Caching.** API responses are sent with `Cache-Control: no-store`, except the public content endpoints, which are cacheable for up to 5 minutes.
 
 **Sessions.** `POST /auth/verify` sets an HttpOnly cookie. Browser calls must use `credentials: "include"`,
-and state-changing requests must come from an origin listed in `ALLOWED_ORIGINS`, otherwise `403`.
+and state-changing requests must come from an origin listed in `ALLOWED_ORIGINS`, otherwise `403`. The sign-in endpoints (`/auth/*`) apply the same rule to any request that names an origin, with or without a cookie.
 
 Roles: **client** org roles `viewer < member < admin < owner`; **staff** roles `admin`, `delivery`, `sales`.
 

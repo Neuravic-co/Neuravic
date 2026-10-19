@@ -33,7 +33,7 @@ The defaults in `wrangler.jsonc` match the frontend dev server (`http://localhos
 provider is needed. Sign in once with your bootstrap email and you are a staff admin.
 
 ```bash
-npm test            # 103 tests (they live in ../Test/backend), in-memory SQLite, no network
+npm test            # 108 tests (they live in ../Test/backend), in-memory SQLite, no network
 npm run typecheck
 ```
 

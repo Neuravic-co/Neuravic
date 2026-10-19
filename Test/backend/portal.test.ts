@@ -195,4 +195,14 @@ describe("requests under concurrent changes", () => {
     const after = await body(await ctx.request(`/api/v1/requests/${request.id}`, as(member)));
     expect(after.state).toBe("approved");
   });
+
+  it("keeps line breaks out of the notification email subject", async () => {
+    const { ctx, project } = await setup();
+    const member = await signIn(ctx, "member@acme.dev");
+    const res = await ctx.request(`/api/v1/projects/${project.id}/requests`, asJson(member, "POST", { ...newRequest, title: "Badge\r\nBcc: attacker@evil.dev" }));
+    expect(res.status).toBe(201);
+    const subjects = ctx.mailer.sent.filter((m) => m.subject.startsWith("Approval needed")).map((m) => m.subject);
+    expect(subjects.length).toBeGreaterThan(0);
+    for (const subject of subjects) expect(subject).not.toMatch(/[\r\n]/);
+  });
 });
