@@ -3445,3 +3445,27 @@ section {
     gap: 0 1.3rem;
   }
 }
+
+/* The home page is a stack of one-screen pages, so scrolling settles on a page and no band of the next colour is left showing. */
+html:has(main.landing) {
+  scroll-snap-type: y mandatory;
+}
+
+main.landing > section {
+  scroll-snap-align: start;
+}
+
+/* The contact screen is never shorter than the viewport, so the page above cannot show through at the end. */
+.contact {
+  display: flex;
+  min-height: 100svh;
+  flex-direction: column;
+}
+
+.contact > .contact__inner {
+  flex: 1 0 auto;
+}
+
+.contact > .site-footer {
+  flex: none;
+}
