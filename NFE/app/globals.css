@@ -2589,16 +2589,6 @@ section {
   }
 }
 
-@media (max-width: 36rem) {
-  .service-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .service-card__icon {
-    margin-block: 1.25rem 1rem;
-  }
-}
-
 @media (hover: none) {
   .service-card:hover {
     transform: none;
@@ -3213,5 +3203,79 @@ section {
 @media (hover: none) {
   .about__city:hover {
     transform: none;
+  }
+}
+
+/* Services and process on tablet and phone: one compact screen, two cards across */
+@media (max-width: 58rem) {
+  .services,
+  .process {
+    display: flex;
+    min-height: 100svh;
+    flex-direction: column;
+    justify-content: center;
+    padding-block: calc(var(--header-height) + 1rem) 2rem;
+  }
+
+  .services__heading {
+    margin-bottom: 1.5rem;
+  }
+
+  .services__heading h2 {
+    font-size: clamp(1.9rem, 8vw, 3.2rem);
+  }
+
+  .services__heading .section-lede {
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .service-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    padding-top: 0;
+  }
+
+  .service-card {
+    min-height: 0;
+    padding: 1rem;
+    border-radius: 0.9rem;
+  }
+
+  .service-card__number,
+  .service-card__link {
+    display: none;
+  }
+
+  .service-card__icon {
+    width: 1.9rem;
+    height: 1.9rem;
+    margin-block: 0 0.7rem;
+  }
+
+  .service-card h3 {
+    margin-bottom: 0.4rem;
+    font-size: 1rem;
+  }
+
+  .service-card p {
+    font-size: 0.78rem;
+    line-height: 1.5;
+  }
+
+  .services__cta {
+    margin-top: 1.25rem;
+  }
+}
+
+@media (max-width: 24rem) {
+  .service-card p {
+    display: none;
+  }
+}
+
+@media (max-width: 36rem) {
+  .services__heading .section-lede {
+    display: none;
   }
 }
