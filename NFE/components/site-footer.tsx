@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LEGAL_DOCUMENTS, type LegalDocument } from "@/lib/legal-content";
@@ -11,8 +12,14 @@ const TAB_LABELS: Record<string, string> = {
   license: "Licence",
 };
 
-/** A faded gradient wordmark, four legal tabs and the copyright line; each tab opens its document in a popup. */
-export function SiteFooter({ contactEmail }: { contactEmail: string }) {
+/** A classic footer: brand, company links, legal links (popups), contact details and the copyright line; each tab opens its document in a popup. */
+export function SiteFooter({
+  contactEmail,
+  locations,
+}: {
+  contactEmail: string;
+  locations: { city: string; country: string }[];
+}) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<LegalDocument | null>(null);
@@ -34,24 +41,58 @@ export function SiteFooter({ contactEmail }: { contactEmail: string }) {
 
   return (
     <footer className="site-footer">
-      <span className="site-footer__word" aria-hidden="true">
-        NEURAVIC
-      </span>
+      <div className="page-shell site-footer__grid">
+        <div className="site-footer__brand">
+          <Image
+            src="/assets/neuravic-logo.png"
+            alt="Neuravic"
+            width={617}
+            height={120}
+            unoptimized
+          />
+          <p>
+            Intelligent systems for complex operations. AI, software, design and deployment
+            from one team.
+          </p>
+        </div>
 
-      <nav className="site-footer__tabs" aria-label="Legal">
-        {LEGAL_DOCUMENTS.map((doc) => (
-          <button
-            type="button"
-            key={doc.slug}
-            aria-haspopup="dialog"
-            onClick={() => open(doc)}
-          >
-            {TAB_LABELS[doc.slug] ?? doc.title}
-          </button>
-        ))}
-      </nav>
+        <nav className="site-footer__col" aria-label="Company">
+          <h2>Company</h2>
+          <a href="#home">Home</a>
+          <a href="#services">Services</a>
+          <a href="#about">About us</a>
+          <a href="#contact">Contact us</a>
+        </nav>
 
-      <p className="site-footer__copy">© 2026 Neuravic</p>
+        <nav className="site-footer__col" aria-label="Legal">
+          <h2>Legal</h2>
+          {LEGAL_DOCUMENTS.map((doc) => (
+            <button
+              type="button"
+              key={doc.slug}
+              aria-haspopup="dialog"
+              onClick={() => open(doc)}
+            >
+              {TAB_LABELS[doc.slug] ?? doc.title}
+            </button>
+          ))}
+        </nav>
+
+        <div className="site-footer__col">
+          <h2>Contact</h2>
+          <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+          {locations.map((location) => (
+            <span key={location.city}>
+              {location.city} · {location.country}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="page-shell site-footer__bar">
+        <p>© 2026 Neuravic. All rights reserved.</p>
+        <a href="#home">Back to top ↑</a>
+      </div>
 
       <dialog
         ref={dialogRef}
