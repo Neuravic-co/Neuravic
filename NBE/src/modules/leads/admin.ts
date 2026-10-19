@@ -7,7 +7,7 @@ import { notFound } from "../../lib/errors";
 import { ulid } from "../../lib/ids";
 import { olderThan, toPage } from "../../lib/pagination";
 import { parseJson, parseQuery } from "../../lib/validate";
-import { auditInsert } from "../audit/audit";
+import { auditInsert, writeAudit } from "../audit/audit";
 import { requireStaff } from "../auth/middleware";
 import { leadNoteSchema, listLeadsQuery, updateLeadSchema } from "./schemas";
 
@@ -41,11 +41,11 @@ leadsAdminRoutes.get("/", async (c) => {
 
 /** CSV export of leads, optionally limited to a date range (epoch ms). */
 leadsAdminRoutes.get("/export.csv", async (c) => {
-  requireStaff(c, INBOX_ROLES);
+  const actor = requireStaff(c, INBOX_ROLES);
+  const deps = c.get("deps");
   const { from, to } = parseQuery(c, exportQuery);
-  const rows = await c
-    .get("deps")
-    .db.select()
+  const rows = await deps.db
+    .select()
     .from(schema.leads)
     .where(and(gte(schema.leads.createdAt, from), lte(schema.leads.createdAt, to)))
     .orderBy(desc(schema.leads.createdAt))
@@ -63,6 +63,8 @@ leadsAdminRoutes.get("/export.csv", async (c) => {
       .map(cell)
       .join(","),
   );
+  // Exporting personal data is recorded, with how much was taken.
+  await writeAudit(deps.db, { actorId: actor.user.id, action: "lead.exported", meta: { rows: rows.length, from, to } }, deps.now());
   return new Response([header.join(","), ...lines].join("\n"), {
     headers: {
       "content-type": "text/csv; charset=utf-8",

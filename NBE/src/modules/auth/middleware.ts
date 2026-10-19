@@ -26,12 +26,21 @@ export const loadActor: MiddlewareHandler<AppEnv> = async (c, next) => {
 /**
  * CSRF defence for cookie sessions: state-changing requests that carry a
  * session cookie must come from an allowed Origin (SameSite=Lax is the second layer).
+ *
+ * The sign-in endpoints are checked even without a cookie. Otherwise another site could post an
+ * attacker's own sign-in token from a visitor's browser and silently sign the visitor into the attacker's
+ * account ("login CSRF"). Browsers always send Origin on such a post, so a request that names a foreign
+ * origin is refused; requests with no origin at all (scripts, curl) are not browsers and stay allowed.
  */
 export const requireTrustedOrigin: MiddlewareHandler<AppEnv> = async (c, next) => {
-  const deps = c.get("deps");
-  if (UNSAFE_METHODS.has(c.req.method) && getCookie(c, sessionCookieName(deps.config.cookieSecure))) {
+  if (UNSAFE_METHODS.has(c.req.method)) {
+    const deps = c.get("deps");
     const origin = c.req.header("origin") ?? safeOrigin(c.req.header("referer"));
-    if (!origin || !deps.config.allowedOrigins.includes(origin)) throw forbidden("Untrusted origin");
+    const hasSession = Boolean(getCookie(c, sessionCookieName(deps.config.cookieSecure)));
+    const isSignIn = c.req.path.startsWith("/api/v1/auth/");
+    const trusted = origin !== undefined && deps.config.allowedOrigins.includes(origin);
+    if (hasSession && !trusted) throw forbidden("Untrusted origin");
+    if (isSignIn && origin !== undefined && !trusted) throw forbidden("Untrusted origin");
   }
   await next();
 };

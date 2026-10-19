@@ -168,7 +168,7 @@ portalRoutes.post("/projects/:id/requests", async (c) => {
     .map((a) =>
       emailJob(deps.db, now, {
         to: a.email,
-        subject: `Approval needed: ${request.title}`,
+        subject: `Approval needed: ${oneLine(request.title)}`,
         text: `${actor.user.name ?? actor.user.email} submitted a ${request.type} request in "${project.name}".\n\nOpen the portal to review: ${deps.config.appUrl}/portal`,
       }),
     );

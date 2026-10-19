@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { schema } from "../../NBE/src/db";
 import { as, asJson, body, json, makeTestApp, seedUser, signIn } from "./helpers";
 
 async function setup() {
@@ -68,5 +69,15 @@ describe("lead inbox", () => {
     const sales = await signIn(ctx, "sales@test.dev");
     const text = await (await ctx.request("/api/v1/leads/export.csv", as(sales))).text();
     expect(text).toContain("\"'=HYPERLINK");
+  });
+
+  it("records every CSV export in the audit log", async () => {
+    const ctx = await setup();
+    const sales = await signIn(ctx, "sales@test.dev");
+    expect((await ctx.request("/api/v1/leads/export.csv", as(sales))).status).toBe(200);
+    const entries = (await ctx.deps.db.select().from(schema.auditLog)).filter((e) => e.action === "lead.exported");
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.actorId).toBeTruthy();
+    expect((entries[0]?.meta as { rows: number }).rows).toBeGreaterThan(0);
   });
 });
