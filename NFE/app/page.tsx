@@ -93,12 +93,11 @@ export default async function Home() {
             <div className="section-heading services__heading">
               <div data-reveal>
                 <p className="eyebrow">Services / What we build</p>
-                <h2>One team, from problem to production.</h2>
+                <h2>We build it, start to finish.</h2>
               </div>
               <p className="section-lede" data-reveal>
-                Neuravic combines AI, software, product design and deployment into one
-                delivery system—turning difficult operational problems into systems
-                people can actually run.
+                AI, software and design in one team. We take hard problems and build tools
+                people use every day.
               </p>
             </div>
 
@@ -235,38 +234,33 @@ export default async function Home() {
           <div className="page-shell">
             <div className="section-heading team__heading">
               <div data-reveal>
-                <p className="eyebrow">People / The team</p>
-                <h2>Three people. One accountable team.</h2>
+                <p className="eyebrow">Our team</p>
+                <h2>Three people. One team.</h2>
               </div>
               <p className="section-lede" data-reveal>
-                Two cities, one delivery system. Strategy, design, AI, engineering and
-                operations stay connected from the first decision to deployment.
+                Based in Dubai and Cairo. We work as one team from the first idea to launch.
               </p>
             </div>
 
-            <div className="team-grid">
-              {team.map((person) => (
-                <article className="team-card" data-reveal key={person.number}>
-                  <div className="team-card__portrait">
-                    <div>
-                      <span>Portrait / {person.number}</span>
-                      <span>Original asset reserved</span>
+            <div className="person-grid">
+              {team.map((person) => {
+                const [name, role = "Role to be added"] = person.label.split(" / ");
+                return (
+                  <article className="person-card" data-reveal key={person.number}>
+                    <div className="person-card__portrait">
+                      <span className="person-card__city">{person.city}</span>
+                      <svg className="person-card__figure" viewBox="0 0 100 100" aria-hidden="true">
+                        <circle cx="50" cy="36" r="17" />
+                        <path d="M14 100c0-25 16-40 36-40s36 15 36 40z" />
+                      </svg>
                     </div>
-                  </div>
-                  <div className="team-card__meta">
-                    <div>
-                      <p>{person.label}</p>
-                      <span>{person.city}</span>
+                    <div className="person-card__meta">
+                      <h3>{name}</h3>
+                      <p>{role}</p>
                     </div>
-                    <span>{person.number}</span>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            <div className="team__footer" data-reveal>
-              <span>Distributed by design</span>
-              <ArrowUpRight aria-hidden="true" size={15} strokeWidth={1.5} />
+                  </article>
+                );
+              })}
             </div>
           </div>
         </section>

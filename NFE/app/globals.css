@@ -35,7 +35,7 @@
 .mobile-nav,
 .footer,
 .project,
-.team-card__portrait {
+.person-card__portrait {
   --muted: color-mix(in srgb, var(--paper) 62%, var(--ink));
   --blue-text: color-mix(in srgb, var(--blue) 72%, var(--paper));
 }
@@ -875,7 +875,8 @@ section {
   font-size: clamp(3.25rem, 6.5vw, 7.2rem);
 }
 
-.project {
+.project,
+.person-card__portrait {
   padding: clamp(8rem, 13vw, 13rem) 0 clamp(8rem, 13vw, 13rem);
   color: var(--paper);
 }
@@ -1139,85 +1140,15 @@ section {
   max-width: 52rem;
 }
 
-.team-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(1rem, 2.4vw, 2.5rem);
-}
 
-.team-card__portrait {
-  position: relative;
-  aspect-ratio: 4 / 5;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--muted) 62%, transparent);
-  background: var(--slate);
-  transition:
-    border-color 350ms var(--ease-out),
-    transform 500ms var(--ease-out);
-}
 
-.team-card:hover .team-card__portrait {
-  border-color: var(--blue);
-  transform: translateY(-0.35rem);
-}
 
-.team-card__portrait > div {
-  position: absolute;
-  inset: 1rem;
-  display: flex;
-  justify-content: space-between;
-  color: var(--muted);
-  font-size: 0.7rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
 
-.team-card__portrait::after {
-  position: absolute;
-  right: 1rem;
-  bottom: 1rem;
-  width: 1.9rem;
-  height: 1px;
-  content: "";
-  background: var(--blue);
-}
 
-.team-card__meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-top: 1.25rem;
-}
 
-.team-card__meta p {
-  margin: 0 0 0.4rem;
-  font-size: 0.8rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
 
-.team-card__meta span {
-  color: var(--muted);
-  font-size: 0.7rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
 
-.team__footer {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 0.7rem;
-  margin-top: 4.5rem;
-  color: var(--muted);
-  font-size: 0.7rem;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-}
 
-.team__footer svg {
-  color: var(--blue-text, var(--blue));
-}
 
 /* Contact & footer */
 
@@ -1719,13 +1650,7 @@ section {
     max-width: 41rem;
   }
 
-  .team-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 
-  .team-card:last-child {
-    grid-column: 2;
-  }
 
   .footer__top {
     grid-template-columns: 1fr 1fr;
@@ -1918,18 +1843,8 @@ section {
     padding: 1rem 0;
   }
 
-  .team-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 3rem;
-  }
 
-  .team-card:last-child {
-    grid-column: auto;
-  }
 
-  .team-card__portrait > div span:last-child {
-    display: none;
-  }
 
   .contact__inner {
     gap: 4rem;
@@ -2421,35 +2336,11 @@ section {
     line-height: 1.5;
   }
 
-  .team-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 5rem;
-  }
 
-  .team-card:last-child {
-    grid-column: auto;
-  }
 
-  .team-card__portrait {
-    aspect-ratio: 4 / 5;
-  }
 
-  .team-card__portrait > div,
-  .team-card__meta span {
-    font-size: 0.7rem;
-    line-height: 1.5;
-  }
 
-  .team-card__meta p {
-    font-size: 0.9rem;
-    line-height: 1.5;
-  }
 
-  .team__footer {
-    justify-content: flex-start;
-    margin-top: 5rem;
-    font-size: 0.72rem;
-  }
 
   .contact__inner {
     gap: 3.5rem;
@@ -2705,18 +2596,8 @@ section {
   }
 
   /* Team: three portraits sized by height, not by width */
-  .team-card__portrait {
-    aspect-ratio: auto;
-    height: clamp(11rem, 34vh, 24rem);
-  }
 
-  .team-card__meta {
-    padding-top: 0.9rem;
-  }
 
-  .team__footer {
-    margin-top: var(--fit-gap);
-  }
 
   /* Contact: the form fits beside its heading */
   .contact__inner {
@@ -3205,5 +3086,170 @@ section {
 
   .services__heading {
     margin-bottom: 2.5rem;
+  }
+}
+
+/* Team: three people */
+
+.team__heading {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.team__heading .section-lede {
+  max-width: 34rem;
+}
+
+.person-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1rem, 2vw, 1.6rem);
+}
+
+.person-card {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--muted) 38%, transparent);
+  border-radius: 1.1rem;
+  background: #fff;
+  transition:
+    transform 350ms var(--ease-out),
+    border-color 350ms var(--ease-out),
+    box-shadow 350ms var(--ease-out);
+}
+
+.person-card:hover {
+  border-color: var(--blue);
+  box-shadow:
+    0 1.25rem 3rem -1.25rem color-mix(in srgb, var(--blue) 55%, transparent),
+    0 0 0 1px var(--blue);
+  transform: translateY(-0.5rem);
+}
+
+.person-card__portrait {
+  position: relative;
+  display: grid;
+  height: clamp(13rem, 36vh, 24rem);
+  place-items: end center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--blue) 42%, transparent), transparent 62%),
+    linear-gradient(var(--slate), var(--ink));
+}
+
+/* A thin blue line along the bottom edge, like the rest of the site's accents */
+.person-card__portrait::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  content: "";
+  background: linear-gradient(90deg, transparent, var(--blue), transparent);
+  opacity: 0.8;
+}
+
+.person-card__city {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--paper) 22%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 8%, transparent);
+  color: var(--paper);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.person-card__city::before {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  content: "";
+  background: var(--blue-text);
+  box-shadow: 0 0 0.6rem 0.1rem var(--blue);
+}
+
+.person-card__figure {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: auto;
+  height: 72%;
+  transform: translateX(-50%);
+  fill: color-mix(in srgb, var(--paper) 11%, transparent);
+  transition: fill 350ms var(--ease-out);
+}
+
+.person-card:hover .person-card__figure {
+  fill: color-mix(in srgb, var(--blue-text) 40%, transparent);
+}
+
+.person-card__meta {
+  padding: 1.1rem 1.4rem 1.3rem;
+}
+
+.person-card__meta h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.person-card__meta p {
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 58rem) {
+  .team {
+    padding-block: 6rem;
+  }
+
+  .team__heading {
+    margin-bottom: 2.5rem;
+  }
+
+  .person-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .person-card__portrait {
+    height: 14rem;
+  }
+}
+
+@media (hover: none) {
+  .person-card:hover {
+    transform: none;
+  }
+}
+
+@media (min-width: 58.01rem) and (min-height: 38rem) {
+  .team__heading h2 {
+    font-size: clamp(2rem, min(4.4vw, 6.8vh), 4.6rem);
+  }
+
+  .team__heading {
+    gap: clamp(0.6rem, 1.8vh, 1.25rem);
+  }
+
+  .team__heading .section-lede {
+    font-size: clamp(0.9rem, min(1.1vw, 2.1vh), 1.1rem);
+  }
+
+  .person-card__portrait {
+    height: clamp(8.5rem, 34vh, 24rem);
+  }
+
+  .person-card__meta {
+    padding-block: 0.9rem 1.05rem;
   }
 }

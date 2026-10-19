@@ -73,9 +73,9 @@ export const DEFAULT_CONTENT: SiteContent = {
     { number: "04", title: "Deploy & support", description: "Ship securely, observe performance and keep improving." },
   ],
   team: [
-    { number: "01", city: "Cairo", label: "Name / role to be added" },
-    { number: "02", city: "Cairo", label: "Name / role to be added" },
-    { number: "03", city: "Dubai", label: "Name / role to be added" },
+    { number: "01", city: "Cairo", label: "Name / Role to be added" },
+    { number: "02", city: "Cairo", label: "Name / Role to be added" },
+    { number: "03", city: "Dubai", label: "Name / Role to be added" },
   ],
   company: {
     headline: "We turn complex operations into intelligent systems.",
@@ -101,7 +101,7 @@ const isList = (value: unknown): value is unknown[] => Array.isArray(value) && v
 /** Maps API team records to the card label the design uses. */
 function teamLabel(member: ApiTeamMember): string {
   if (member.name && member.role) return `${member.name} / ${member.role}`;
-  return member.name ?? "Name / role to be added";
+  return member.name ?? "Name / Role to be added";
 }
 
 /**
