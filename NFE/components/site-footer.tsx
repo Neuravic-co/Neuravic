@@ -11,7 +11,7 @@ const TAB_LABELS: Record<string, string> = {
   license: "Licence",
 };
 
-/** A large faded wordmark, the copyright line and four legal tabs; each tab opens its document in a popup. */
+/** A faded gradient wordmark, four legal tabs and the copyright line; each tab opens its document in a popup. */
 export function SiteFooter({ contactEmail }: { contactEmail: string }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -38,22 +38,20 @@ export function SiteFooter({ contactEmail }: { contactEmail: string }) {
         NEURAVIC
       </span>
 
-      <div className="site-footer__bar">
-        <p className="site-footer__copy">© 2026 Neuravic</p>
+      <nav className="site-footer__tabs" aria-label="Legal">
+        {LEGAL_DOCUMENTS.map((doc) => (
+          <button
+            type="button"
+            key={doc.slug}
+            aria-haspopup="dialog"
+            onClick={() => open(doc)}
+          >
+            {TAB_LABELS[doc.slug] ?? doc.title}
+          </button>
+        ))}
+      </nav>
 
-        <nav className="site-footer__tabs" aria-label="Legal">
-          {LEGAL_DOCUMENTS.map((doc) => (
-            <button
-              type="button"
-              key={doc.slug}
-              aria-haspopup="dialog"
-              onClick={() => open(doc)}
-            >
-              {TAB_LABELS[doc.slug] ?? doc.title}
-            </button>
-          ))}
-        </nav>
-      </div>
+      <p className="site-footer__copy">© 2026 Neuravic</p>
 
       <dialog
         ref={dialogRef}

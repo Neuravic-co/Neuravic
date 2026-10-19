@@ -21,8 +21,8 @@
   --blue: #365bff;
   --page-gutter: clamp(1.5rem, 5.75vw, 6.5rem);
   --header-height: 5.5rem;
-  --word-size: min(9vw, max(3.8rem, calc(20vh - 4.5rem)), 12rem);
-  --footer-height: calc(var(--word-size) * 0.85 + 3.6rem);
+  --word-size: min(9.5vw, max(2.8rem, calc(11vh - 2rem)), 11rem);
+  --footer-height: calc(var(--word-size) * 0.9 + 7.2rem);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --font-brand: "termina", "termina-fallback", sans-serif;
 }
@@ -3347,72 +3347,68 @@ section {
     align-content: center;
   }
 }
-
 /* Footer: a large faded wordmark with the copyright line and the legal tabs along the bottom */
+
+
+
+
+
+
+
+
+/* Footer: a faded gradient wordmark, rounded legal tabs and the copyright line, centred with room to breathe */
 
 .site-footer {
   position: relative;
+  display: grid;
   height: var(--footer-height);
+  align-content: center;
+  justify-items: center;
+  gap: 1rem;
   overflow: hidden;
+  padding-inline: var(--page-gutter);
   border-top: 1px solid color-mix(in srgb, var(--paper) 10%, transparent);
-  background: var(--ink);
+  background:
+    radial-gradient(50% 100% at 50% 0%, color-mix(in srgb, var(--blue) 14%, transparent), transparent 70%),
+    var(--ink);
   color: var(--paper);
 }
 
 .site-footer__word {
-  position: absolute;
-  top: 0.6rem;
-  left: 50%;
+  width: max-content;
+  padding-right: 0.05em;
   background: linear-gradient(
-    color-mix(in srgb, var(--paper) 28%, transparent),
-    color-mix(in srgb, var(--paper) 4%, transparent) 90%
+    180deg,
+    color-mix(in srgb, var(--paper) 40%, transparent) 0%,
+    color-mix(in srgb, #9db1ff 25%, transparent) 55%,
+    color-mix(in srgb, var(--blue) 19%, transparent) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
-  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 1.8rem color-mix(in srgb, var(--blue) 14%, transparent));
   font-size: var(--word-size);
   font-weight: 300;
   letter-spacing: -0.05em;
-  line-height: 0.85;
+  line-height: 0.9;
   pointer-events: none;
-  transform: translateX(-50%);
   user-select: none;
   white-space: nowrap;
-}
-
-.site-footer__bar {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.25rem 1.5rem;
-  padding: 0 var(--page-gutter) 0.7rem;
-}
-
-.site-footer__copy {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
 }
 
 .site-footer__tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 0 1.8rem;
+  justify-content: center;
+  gap: 0.6rem;
 }
 
 .site-footer__tabs button {
-  padding: 0.5rem 0;
-  border: 0;
-  border-bottom: 1px solid transparent;
-  background: none;
-  color: color-mix(in srgb, var(--paper) 72%, transparent);
+  padding: 0.6rem 1.35rem;
+  border: 1px solid color-mix(in srgb, var(--paper) 12%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 3%, transparent);
+  color: color-mix(in srgb, var(--paper) 78%, transparent);
   cursor: pointer;
   font: inherit;
   font-size: 0.7rem;
@@ -3420,28 +3416,58 @@ section {
   text-transform: uppercase;
   transition:
     color 220ms var(--ease-out),
-    border-color 220ms var(--ease-out);
+    border-color 220ms var(--ease-out),
+    background-color 220ms var(--ease-out);
 }
 
 .site-footer__tabs button:hover,
 .site-footer__tabs button:focus-visible {
-  border-bottom-color: var(--blue);
+  border-color: var(--blue);
+  background: color-mix(in srgb, var(--blue) 18%, transparent);
   color: var(--paper);
+}
+
+.site-footer__copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 @media (max-width: 58rem) {
   :root {
-    --word-size: 15.5vw;
-    --footer-height: calc(var(--word-size) * 0.85 + 6rem);
+    --word-size: 14vw;
+    --footer-height: calc(var(--word-size) * 0.9 + 7.4rem);
   }
 
-  .site-footer__bar {
-    flex-direction: column;
-    align-items: flex-start;
-    padding-bottom: 0.4rem;
+  .site-footer {
+    gap: 0.7rem;
   }
 
   .site-footer__tabs {
-    gap: 0 1.3rem;
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+  }
+
+  .site-footer__tabs button {
+    padding: 0.5rem 0.7rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+  }
+}
+
+/* Short laptop screens: pills get slimmer so the contact form keeps its room */
+@media (min-width: 58.01rem) and (max-height: 56rem) {
+  :root {
+    --footer-height: calc(var(--word-size) * 0.9 + 6.4rem);
+  }
+
+  .site-footer {
+    gap: 0.6rem;
+  }
+
+  .site-footer__tabs button {
+    padding: 0.4rem 1.1rem;
   }
 }
