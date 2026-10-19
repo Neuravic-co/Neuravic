@@ -1,5 +1,6 @@
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { ContactForm } from "@/components/contact-form";
 import { HeroArt } from "@/components/hero-art";
 import { ScrollEffects } from "@/components/scroll-effects";
@@ -295,6 +296,18 @@ export default async function Home() {
                   <span key={location.city}>{location.city}</span>
                 ))}
               </div>
+            </div>
+
+            <div className="page-shell footer__legal">
+              <p>
+                All rights reserved. Neuravic and its logo are trademarks of Neuravic.
+              </p>
+              <nav aria-label="Legal">
+                <Link href="/legal/privacy">Privacy</Link>
+                <Link href="/legal/terms">Terms</Link>
+                <Link href="/legal/cookies">Cookies</Link>
+                <Link href="/legal/license">Licence</Link>
+              </nav>
             </div>
 
             <div className="page-shell footer__bottom">

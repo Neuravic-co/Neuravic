@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { CookieNotice } from "@/components/cookie-notice";
 
 export const metadata: Metadata = {
   applicationName: "Neuravic",
@@ -49,7 +50,10 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <CookieNotice />
+      </body>
     </html>
   );
 }
