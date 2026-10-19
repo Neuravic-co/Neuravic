@@ -7,7 +7,7 @@ await run("Contact form", async (browser, errors) => {
   await page.goto(BASE_URL, { waitUntil: "networkidle" });
 
   check("page title", (await page.title()).startsWith("Neuravic"));
-  check("service list renders", (await page.locator(".service-row h3").count()) === 4);
+  check("service cards render", (await page.locator(".service-card h3").count()) === 4);
 
   const form = page.locator("#contact");
   await form.scrollIntoViewIfNeeded();
