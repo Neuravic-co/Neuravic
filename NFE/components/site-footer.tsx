@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LEGAL_DOCUMENTS, type LegalDocument } from "@/lib/legal-content";
@@ -12,7 +11,7 @@ const TAB_LABELS: Record<string, string> = {
   license: "Licence",
 };
 
-/** Logo and four legal tabs; each tab opens its document in a popup. */
+/** A large faded wordmark, the copyright line and four legal tabs; each tab opens its document in a popup. */
 export function SiteFooter({ contactEmail }: { contactEmail: string }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -35,29 +34,26 @@ export function SiteFooter({ contactEmail }: { contactEmail: string }) {
 
   return (
     <footer className="site-footer">
-      <Image
-        className="site-footer__logo"
-        src="/assets/neuravic-logo.png"
-        alt="Neuravic"
-        width={617}
-        height={120}
-        unoptimized
-      />
+      <span className="site-footer__word" aria-hidden="true">
+        NEURAVIC
+      </span>
 
-      <p className="site-footer__copy">© 2026 Neuravic</p>
+      <div className="site-footer__bar">
+        <p className="site-footer__copy">© 2026 Neuravic</p>
 
-      <nav className="site-footer__tabs" aria-label="Legal">
-        {LEGAL_DOCUMENTS.map((doc) => (
-          <button
-            type="button"
-            key={doc.slug}
-            aria-haspopup="dialog"
-            onClick={() => open(doc)}
-          >
-            {TAB_LABELS[doc.slug] ?? doc.title}
-          </button>
-        ))}
-      </nav>
+        <nav className="site-footer__tabs" aria-label="Legal">
+          {LEGAL_DOCUMENTS.map((doc) => (
+            <button
+              type="button"
+              key={doc.slug}
+              aria-haspopup="dialog"
+              onClick={() => open(doc)}
+            >
+              {TAB_LABELS[doc.slug] ?? doc.title}
+            </button>
+          ))}
+        </nav>
+      </div>
 
       <dialog
         ref={dialogRef}
