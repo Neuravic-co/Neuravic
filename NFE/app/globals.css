@@ -49,7 +49,6 @@ html {
   background: var(--ink);
   color: var(--paper);
   scroll-behavior: smooth;
-  scroll-padding-top: var(--header-height);
   scrollbar-color: var(--blue) var(--ink);
   text-rendering: optimizeLegibility;
 }
@@ -1452,10 +1451,6 @@ section {
 @media (max-width: 58rem) {
   :root {
     --header-height: 4.75rem;
-  }
-
-  section[id] {
-    scroll-margin-top: var(--header-height);
   }
 
   .site-header,
