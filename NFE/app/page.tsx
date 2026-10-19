@@ -1,5 +1,4 @@
 import { ArrowRight, ArrowUpRight, BrainCircuit, CodeXml, PenTool, ShieldCheck } from "lucide-react";
-import Image from "next/image";
 import { ContactForm } from "@/components/contact-form";
 import { HeroArt } from "@/components/hero-art";
 import { ScrollEffects } from "@/components/scroll-effects";
@@ -200,33 +199,34 @@ export default async function Home() {
         </section>
 
         <section className="about section-dark" id="about" data-nav-section>
-          <Image
-            className="about__pattern"
-            src="/assets/neuravic-pattern.svg"
-            alt=""
-            aria-hidden="true"
-            width={1080}
-            height={700}
-            unoptimized
-          />
           <div className="page-shell about__inner">
             <div className="about__copy" data-reveal>
-              <p className="eyebrow">About / Neuravic</p>
-              <h2>Different disciplines. One accountable team.</h2>
-              <p>{company.about}</p>
-              <ArrowLink href="#team">About Neuravic</ArrowLink>
+              <p className="eyebrow">About us</p>
+              <h2>
+                Different skills.
+                <br />
+                One team.
+              </h2>
+              <p className="section-lede">{company.about}</p>
             </div>
 
-            <div className="about__locations" data-reveal>
+            <div className="about__cities" data-reveal>
               {company.locations.map((location, index) => (
-                <div key={location.city}>
+                <div className="about__city" key={location.city}>
                   <span>{String(index + 1).padStart(2, "0")}</span>
-                  <p>
-                    {location.city} / {location.country}
-                  </p>
+                  <div>
+                    <h3>{location.city}</h3>
+                    <p>{location.country}</p>
+                  </div>
+                  <i aria-hidden="true" />
                 </div>
               ))}
             </div>
+
+            <a className="button button--primary" href="#team">
+              <span>Meet the team</span>
+              <ArrowRight aria-hidden="true" size={18} strokeWidth={1.5} />
+            </a>
           </div>
         </section>
 
