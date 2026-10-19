@@ -15,10 +15,10 @@ const services = [
 ] as const;
 
 const process = [
-  ["discover", "Discover", "Map the workflow, constraints and real decision points."],
-  ["design", "Design", "Shape the product, experience and system architecture."],
-  ["engineer", "Engineer", "Build the platform, intelligence and integrations."],
-  ["deploy-support", "Deploy & support", "Ship securely, observe performance and keep improving."],
+  ["discover", "Discover", "Understand the workflow, the limits and the key decisions."],
+  ["design", "Design", "Shape the product, the experience and the system."],
+  ["engineer", "Engineer", "Build the platform, the AI and the integrations."],
+  ["deploy-support", "Deploy & Support", "Launch safely, watch performance and keep improving."],
 ] as const;
 
 const pad = (n: number) => String(n).padStart(2, "0");

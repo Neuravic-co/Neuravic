@@ -67,10 +67,10 @@ export const DEFAULT_CONTENT: SiteContent = {
     },
   ],
   process: [
-    { number: "01", title: "Discover", description: "Map the workflow, constraints and real decision points." },
-    { number: "02", title: "Design", description: "Shape the product, experience and system architecture." },
-    { number: "03", title: "Engineer", description: "Build the platform, intelligence and integrations." },
-    { number: "04", title: "Deploy & support", description: "Ship securely, observe performance and keep improving." },
+    { number: "01", title: "Discover", description: "Understand the workflow, the limits and the key decisions." },
+    { number: "02", title: "Design", description: "Shape the product, the experience and the system." },
+    { number: "03", title: "Engineer", description: "Build the platform, the AI and the integrations." },
+    { number: "04", title: "Deploy & Support", description: "Launch safely, watch performance and keep improving." },
   ],
   team: [
     { number: "01", city: "Cairo", label: "Name / Role to be added" },

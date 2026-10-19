@@ -1,4 +1,15 @@
-import { ArrowRight, ArrowUpRight, BrainCircuit, CodeXml, PenTool, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  BrainCircuit,
+  Cpu,
+  CodeXml,
+  PencilRuler,
+  PenTool,
+  Rocket,
+  Search,
+  ShieldCheck,
+} from "lucide-react";
 import { ContactForm } from "@/components/contact-form";
 import { HeroArt } from "@/components/hero-art";
 import { ScrollEffects } from "@/components/scroll-effects";
@@ -7,6 +18,7 @@ import { SiteHeader } from "@/components/site-header";
 import { getSiteContent } from "@/lib/site-content";
 
 const SERVICE_ICONS = [BrainCircuit, CodeXml, PenTool, ShieldCheck];
+const PROCESS_ICONS = [Search, PencilRuler, Cpu, Rocket];
 
 function ArrowLink({ children, href }: { children: React.ReactNode; href: string }) {
   return (
@@ -175,25 +187,34 @@ export default async function Home() {
 
         <section className="process section-light" id="process">
           <div className="page-shell">
-            <div className="section-heading process__heading">
-              <div data-reveal>
+            <div className="section-heading services__heading" data-reveal>
+              <div>
                 <p className="eyebrow">Process / How we work</p>
-                <h2>From ambiguity to operation.</h2>
+                <h2>From idea to live.</h2>
               </div>
-              <p className="section-lede" data-reveal>
-                Discovery, product design, engineering and deployment move as one
-                system—so nothing gets lost between teams.
+              <p className="section-lede">
+                Discovery, design, engineering and launch happen as one flow, so nothing gets
+                lost between teams.
               </p>
             </div>
 
-            <div className="process-list">
-              {processSteps.map((step) => (
-                <article className="process-step" data-reveal key={step.number}>
-                  <span>{step.number}</span>
-                  <h3>{step.title}</h3>
-                  <p>{step.description}</p>
-                </article>
-              ))}
+            <div className="service-grid">
+              {processSteps.map((step, index) => {
+                const Icon = PROCESS_ICONS[index % PROCESS_ICONS.length];
+                return (
+                  <article className="service-card" data-reveal key={step.number}>
+                    <span className="service-card__number">{step.number}</span>
+                    <Icon
+                      className="service-card__icon"
+                      aria-hidden="true"
+                      size={40}
+                      strokeWidth={1.25}
+                    />
+                    <h3>{step.title}</h3>
+                    <p>{step.description}</p>
+                  </article>
+                );
+              })}
             </div>
           </div>
         </section>
