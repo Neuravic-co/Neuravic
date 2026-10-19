@@ -21,6 +21,8 @@
   --blue: #365bff;
   --page-gutter: clamp(1.5rem, 5.75vw, 6.5rem);
   --header-height: 5.5rem;
+  --word-size: min(9vw, max(3.8rem, calc(20vh - 4.5rem)), 12rem);
+  --footer-height: calc(var(--word-size) * 0.85 + 3.6rem);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --font-brand: "termina", "termina-fallback", sans-serif;
 }
@@ -2538,89 +2540,15 @@ section {
     padding-block: 0.9rem 1.05rem;
   }
 }
-
 /* Footer: logo and four legal tabs */
 
-.site-footer {
-  position: relative;
-  display: grid;
-  justify-items: center;
-  gap: 1.75rem;
-  overflow: hidden;
-  padding: clamp(2.5rem, 6vh, 4rem) var(--page-gutter) clamp(2.25rem, 5vh, 3.25rem);
-  background: var(--ink);
-  color: var(--paper);
-}
 
-.site-footer::before {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 1px;
-  content: "";
-  background: linear-gradient(90deg, transparent, var(--blue), transparent);
-}
 
-.site-footer::after {
-  position: absolute;
-  top: -9rem;
-  left: 50%;
-  width: min(48rem, 100%);
-  height: 15rem;
-  content: "";
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--blue) 26%, transparent), transparent);
-  pointer-events: none;
-  transform: translateX(-50%);
-}
 
-.site-footer__logo {
-  position: relative;
-  z-index: 1;
-  width: 10.5rem;
-  height: auto;
-}
 
-.site-footer__copy {
-  position: relative;
-  z-index: 1;
-  margin: -0.9rem 0 0;
-  color: var(--muted);
-  font-size: 0.7rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
 
-.site-footer__tabs {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.25rem 2.1rem;
-}
 
-.site-footer__tabs button {
-  padding: 0.55rem 0;
-  border: 0;
-  border-bottom: 1px solid transparent;
-  background: none;
-  color: color-mix(in srgb, var(--paper) 68%, transparent);
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.7rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  transition:
-    color 220ms var(--ease-out),
-    border-color 220ms var(--ease-out);
-}
 
-.site-footer__tabs button:hover,
-.site-footer__tabs button:focus-visible {
-  border-bottom-color: var(--blue);
-  color: var(--paper);
-}
 
 /* Popup */
 
@@ -3225,40 +3153,14 @@ section {
 /* Every page is one full screen, the same size as the hero */
 
 @media (min-width: 58.01rem) and (min-height: 38rem) {
-  /* Footer: a slim row, so the contact screen and the footer together fill one screen */
-  .site-footer {
-    display: grid;
-    height: 6.75rem;
-    grid-template-columns: auto 1fr;
-    grid-template-rows: auto auto;
-    align-content: center;
-    align-items: center;
-    justify-items: start;
-    gap: 0.2rem 2rem;
-    padding-block: 0.75rem;
-  }
+/* Footer: a slim row, so the contact screen and the footer together fill one screen */
 
-  .site-footer__logo {
-    grid-column: 1;
-    grid-row: 1;
-    width: 8.5rem;
-  }
 
-  .site-footer__copy {
-    grid-column: 1;
-    grid-row: 2;
-    margin: 0;
-  }
 
-  .site-footer__tabs {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-    justify-content: flex-end;
-    justify-self: end;
-  }
+
 
   .contact__inner {
-    min-height: calc(100svh - 6.75rem);
+    min-height: calc(100svh - var(--footer-height));
     padding-block: calc(var(--header-height) + 0.25rem) 0.75rem;
   }
 
@@ -3287,10 +3189,6 @@ section {
     min-height: 100svh;
   }
 
-  .site-footer {
-    gap: 1.1rem;
-    padding-block: 1.75rem 1.5rem;
-  }
 
   .team {
     padding-block: calc(var(--header-height) + 1rem) 1.5rem;
@@ -3429,16 +3327,10 @@ section {
     min-height: 3rem;
   }
 
-  .site-footer {
-    gap: 0.5rem;
-    padding-block: 1rem 1.1rem;
-  }
 }
 
 @media (max-width: 58rem) {
-  .site-footer__copy {
-    margin: 0;
-  }
+
 
   .contact-form textarea {
     height: 3rem;
@@ -3451,7 +3343,105 @@ section {
 
 @media (min-width: 36.01rem) and (max-width: 58rem) {
   .contact__inner {
-    min-height: calc(100svh - 7.5rem);
+    min-height: calc(100svh - var(--footer-height));
     align-content: center;
+  }
+}
+
+/* Footer: a large faded wordmark with the copyright line and the legal tabs along the bottom */
+
+.site-footer {
+  position: relative;
+  height: var(--footer-height);
+  overflow: hidden;
+  border-top: 1px solid color-mix(in srgb, var(--paper) 10%, transparent);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.site-footer__word {
+  position: absolute;
+  top: 0.6rem;
+  left: 50%;
+  background: linear-gradient(
+    color-mix(in srgb, var(--paper) 28%, transparent),
+    color-mix(in srgb, var(--paper) 4%, transparent) 90%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: var(--word-size);
+  font-weight: 300;
+  letter-spacing: -0.05em;
+  line-height: 0.85;
+  pointer-events: none;
+  transform: translateX(-50%);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.site-footer__bar {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1.5rem;
+  padding: 0 var(--page-gutter) 0.7rem;
+}
+
+.site-footer__copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.site-footer__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.8rem;
+}
+
+.site-footer__tabs button {
+  padding: 0.5rem 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  color: color-mix(in srgb, var(--paper) 72%, transparent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition:
+    color 220ms var(--ease-out),
+    border-color 220ms var(--ease-out);
+}
+
+.site-footer__tabs button:hover,
+.site-footer__tabs button:focus-visible {
+  border-bottom-color: var(--blue);
+  color: var(--paper);
+}
+
+@media (max-width: 58rem) {
+  :root {
+    --word-size: 15.5vw;
+    --footer-height: calc(var(--word-size) * 0.85 + 6rem);
+  }
+
+  .site-footer__bar {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-bottom: 0.4rem;
+  }
+
+  .site-footer__tabs {
+    gap: 0 1.3rem;
   }
 }
