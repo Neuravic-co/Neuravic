@@ -2,8 +2,8 @@
 
 import { ArrowUpRight } from "lucide-react";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { z } from "zod";
 import { ApiError, api } from "@/lib/api";
+import { validateContact } from "@/lib/validation";
 
 const SERVICES = [
   { value: "ai", label: "AI systems" },
@@ -13,20 +13,6 @@ const SERVICES = [
 ] as const;
 
 type ServiceValue = (typeof SERVICES)[number]["value"];
-
-/** Mirrors the API validation so mistakes are caught before a request is sent. */
-const formSchema = z.object({
-  firstName: z.string().trim().min(1, "Tell us your name").max(60, "Name is too long"),
-  lastName: z.string().trim().min(1, "Tell us your last name").max(59, "Last name is too long"),
-  email: z.string().trim().email("Enter a valid email address").max(254),
-  company: z.string().trim().max(160, "Company name is too long").optional(),
-  message: z
-    .string()
-    .trim()
-    .min(10, "Please write at least a sentence")
-    .max(4000, "Message is too long (4000 characters maximum)"),
-  consent: z.literal(true, { error: "Please agree so we can reply to you" }),
-});
 
 type FieldName = "firstName" | "lastName" | "email" | "company" | "message" | "consent" | "form";
 type Errors = Partial<Record<FieldName, string>>;
@@ -109,15 +95,10 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
       consent,
     };
 
-    const parsed = formSchema.safeParse(values);
-    if (!parsed.success) {
-      const next: Errors = {};
-      for (const issue of parsed.error.issues) {
-        const key = issue.path[0] as FieldName;
-        next[key] ??= issue.message;
-      }
-      setErrors(next);
-      document.getElementById(`${uid}-${Object.keys(next)[0]}`)?.focus();
+    const parsed = validateContact(values);
+    if (!parsed.ok) {
+      setErrors(parsed.errors);
+      document.getElementById(`${uid}-${Object.keys(parsed.errors)[0]}`)?.focus();
       return;
     }
     if (TURNSTILE_SITE_KEY && !token) {

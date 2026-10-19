@@ -25,6 +25,12 @@ export function ScrollEffects() {
     const hero = document.querySelector<HTMLElement>(".hero");
     let frame = 0;
 
+    // Pause the hero's looping light animation while the hero is scrolled out of view.
+    const heroObserver = new IntersectionObserver(([entry]) => {
+      hero?.classList.toggle("is-offscreen", !entry?.isIntersecting);
+    });
+    if (hero) heroObserver.observe(hero);
+
     const handlePointerMove = (event: PointerEvent) => {
       if (!hero || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         return;
@@ -43,6 +49,7 @@ export function ScrollEffects() {
     return () => {
       document.documentElement.classList.remove("js");
       revealObserver.disconnect();
+      heroObserver.disconnect();
       cancelAnimationFrame(frame);
       window.removeEventListener("pointermove", handlePointerMove);
     };
