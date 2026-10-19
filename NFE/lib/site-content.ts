@@ -80,7 +80,7 @@ export const DEFAULT_CONTENT: SiteContent = {
   company: {
     headline: "We turn complex operations into intelligent systems.",
     about:
-      "Neuravic is a multidisciplinary engineering company working across Dubai and Cairo. We combine AI, software, product design and operations to build systems people can actually run.",
+      "Neuravic is an engineering company in Dubai and Cairo. We bring AI, software, design and operations together to build systems people can run.",
     contactEmail: "neuravic2026@gmail.com",
     locations: [
       { city: "Dubai", country: "United Arab Emirates" },
