@@ -311,8 +311,9 @@ export default async function Home() {
             </div>
           </div>
 
-          <SiteFooter contactEmail={company.contactEmail} />
         </section>
+
+        <SiteFooter contactEmail={company.contactEmail} locations={company.locations} />
       </main>
     </>
   );

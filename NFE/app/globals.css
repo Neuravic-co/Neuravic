@@ -21,8 +21,7 @@
   --blue: #365bff;
   --page-gutter: clamp(1.5rem, 5.75vw, 6.5rem);
   --header-height: 5.5rem;
-  --word-size: min(9.5vw, max(2.8rem, calc(11vh - 2rem)), 11rem);
-  --footer-height: calc(var(--word-size) * 0.9 + 7.2rem);
+  --footer-height: 0px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --font-brand: "termina", "termina-fallback", sans-serif;
 }
@@ -3247,130 +3246,13 @@ section {
     align-content: center;
   }
 }
-/* Footer: a large faded wordmark with the copyright line and the legal tabs along the bottom */
+/* Footer: a large faded wordmark with the copyright line and the legal tabs along the bottom *//* Footer: a faded gradient wordmark, rounded legal tabs and the copyright line, centred with room to breathe */
 
 
 
 
 
 
-
-
-/* Footer: a faded gradient wordmark, rounded legal tabs and the copyright line, centred with room to breathe */
-
-.site-footer {
-  position: relative;
-  display: grid;
-  height: var(--footer-height);
-  align-content: center;
-  justify-items: center;
-  gap: 1rem;
-  overflow: hidden;
-  padding-inline: var(--page-gutter);
-  border-top: 1px solid color-mix(in srgb, var(--paper) 10%, transparent);
-  background:
-    radial-gradient(50% 100% at 50% 0%, color-mix(in srgb, var(--blue) 14%, transparent), transparent 70%),
-    var(--ink);
-  color: var(--paper);
-}
-
-.site-footer__word {
-  width: max-content;
-  padding-right: 0.05em;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--paper) 40%, transparent) 0%,
-    color-mix(in srgb, #9db1ff 25%, transparent) 55%,
-    color-mix(in srgb, var(--blue) 19%, transparent) 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 1.8rem color-mix(in srgb, var(--blue) 14%, transparent));
-  font-size: var(--word-size);
-  font-weight: 300;
-  letter-spacing: -0.05em;
-  line-height: 0.9;
-  pointer-events: none;
-  user-select: none;
-  white-space: nowrap;
-}
-
-.site-footer__tabs {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.6rem;
-}
-
-.site-footer__tabs button {
-  padding: 0.6rem 1.35rem;
-  border: 1px solid color-mix(in srgb, var(--paper) 12%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--paper) 3%, transparent);
-  color: color-mix(in srgb, var(--paper) 78%, transparent);
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.7rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  transition:
-    color 220ms var(--ease-out),
-    border-color 220ms var(--ease-out),
-    background-color 220ms var(--ease-out);
-}
-
-.site-footer__tabs button:hover,
-.site-footer__tabs button:focus-visible {
-  border-color: var(--blue);
-  background: color-mix(in srgb, var(--blue) 18%, transparent);
-  color: var(--paper);
-}
-
-.site-footer__copy {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.7rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-@media (max-width: 58rem) {
-  :root {
-    --word-size: 14vw;
-    --footer-height: calc(var(--word-size) * 0.9 + 7.4rem);
-  }
-
-  .site-footer {
-    gap: 0.7rem;
-  }
-
-  .site-footer__tabs {
-    flex-wrap: nowrap;
-    gap: 0.4rem;
-  }
-
-  .site-footer__tabs button {
-    padding: 0.5rem 0.7rem;
-    font-size: 0.6rem;
-    letter-spacing: 0.1em;
-  }
-}
-
-/* Short laptop screens: pills get slimmer so the contact form keeps its room */
-@media (min-width: 58.01rem) and (max-height: 56rem) {
-  :root {
-    --footer-height: calc(var(--word-size) * 0.9 + 6.4rem);
-  }
-
-  .site-footer {
-    gap: 0.6rem;
-  }
-
-  .site-footer__tabs button {
-    padding: 0.4rem 1.1rem;
-  }
-}
 
 /* The home page is a stack of one-screen pages, so scrolling settles on a page and no band of the next colour is left showing. */
 html:has(main.landing) {
@@ -3379,6 +3261,11 @@ html:has(main.landing) {
 
 main.landing > section {
   scroll-snap-align: start;
+}
+
+/* The footer is shorter than the screen, so the very end of the page is its snap point. */
+main.landing > footer {
+  scroll-snap-align: end;
 }
 
 /* The contact screen is never shorter than the viewport, so the page above cannot show through at the end. */
@@ -3390,10 +3277,6 @@ main.landing > section {
 
 .contact > .contact__inner {
   flex: 1 0 auto;
-}
-
-.contact > .site-footer {
-  flex: none;
 }
 
 /* About: the same flat navy as the rest of the site, a faint pattern on the right and two slate cards */
@@ -3580,52 +3463,124 @@ main.landing > section {
     display: none;
   }
 }
-
 /* Footer polish: layered blue gradients, a glowing top edge and glass pills */
 
+
+
+
+
+
+/* Footer: a classic four-column footer in the base navy, white and blue */
+
 .site-footer {
-  border-top: 0;
-  background:
-    radial-gradient(55% 110% at 50% 0%, color-mix(in srgb, var(--blue) 22%, transparent), transparent 72%),
-    radial-gradient(80% 90% at 50% 135%, color-mix(in srgb, var(--blue) 32%, transparent), transparent 70%),
-    linear-gradient(180deg, var(--ink), #0a1226);
+  border-top: 1px solid color-mix(in srgb, var(--paper) 12%, transparent);
+  background: var(--ink);
+  color: var(--paper);
 }
 
-.site-footer::before {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 1px;
-  content: "";
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--blue) 90%, white), transparent);
-  box-shadow: 0 0 1.5rem 0.1rem color-mix(in srgb, var(--blue) 45%, transparent);
+.site-footer__grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr 1.2fr;
+  gap: clamp(2rem, 5vw, 4rem);
+  padding-block: clamp(2.5rem, 6vh, 3.75rem) clamp(2rem, 5vh, 3rem);
 }
 
-.site-footer__word {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--paper) 62%, transparent) 0%,
-    color-mix(in srgb, #8fa6ff 45%, transparent) 52%,
-    color-mix(in srgb, var(--blue) 14%, transparent) 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  filter: drop-shadow(0 0 2.2rem color-mix(in srgb, var(--blue) 30%, transparent));
+.site-footer__brand img {
+  width: 9.5rem;
+  height: auto;
 }
 
-.site-footer__tabs button {
-  border: 1px solid transparent;
-  background:
-    linear-gradient(color-mix(in srgb, #0c1428 92%, var(--blue)), color-mix(in srgb, #0c1428 92%, var(--blue))) padding-box,
-    linear-gradient(135deg, color-mix(in srgb, var(--blue) 75%, white), rgb(255 255 255 / 0.1) 45%, color-mix(in srgb, var(--blue) 55%, transparent)) border-box;
+.site-footer__brand p {
+  max-width: 19rem;
+  margin: 1.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.7;
 }
 
-.site-footer__tabs button:hover,
-.site-footer__tabs button:focus-visible {
-  border-color: transparent;
-  background:
-    linear-gradient(color-mix(in srgb, #0c1428 70%, var(--blue)), color-mix(in srgb, #0c1428 70%, var(--blue))) padding-box,
-    linear-gradient(135deg, #fff, var(--blue)) border-box;
-  box-shadow: 0 0 1.4rem -0.2rem color-mix(in srgb, var(--blue) 70%, transparent);
+.site-footer__col {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 0.35rem;
+}
+
+.site-footer__col h2 {
+  margin: 0 0 0.75rem;
+  color: var(--blue-text);
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.site-footer__col a,
+.site-footer__col button,
+.site-footer__col span {
+  padding: 0.3rem 0;
+  border: 0;
+  background: none;
+  color: color-mix(in srgb, var(--paper) 74%, transparent);
+  font: inherit;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  overflow-wrap: anywhere;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.site-footer__col a,
+.site-footer__col button {
+  cursor: pointer;
+  transition: color 220ms var(--ease-out);
+}
+
+.site-footer__col a:hover,
+.site-footer__col a:focus-visible,
+.site-footer__col button:hover,
+.site-footer__col button:focus-visible {
+  color: var(--paper);
+  text-decoration: underline;
+  text-decoration-color: var(--blue);
+  text-underline-offset: 0.35em;
+}
+
+.site-footer__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 1.5rem;
+  padding-block: 1.25rem 1.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--paper) 9%, transparent);
+  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.site-footer__bar p {
+  margin: 0;
+}
+
+.site-footer__bar a {
+  padding-block: 0.4rem;
+  color: color-mix(in srgb, var(--paper) 74%, transparent);
+  transition: color 220ms var(--ease-out);
+}
+
+.site-footer__bar a:hover {
+  color: var(--paper);
+}
+
+@media (max-width: 58rem) {
+  .site-footer__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem 1.5rem;
+    padding-block: 2.5rem 1.75rem;
+  }
+
+  .site-footer__brand {
+    grid-column: 1 / -1;
+  }
 }
