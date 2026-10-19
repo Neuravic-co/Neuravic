@@ -20,6 +20,30 @@ import { getSiteContent } from "@/lib/site-content";
 const SERVICE_ICONS = [BrainCircuit, CodeXml, PenTool, ShieldCheck];
 const PROCESS_ICONS = [Search, PencilRuler, Cpu, Rocket];
 
+function ArrowLink({ children, href }: { children: React.ReactNode; href: string }) {
+  return (
+    <a className="text-link" href={href}>
+      <span>{children}</span>
+      <ArrowUpRight aria-hidden="true" size={15} strokeWidth={1.5} />
+    </a>
+  );
+}
+
+function ProjectVisual({ number, name }: { number: string; name: string }) {
+  return (
+    <figure className="project-visual" data-reveal>
+      <div className="project-visual__meta">
+        <span>Project visual / {number}</span>
+        <span>Original asset reserved</span>
+      </div>
+      <div className="project-visual__center" aria-hidden="true">
+        <span />
+      </div>
+      <figcaption>{name} / Image slot</figcaption>
+    </figure>
+  );
+}
+
 export default async function Home() {
   const { services, projects, process: processSteps, team, company } = await getSiteContent();
 
@@ -120,37 +144,46 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="work" id="work">
-          <div className="page-shell work__inner">
-            <div className="work__copy" data-reveal>
-              <p className="eyebrow">Our work</p>
-              <h2>
-                Systems built
-                <br />
-                to be used.
-              </h2>
-              <p className="section-lede">
-                Focused products for real workflows, built and run by one team.
-              </p>
-            </div>
-
-            <div className="work__grid">
-              {projects.map((project) => (
-                <article className="work-card" data-reveal key={project.number}>
-                  <span className="work-card__number">{project.number}</span>
-                  <h3>{project.name}</h3>
-                  <p>
-                    {project.title} {project.description}
-                  </p>
-                  <a className="work-card__link" href="#contact">
-                    <span>View system</span>
-                    <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.5} />
-                  </a>
-                </article>
-              ))}
-            </div>
+        <section className="work-intro section-dark" id="work">
+          <div className="page-shell work-intro__grid">
+            <p className="eyebrow" data-reveal>
+              Selected systems / 01—02
+            </p>
+            <h2 data-reveal>
+              Operational systems.
+              <br />
+              Built to be used.
+            </h2>
+            <p className="section-lede" data-reveal>
+              Focused products for real workflows—designed, engineered and carried into
+              daily operation by one accountable team.
+            </p>
           </div>
         </section>
+
+        {projects.map((project) => (
+          <section
+            className={`project project--${project.surface}`}
+            id={`project-${project.number}`}
+            key={project.number}
+          >
+            <div className="page-shell">
+              <div className="project__heading">
+                <div data-reveal>
+                  <p className="eyebrow">Selected systems / {project.number}</p>
+                  <p className="project__eyebrow">{project.eyebrow}</p>
+                </div>
+                <div className="project__copy" data-reveal>
+                  <p className="project__name">{project.name}</p>
+                  <h2>{project.title}</h2>
+                  <p>{project.description}</p>
+                  <ArrowLink href="#contact">View system</ArrowLink>
+                </div>
+              </div>
+              <ProjectVisual number={project.number} name={project.name} />
+            </div>
+          </section>
+        ))}
 
         <section className="process section-light" id="process">
           <div className="page-shell">
