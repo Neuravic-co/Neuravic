@@ -71,7 +71,7 @@ export default async function Home() {
       </a>
       <SiteHeader />
 
-      <main id="main-content">
+      <main className="landing" id="main-content">
         <section className="hero section-dark" id="home" data-nav-section>
           <div className="hero__art">
             <HeroArt />
