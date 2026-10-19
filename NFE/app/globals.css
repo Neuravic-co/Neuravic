@@ -839,15 +839,6 @@ section {
 .services__heading h2 {
   max-width: 50rem;
 }
-/* Selected work */
-
-
-
-
-.person-card__portrait {
-  padding: clamp(8rem, 13vw, 13rem) 0 clamp(8rem, 13vw, 13rem);
-  color: var(--paper);
-}
 
 
 
@@ -3233,5 +3224,239 @@ section {
 @media (hover: none) {
   .work-card:hover {
     transform: none;
+  }
+}
+
+/* Every page is one full screen, the same size as the hero */
+
+@media (min-width: 58.01rem) and (min-height: 38rem) {
+  /* Footer: a slim row, so the contact screen and the footer together fill one screen */
+  .site-footer {
+    display: grid;
+    height: 6.75rem;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    align-content: center;
+    align-items: center;
+    justify-items: start;
+    gap: 0.2rem 2rem;
+    padding-block: 0.75rem;
+  }
+
+  .site-footer__logo {
+    grid-column: 1;
+    grid-row: 1;
+    width: 8.5rem;
+  }
+
+  .site-footer__copy {
+    grid-column: 1;
+    grid-row: 2;
+    margin: 0;
+  }
+
+  .site-footer__tabs {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    justify-content: flex-end;
+    justify-self: end;
+  }
+
+  .contact__inner {
+    min-height: calc(100svh - 6.75rem);
+    padding-block: calc(var(--header-height) + 0.25rem) 0.75rem;
+  }
+
+  .hero__inner {
+    padding-bottom: 1.25rem;
+  }
+}
+
+@media (min-width: 58.01rem) and (min-height: 38rem) and (max-height: 56rem) {
+  .hero h1 {
+    font-size: clamp(2.8rem, min(5.55vw, 9.2vh), 6.1rem);
+  }
+
+  .hero__intro {
+    margin-block: 1.2rem 1.4rem;
+  }
+
+  .team__heading .section-lede {
+    display: none;
+  }
+}
+
+@media (max-width: 58rem) {
+  .hero,
+  .hero__inner {
+    min-height: 100svh;
+  }
+
+  .site-footer {
+    gap: 1.1rem;
+    padding-block: 1.75rem 1.5rem;
+  }
+
+  .team {
+    padding-block: calc(var(--header-height) + 1rem) 1.5rem;
+  }
+
+  .team__heading {
+    margin-bottom: 1.25rem;
+  }
+
+  .team__heading h2 {
+    font-size: clamp(1.9rem, 8vw, 3.2rem);
+  }
+
+  .team__heading .section-lede {
+    display: none;
+  }
+
+  .person-grid {
+    gap: 0.7rem;
+  }
+
+  .person-card {
+    display: grid;
+    grid-template-columns: 38% minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .person-card__portrait {
+    height: 5.5rem;
+  }
+
+  .person-card__city {
+    top: 0.5rem;
+    left: 0.5rem;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.6rem;
+  }
+
+  .person-card__meta {
+    align-self: center;
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media (min-width: 58.01rem) and (min-height: 38rem) and (max-height: 60rem) {
+  .contact__copy p {
+    display: none;
+  }
+}
+
+@media (max-width: 58rem) {
+  .contact__copy p {
+    display: none;
+  }
+
+  .team {
+    display: flex;
+    min-height: 100svh;
+    flex-direction: column;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 58.01rem) and (min-height: 38rem) and (max-height: 56rem) {
+  .contact-form {
+    gap: 0.6rem;
+  }
+
+  .contact-form__row {
+    gap: 0.9rem;
+  }
+
+  .contact-form textarea {
+    height: 3.25rem;
+  }
+
+  .contact-form__services label > span {
+    min-height: 2rem;
+  }
+
+  .contact-form .button--large {
+    min-height: 3rem;
+  }
+
+  .contact-form input[type="text"],
+  .contact-form input[type="email"] {
+    padding-block: 0.35rem;
+  }
+}
+
+/* Contact on tablet and phone: compact so the form and footer fill one screen */
+@media (max-width: 58rem) {
+  .contact__inner {
+    min-height: 0;
+    padding-block: calc(var(--header-height) + 0.5rem) 1rem;
+    gap: 0.75rem;
+  }
+
+  .contact .eyebrow {
+    display: none;
+  }
+
+  .contact h2 {
+    font-size: clamp(1.8rem, 7.4vw, 3rem);
+  }
+
+  .contact-form {
+    gap: 0.65rem;
+  }
+
+  .contact-form__row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .contact-form textarea {
+    height: 3.5rem;
+    min-height: 0;
+  }
+
+  .contact-form input[type="text"],
+  .contact-form input[type="email"],
+  .contact-form textarea {
+    padding-block: 0.4rem;
+  }
+
+  .contact-form__services legend {
+    margin-bottom: 0.4rem;
+  }
+
+  .contact-form__services label > span {
+    min-height: 2.1rem;
+  }
+
+  .contact-form .button--large {
+    min-height: 3rem;
+  }
+
+  .site-footer {
+    gap: 0.5rem;
+    padding-block: 1rem 1.1rem;
+  }
+}
+
+@media (max-width: 58rem) {
+  .site-footer__copy {
+    margin: 0;
+  }
+
+  .contact-form textarea {
+    height: 3rem;
+  }
+
+  .contact-form__services label > span {
+    min-height: 2rem;
+  }
+}
+
+@media (min-width: 36.01rem) and (max-width: 58rem) {
+  .contact__inner {
+    min-height: calc(100svh - 7.5rem);
+    align-content: center;
   }
 }
