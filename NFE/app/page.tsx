@@ -1,9 +1,9 @@
 import { ArrowRight, ArrowUpRight, BrainCircuit, CodeXml, PenTool, ShieldCheck } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { ContactForm } from "@/components/contact-form";
 import { HeroArt } from "@/components/hero-art";
 import { ScrollEffects } from "@/components/scroll-effects";
+import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { getSiteContent } from "@/lib/site-content";
 
@@ -280,51 +280,7 @@ export default async function Home() {
             </div>
           </div>
 
-          <footer className="footer">
-            <div className="page-shell footer__top">
-              <div className="footer__brand">
-                <Image
-                  src="/assets/neuravic-logo.png"
-                  alt="Neuravic"
-                  width={617}
-                  height={120}
-                  unoptimized
-                />
-                <p>AI systems · Software · Product design · Operations</p>
-              </div>
-
-              <nav aria-label="Footer navigation">
-                <a href="#home">Home</a>
-                <a href="#services">Services</a>
-                <a href="#work">Work</a>
-                <a href="#about">About us</a>
-                <a href="#contact">Contact us</a>
-              </nav>
-
-              <div className="footer__places">
-                {company.locations.map((location) => (
-                  <span key={location.city}>{location.city}</span>
-                ))}
-              </div>
-            </div>
-
-            <div className="page-shell footer__legal">
-              <p>
-                All rights reserved. Neuravic and its logo are trademarks of Neuravic.
-              </p>
-              <nav aria-label="Legal">
-                <Link href="/legal/privacy">Privacy</Link>
-                <Link href="/legal/terms">Terms</Link>
-                <Link href="/legal/cookies">Cookies</Link>
-                <Link href="/legal/license">Licence</Link>
-              </nav>
-            </div>
-
-            <div className="page-shell footer__bottom">
-              <span>© 2026 Neuravic</span>
-              <a href="#home">Back to top ↑</a>
-            </div>
-          </footer>
+          <SiteFooter contactEmail={company.contactEmail} />
         </section>
       </main>
     </>
