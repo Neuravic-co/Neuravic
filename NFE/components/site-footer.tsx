@@ -44,6 +44,8 @@ export function SiteFooter({ contactEmail }: { contactEmail: string }) {
         unoptimized
       />
 
+      <p className="site-footer__copy">© 2026 Neuravic</p>
+
       <nav className="site-footer__tabs" aria-label="Legal">
         {LEGAL_DOCUMENTS.map((doc) => (
           <button

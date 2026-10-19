@@ -3147,6 +3147,16 @@ section {
   height: auto;
 }
 
+.site-footer__copy {
+  position: relative;
+  z-index: 1;
+  margin: -0.9rem 0 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
 .site-footer__tabs {
   position: relative;
   z-index: 1;
