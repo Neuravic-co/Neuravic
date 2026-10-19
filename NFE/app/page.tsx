@@ -20,27 +20,43 @@ import { getSiteContent } from "@/lib/site-content";
 const SERVICE_ICONS = [BrainCircuit, CodeXml, PenTool, ShieldCheck];
 const PROCESS_ICONS = [Search, PencilRuler, Cpu, Rocket];
 
-function ArrowLink({ children, href }: { children: React.ReactNode; href: string }) {
-  return (
-    <a className="text-link" href={href}>
-      <span>{children}</span>
-      <ArrowUpRight aria-hidden="true" size={15} strokeWidth={1.5} />
-    </a>
-  );
-}
+const PROJECT_NAMES: Record<string, string> = {
+  DARKAGENT: "DarkAgent",
+  COOLACCESS_DXB: "CoolAccess DXB",
+};
 
-function ProjectVisual({ number, name }: { number: string; name: string }) {
+/** A drawn stand-in for a product screenshot: a network for the first project, access tiles for the second. */
+function WorkVisual({ index }: { index: number }) {
   return (
-    <figure className="project-visual" data-reveal>
-      <div className="project-visual__meta">
-        <span>Project visual / {number}</span>
-        <span>Original asset reserved</span>
-      </div>
-      <div className="project-visual__center" aria-hidden="true">
-        <span />
-      </div>
-      <figcaption>{name} / Image slot</figcaption>
-    </figure>
+    <div className="work-card__visual" aria-hidden="true">
+      {index % 2 === 0 ? (
+        <svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice">
+          <g className="work-lines">
+            <path d="M60 150L140 70L220 115L310 50L350 125" />
+            <path d="M60 150L220 115L350 125M140 70L310 50" opacity="0.4" />
+          </g>
+          <circle cx="60" cy="150" r="5" />
+          <circle cx="140" cy="70" r="7" />
+          <circle className="work-hub" cx="220" cy="115" r="10" />
+          <circle cx="310" cy="50" r="6" />
+          <circle cx="350" cy="125" r="5" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice">
+          <g className="work-lines">
+            <rect x="60" y="40" width="120" height="55" rx="8" />
+            <rect x="200" y="40" width="140" height="55" rx="8" />
+            <rect x="60" y="112" width="180" height="55" rx="8" />
+            <rect x="260" y="112" width="80" height="55" rx="8" />
+            <path d="M95 67h60M235 67h80M95 139h120M295 139h30" opacity="0.5" />
+          </g>
+          <circle className="work-hub" cx="80" cy="67" r="5" />
+          <circle className="work-hub" cx="220" cy="67" r="5" />
+          <circle className="work-hub" cx="80" cy="139" r="5" />
+          <circle className="work-hub" cx="280" cy="139" r="5" />
+        </svg>
+      )}
+    </div>
   );
 }
 
@@ -144,46 +160,40 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="work-intro section-dark" id="work">
-          <div className="page-shell work-intro__grid">
-            <p className="eyebrow" data-reveal>
-              Selected systems / 01—02
-            </p>
-            <h2 data-reveal>
-              Operational systems.
-              <br />
-              Built to be used.
-            </h2>
-            <p className="section-lede" data-reveal>
-              Focused products for real workflows—designed, engineered and carried into
-              daily operation by one accountable team.
-            </p>
+        <section className="work section-dark" id="work">
+          <div className="page-shell work__inner">
+            <div className="work__copy" data-reveal>
+              <p className="eyebrow">Our work</p>
+              <h2>
+                Systems built
+                <br />
+                to be used.
+              </h2>
+              <p className="section-lede">
+                Focused products for real workflows, built and run by one team.
+              </p>
+            </div>
+
+            <div className="work__grid">
+              {projects.map((project, index) => (
+                <article className="work-card" data-reveal key={project.number}>
+                  <WorkVisual index={index} />
+                  <div className="work-card__body">
+                    <span className="work-card__number">{project.number}</span>
+                    <h3>{PROJECT_NAMES[project.name] ?? project.name}</h3>
+                    <p>
+                      {project.title} {project.description}
+                    </p>
+                    <a className="work-card__link" href="#contact">
+                      <span>View system</span>
+                      <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.5} />
+                    </a>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         </section>
-
-        {projects.map((project) => (
-          <section
-            className={`project project--${project.surface}`}
-            id={`project-${project.number}`}
-            key={project.number}
-          >
-            <div className="page-shell">
-              <div className="project__heading">
-                <div data-reveal>
-                  <p className="eyebrow">Selected systems / {project.number}</p>
-                  <p className="project__eyebrow">{project.eyebrow}</p>
-                </div>
-                <div className="project__copy" data-reveal>
-                  <p className="project__name">{project.name}</p>
-                  <h2>{project.title}</h2>
-                  <p>{project.description}</p>
-                  <ArrowLink href="#contact">View system</ArrowLink>
-                </div>
-              </div>
-              <ProjectVisual number={project.number} name={project.name} />
-            </div>
-          </section>
-        ))}
 
         <section className="process section-light" id="process">
           <div className="page-shell">
