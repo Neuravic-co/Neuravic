@@ -75,16 +75,12 @@ export default async function Home() {
           </a>
         </section>
 
-        <section className="services section-dark" id="services" data-nav-section>
+        <section className="services section-light" id="services" data-nav-section>
           <div className="page-shell">
             <div className="section-heading services__heading">
               <div data-reveal>
-                <p className="eyebrow">Services</p>
-                <h2>
-                  We build it,
-                  <br />
-                  start to finish.
-                </h2>
+                <p className="eyebrow">Services / What we build</p>
+                <h2>We build it, start to finish.</h2>
               </div>
               <p className="section-lede" data-reveal>
                 AI, software and design in one team. We take hard problems and build tools
@@ -106,6 +102,10 @@ export default async function Home() {
                     />
                     <h3>{service.title}</h3>
                     <p>{service.description}</p>
+                    <a className="service-card__link" href="#contact">
+                      <span>Discuss this</span>
+                      <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.5} />
+                    </a>
                   </article>
                 );
               })}
