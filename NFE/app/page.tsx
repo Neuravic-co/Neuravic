@@ -1,4 +1,4 @@
-import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BrainCircuit, CodeXml, PenTool, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { ContactForm } from "@/components/contact-form";
@@ -6,6 +6,8 @@ import { HeroArt } from "@/components/hero-art";
 import { ScrollEffects } from "@/components/scroll-effects";
 import { SiteHeader } from "@/components/site-header";
 import { getSiteContent } from "@/lib/site-content";
+
+const SERVICE_ICONS = [BrainCircuit, CodeXml, PenTool, ShieldCheck];
 
 function ArrowLink({ children, href }: { children: React.ReactNode; href: string }) {
   return (
@@ -100,20 +102,34 @@ export default async function Home() {
               </p>
             </div>
 
-            <div className="service-list">
-              {services.map((service) => (
-                <article className="service-row" data-reveal key={service.number}>
-                  <span className="service-row__number">{service.number}</span>
-                  <h3>{service.title}</h3>
-                  <p>{service.description}</p>
-                  <ArrowUpRight
-                    className="service-row__arrow"
-                    aria-hidden="true"
-                    size={22}
-                    strokeWidth={1.25}
-                  />
-                </article>
-              ))}
+            <div className="service-grid">
+              {services.map((service, index) => {
+                const Icon = SERVICE_ICONS[index % SERVICE_ICONS.length];
+                return (
+                  <article className="service-card" data-reveal key={service.number}>
+                    <span className="service-card__number">{service.number}</span>
+                    <Icon
+                      className="service-card__icon"
+                      aria-hidden="true"
+                      size={40}
+                      strokeWidth={1.25}
+                    />
+                    <h3>{service.title}</h3>
+                    <p>{service.description}</p>
+                    <a className="service-card__link" href="#contact">
+                      <span>Discuss this</span>
+                      <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.5} />
+                    </a>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="services__cta" data-reveal>
+              <a className="button button--primary" href="#contact">
+                <span>Start a project</span>
+                <ArrowRight aria-hidden="true" size={18} strokeWidth={1.5} />
+              </a>
             </div>
           </div>
         </section>
