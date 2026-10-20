@@ -75,6 +75,28 @@ body.menu-is-open {
   color: var(--paper);
 }
 
+/*
+ * Headings are set with tight line spacing, so a boxed highlight on one line overlaps the line above
+ * and hides the bottoms of its letters. Selected headings glow in the brand blue instead.
+ */
+:is(h1, h2, h3)::selection,
+:is(h1, h2, h3) *::selection {
+  background: transparent;
+  color: #9db1ff;
+  text-shadow:
+    0 0 0.35em color-mix(in srgb, var(--blue) 85%, transparent),
+    0 0 0.9em color-mix(in srgb, var(--blue) 55%, transparent);
+}
+
+/* On the light sections the glow is a deeper blue so the letters stay readable. */
+.section-light :is(h1, h2, h3)::selection,
+.section-light :is(h1, h2, h3) *::selection {
+  color: #1f35a8;
+  text-shadow:
+    0 0 0.3em color-mix(in srgb, var(--blue) 50%, transparent),
+    0 0 0.8em color-mix(in srgb, var(--blue) 25%, transparent);
+}
+
 a,
 button {
   color: inherit;
