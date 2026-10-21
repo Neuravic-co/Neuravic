@@ -22,6 +22,9 @@
   --page-gutter: clamp(1.5rem, 5.75vw, 6.5rem);
   --header-height: 5.5rem;
   --footer-height: 0px;
+  /* The full visible screen height. 100svh is the height with the browser toolbar showing, so on a phone or
+     tablet a section sized to it ends short once the toolbar slides away. 100dvh follows the toolbar. */
+  --screen-h: 100vh;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --font-brand: "termina", "termina-fallback", sans-serif;
 }
@@ -42,6 +45,12 @@
 
 * {
   box-sizing: border-box;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --screen-h: 100dvh;
+  }
 }
 
 html {
@@ -485,7 +494,7 @@ section {
   z-index: 1;
   inset: 0;
   display: none;
-  min-height: 100svh;
+  min-height: var(--screen-h);
   flex-direction: column;
   justify-content: space-between;
   padding: calc(var(--header-height) + 4.5rem) var(--page-gutter) 2.25rem;
@@ -556,7 +565,7 @@ section {
   --hero-x: 0px;
   --hero-y: 0px;
   display: flex;
-  min-height: max(48rem, 100svh);
+  min-height: max(48rem, var(--screen-h));
   overflow: hidden;
   align-items: stretch;
   isolation: isolate;
@@ -736,7 +745,7 @@ section {
 
 .hero__inner {
   display: flex;
-  min-height: max(48rem, 100svh);
+  min-height: max(48rem, var(--screen-h));
   flex-direction: column;
   justify-content: space-between;
   padding-top: clamp(9.5rem, 20vh, 13.5rem);
@@ -1344,11 +1353,11 @@ section {
   }
 
   .hero {
-    min-height: max(47rem, 100svh);
+    min-height: max(47rem, var(--screen-h));
   }
 
   .hero__inner {
-    min-height: max(47rem, 100svh);
+    min-height: max(47rem, var(--screen-h));
     padding-top: 8.3rem;
     padding-bottom: 1.2rem;
   }
@@ -1533,7 +1542,7 @@ section {
 
   .hero,
   .hero__inner {
-    min-height: max(50rem, 100svh);
+    min-height: max(50rem, var(--screen-h));
   }
 
   .hero__inner {
@@ -1867,7 +1876,7 @@ section {
 @media (max-height: 32rem) and (orientation: landscape) {
   .hero,
   .hero__inner {
-    min-height: 100svh;
+    min-height: var(--screen-h);
   }
 
   .hero__inner {
@@ -1905,7 +1914,7 @@ section {
 @media (min-width: 58.01rem) and (min-height: 38rem) {
   .hero,
   .hero__inner {
-    min-height: 100svh;
+    min-height: var(--screen-h);
   }
 
   .hero__inner {
@@ -1922,7 +1931,7 @@ section {
   .process,
   .team {
     display: flex;
-    min-height: 100svh;
+    min-height: var(--screen-h);
     flex-direction: column;
     justify-content: center;
     padding-block: var(--screen-pad-top) var(--screen-pad-bottom);
@@ -1960,7 +1969,7 @@ section {
 
   /* Contact: the form fits beside its heading */
   .contact__inner {
-    min-height: 100svh;
+    min-height: var(--screen-h);
     align-items: center;
     padding-block: var(--screen-pad-top) var(--screen-pad-bottom);
   }
@@ -2097,7 +2106,7 @@ section {
 /* Legal pages */
 
 .legal {
-  min-height: 100svh;
+  min-height: var(--screen-h);
   padding-block: 2.2rem 5rem;
   --muted: color-mix(in srgb, var(--paper) 62%, var(--ink));
   --blue-text: color-mix(in srgb, var(--blue) 72%, var(--paper));
@@ -2786,7 +2795,7 @@ section {
   .services,
   .process {
     display: flex;
-    min-height: 100svh;
+    min-height: var(--screen-h);
     flex-direction: column;
     justify-content: center;
     padding-block: calc(var(--header-height) + 1rem) 2rem;
@@ -2859,7 +2868,7 @@ section {
 
 .work {
   display: flex;
-  min-height: 100svh;
+  min-height: var(--screen-h);
   align-items: center;
   background:
     radial-gradient(60% 60% at 70% 38%, color-mix(in srgb, var(--blue) 20%, transparent), transparent 70%),
@@ -3081,7 +3090,7 @@ section {
 
 
   .contact__inner {
-    min-height: calc(100svh - var(--footer-height));
+    min-height: calc(var(--screen-h) - var(--footer-height));
     padding-block: calc(var(--header-height) + 0.25rem) 0.75rem;
   }
 
@@ -3107,7 +3116,7 @@ section {
 @media (max-width: 58rem) {
   .hero,
   .hero__inner {
-    min-height: 100svh;
+    min-height: var(--screen-h);
   }
 
 
@@ -3167,7 +3176,7 @@ section {
 
   .team {
     display: flex;
-    min-height: 100svh;
+    min-height: var(--screen-h);
     flex-direction: column;
     justify-content: center;
   }
@@ -3264,7 +3273,7 @@ section {
 
 @media (min-width: 36.01rem) and (max-width: 58rem) {
   .contact__inner {
-    min-height: calc(100svh - var(--footer-height));
+    min-height: calc(var(--screen-h) - var(--footer-height));
     align-content: center;
   }
 }
@@ -3293,7 +3302,7 @@ main.landing > footer {
 /* The contact screen is never shorter than the viewport, so the page above cannot show through at the end. */
 .contact {
   display: flex;
-  min-height: 100svh;
+  min-height: var(--screen-h);
   flex-direction: column;
 }
 
@@ -3306,7 +3315,7 @@ main.landing > footer {
 .about {
   position: relative;
   display: flex;
-  min-height: 100svh;
+  min-height: var(--screen-h);
   align-items: center;
   overflow: hidden;
   background: var(--ink);
