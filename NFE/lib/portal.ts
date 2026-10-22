@@ -7,6 +7,18 @@ export type RequestType = "access" | "change" | "support" | "other";
 export type ProjectStatus = "active" | "paused" | "completed";
 export type LeadStatus = "new" | "qualified" | "won" | "lost" | "spam";
 
+/** The screens of the client portal, which staff can also open from the workspace. */
+export type ClientTab = "projects" | "requests" | "activity" | "members" | "organisations" | "leads";
+
+export const STAFF_ROLE_LABELS: Record<StaffRole, string> = {
+  admin: "Administrator",
+  delivery: "Delivery",
+  sales: "Sales",
+};
+
+/** Where portal support emails go until tickets are stored by the backend. */
+export const SUPPORT_EMAIL = "neuravic2026@gmail.com";
+
 export interface Me {
   user: { id: string; email: string; name: string | null; staffRole: StaffRole | null };
   memberships: { orgId: string; name: string; slug: string; role: OrgRole }[];

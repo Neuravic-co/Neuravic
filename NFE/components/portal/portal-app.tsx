@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
-import { effectiveRole, type Me, type Org } from "@/lib/portal";
+import { effectiveRole, type ClientTab, type Me, type Org } from "@/lib/portal";
 import { ActivityView } from "./activity-view";
 import { MembersView } from "./members-view";
 import { ProjectsView } from "./projects-view";
@@ -12,6 +12,7 @@ import { RequestsView } from "./requests-view";
 import { SessionProvider, useMe, useSession } from "./session";
 import { SignIn } from "./sign-in";
 import { LeadsView, OrganisationsView } from "./staff-views";
+import { Workspace } from "./workspace";
 import { usePaged } from "./use-query";
 import { Empty, ErrorNote, Loading } from "./ui";
 
@@ -47,10 +48,31 @@ function Gate() {
   if (state.status === "anonymous") {
     return <SignIn notice={state.expired ? "Your session ended. Sign in again to continue." : undefined} />;
   }
-  return <Shell />;
+  return <Home />;
 }
 
-type Tab = "projects" | "requests" | "activity" | "members" | "organisations" | "leads";
+/** Staff land on the workspace; clients, and staff who open the client portal, get the portal shell. */
+function Home() {
+  const me = useMe();
+  const isStaff = me.user.staffRole !== null;
+  const [clientTab, setClientTab] = useState<ClientTab | null>(null);
+  const [showClients, setShowClients] = useState(!isStaff);
+
+  if (!showClients) {
+    return (
+      <Workspace
+        me={me}
+        onOpenClientPortal={(tab) => {
+          setClientTab(tab);
+          setShowClients(true);
+        }}
+      />
+    );
+  }
+  return <Shell initialTab={clientTab} onBackToWorkspace={isStaff ? () => setShowClients(false) : undefined} />;
+}
+
+type Tab = ClientTab;
 const ORG_TABS: { id: Tab; label: string }[] = [
   { id: "projects", label: "Projects" },
   { id: "requests", label: "Requests" },
@@ -88,12 +110,12 @@ function useOrgs(me: Me) {
   return { orgs, loading: staffSeesAll && all.loading, error: all.error, reload: all.reload };
 }
 
-function Shell() {
+function Shell({ initialTab, onBackToWorkspace }: { initialTab: Tab | null; onBackToWorkspace?: () => void }) {
   const me = useMe();
   const { signOut } = useSession();
   const { orgs, loading: orgsLoading, error: orgsError, reload: reloadOrgs } = useOrgs(me);
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(readStoredOrg);
-  const [tab, setTab] = useState<Tab | null>(null);
+  const [tab, setTab] = useState<Tab | null>(initialTab);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [requestId, setRequestId] = useState<string | null>(null);
 
@@ -135,6 +157,11 @@ function Shell() {
           <Image src="/assets/neuravic-logo.png" alt="Neuravic" width={617} height={120} unoptimized priority />
         </Link>
         <span className="portal-topbar__label">Portal</span>
+        {onBackToWorkspace ? (
+          <button type="button" className="portal-link" onClick={onBackToWorkspace}>
+            ← Workspace
+          </button>
+        ) : null}
         <div className="portal-topbar__spacer" />
         {orgs.length > 0 ? (
           <label className="portal-topbar__org">

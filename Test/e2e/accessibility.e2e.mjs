@@ -46,6 +46,14 @@ await run("Accessibility", async (browser, errors) => {
   await context.addCookies([cookie]);
   await page.goto(`${BASE_URL}/portal`, { waitUntil: "networkidle" });
   await page.getByRole("button", { name: "Sign out" }).waitFor();
+  await scan(page, "portal workspace (PIMS)");
+  for (const tab of ["Calendar", "Tools", "IT & Support"]) {
+    await page.getByRole("tab", { name: new RegExp(tab) }).click();
+    await scan(page, `portal workspace (${tab})`);
+  }
+  await page.getByRole("tab", { name: /Tools/ }).click();
+  await page.getByRole("button", { name: /^Client portal/ }).click();
+  await page.getByRole("button", { name: "Enquiries" }).waitFor();
   await scan(page, "portal (staff view)");
 
   await page.getByRole("button", { name: "Enquiries" }).click();
