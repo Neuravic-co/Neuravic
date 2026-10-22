@@ -8,6 +8,9 @@ Everything about the security of the Neuravic website, portal and API lives here
 | [`threat-model.md`](threat-model.md) | What we protect, who might attack it, and which control stops each attack (with the code and test that prove it) |
 | [`hardening-checklist.md`](hardening-checklist.md) | What must be done before and after going live, and what is still missing |
 | [`scripts/security-check.sh`](scripts/security-check.sh) | Automated check: secrets in the repo and known-vulnerable dependencies. Runs in CI every week and on every change |
+| [`audit-2026-10-22.md`](audit-2026-10-22.md) | Confirmed findings, remediation evidence, validation results and remaining risks |
+| [`api-inventory.md`](api-inventory.md) | Endpoint, authorization, data-operation and frontend integration map |
+| [`operations-runbook.md`](operations-runbook.md) | Staging, rollout order, monitoring, incident response, backup validation and rollback |
 
 The code that enforces security stays next to the feature it protects (for example `NBE/src/modules/auth`).
 This folder explains it and checks it.
@@ -16,6 +19,8 @@ This folder explains it and checks it.
 
 ```bash
 ./Security/scripts/security-check.sh
+# Cross-platform, with a redacted history scan:
+node Security/scripts/security-check.mjs --history
 ```
 
 It fails if a secret-looking file or value is committed, or if the backend or the frontend has a high or critical
@@ -33,14 +38,14 @@ database-level backups and exports beyond the platform's own, a full script-sour
 website, and endpoints for data-subject access and deletion requests. Details and priorities are in
 [`hardening-checklist.md`](hardening-checklist.md).
 
-## Dependency status (18 October 2026)
+## Dependency status (22 October 2026)
 
-Both projects have **no known vulnerabilities in production dependencies**. The frontend's earlier advisories
-(`next`, `postcss`, `sharp`) were cleared by updating `next` to 16.4.2.
+The production lockfile checks for NBE and NFE each reported zero advisories at the time of this audit.
+This result is time-bound and does not establish that the application has no vulnerabilities. Development-only findings
+and remaining production gaps are recorded in the audit. Advisory service failures fail the check rather than being reported as a clean scan.
 
-One finding remains in a development-only tool: `npm audit` in `NBE` reports 4 moderate advisories inside
-`drizzle-kit`'s own bundled build tool (`esbuild`, used only when generating migrations on a developer machine,
-never deployed). `drizzle-kit` is already at its latest release, so there is nothing to update yet.
+The scanner returns categories/locations without printing matching credentials, including when inspecting history.
+Its patterns cover common key formats; they do not replace provider secret scanning or a private incident investigation.
 
 Dependencies are updated automatically: Dependabot opens a weekly pull request per folder
 (`.github/dependabot.yml`), and the security check runs every Monday.

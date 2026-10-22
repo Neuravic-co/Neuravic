@@ -8,7 +8,8 @@ when you set up the real environment; "Gap" means it is not built yet.
 - [ ] **Deploy** Set `APP_ENV=production` on the API. This turns on `Secure` and `__Host-` session cookies.
 - [ ] **Deploy** Set `APP_URL` to the public site address and `ALLOWED_ORIGINS` to exactly that origin. Nothing else.
 - [ ] **Deploy** Route `yourdomain/api/*` to the API Worker and everything else to the website, so the session cookie is first-party. On Vercel the website proxies `/api/*` itself (`NFE/lib/api-proxy.ts`): set `API_ORIGIN` and `API_PROXY_SECRET` on Vercel and the same value as `PROXY_SECRET` on the API. Without the secret every visitor shares one rate limit.
-- [ ] **Deploy** Set the secrets with `wrangler secret put`: `BOOTSTRAP_ADMIN_EMAIL`, `RESEND_API_KEY`, `TURNSTILE_SECRET`, `SSO_PRIVATE_JWK`, and `SLACK_WEBHOOK_URL` if used. Never put them in `wrangler.jsonc`.
+- [ ] **Deploy** Set a dedicated random `PRIVACY_HASH_SECRET` (32+ characters, required outside development), plus `BOOTSTRAP_ADMIN_EMAIL`, `RESEND_API_KEY`, `TURNSTILE_SECRET`, `SSO_PRIVATE_JWK`, and `SLACK_WEBHOOK_URL` if used. Never put secrets in `wrangler.jsonc`. Confirm the proxy credential is at least 32 characters; rotation needs separate approval.
+- [ ] **Deploy** Follow `operations-runbook.md`: dual-format NFE first, additive migrations next, new NBE last. Verify mail delivery; login links are never logged and missing providers leave jobs pending.
 - [ ] **Deploy** Create the SSO signing key with `npm run sso:keygen` in `NBE`, store the private value only as the secret, and give DARKAGENT and COOLACCESS_DXB the JWKS URL.
 - [ ] **Deploy** Turn on Cloudflare Turnstile: set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` on the website and `TURNSTILE_SECRET` on the API.
 - [ ] **Deploy** Set up the sending email domain: SPF, DKIM and DMARC records. Sign-in links depend on delivery.
@@ -27,7 +28,8 @@ when you set up the real environment; "Gap" means it is not built yet.
 
 ## C. Soon after launch
 
-- [ ] **Gap (P2)** Hash IP addresses and user agents with a secret key (HMAC) instead of plain SHA-256, so the values cannot be brute-forced back to addresses.
+- [x] **Code** New audit IP/UA and rate-limit identities use domain-separated HMAC with a dedicated key. Older rows remain subject to existing retention; this is pseudonymization, not anonymization.
+- [x] **Code** Actual streamed request/upload limits, atomic login and security-event revocation, race-safe enquiries/approvals/file quotas, bounded retention and safe outbox retries have automated regressions (see the audit).
 - [ ] **Gap (P2)** A full Content-Security-Policy with `script-src` on the website (needs nonces for the framework's inline scripts and an allow-list for the font provider and Turnstile).
 - [ ] **Gap (P2)** Endpoints and a runbook for data-subject requests (export and delete a person's data).
 - [ ] **Gap (P2)** Alerts: spike in failed sign-ins, outbox jobs marked `dead`, sudden rise in 5xx, first sign-in of a staff account from a new country.

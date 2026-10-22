@@ -66,6 +66,7 @@ npm run build
 |---|---|
 | `NEXT_PUBLIC_API_BASE_URL` | Where the browser reaches the API. Unset in production: it defaults to same-origin `/api/v1`, so route `yourdomain.com/api/*` to the NBE Worker. |
 | `API_ORIGIN` | Where the server reads site content while rendering. Optional; without it the built-in content is used. |
+| `API_PROXY_SECRET` | Server-only shared proxy credential (32+ characters); never expose it through `NEXT_PUBLIC_` variables. |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Optional bot check on the contact form (set `TURNSTILE_SECRET` on NBE too). |
 
 What is connected:
@@ -74,6 +75,10 @@ What is connected:
 - **Site content** (`lib/site-content.ts`) is read from `GET /content`, section by section, and falls back to the built-in copy on any error or timeout. Staff can edit it through the API without redeploying the site.
 - **Portal** (`/portal`) is the client area: passwordless sign-in, projects, requests with approvals, comments and file attachments, activity, members. Staff also get organisations and the enquiries inbox. The email link lands on `/portal/verify`.
 - The API client is `lib/api.ts`; portal state lives in `components/portal/`.
+
+New sign-in links use a URL fragment so the token is not sent to the web server. Verification still accepts older query links
+and removes credentials from browser history before exchange. Deploy this dual-format frontend before the new backend.
+Normal development sign-in requires a mail provider; `npm run test:browser` in NBE provides an isolated test mailbox instead.
 
 ## Security headers
 
