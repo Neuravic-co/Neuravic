@@ -4,7 +4,7 @@ import { CalendarDays, LayoutGrid, LifeBuoy, UserRound, type LucideIcon } from "
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import type { ClientTab, Me } from "@/lib/portal";
+import { PREVIEW_DETAILS, type ClientTab, type Me } from "@/lib/portal";
 import { CalendarView } from "./calendar-view";
 import { PimsView } from "./pims-view";
 import { useSession } from "./session";
@@ -21,8 +21,16 @@ const TABS: { id: WorkspaceTab; label: string; caption: string; icon: LucideIcon
 ];
 
 /** The staff home: four tabs, each a card with two cut corners that echo the Neuravic mark. */
-export function Workspace({ me, onOpenClientPortal }: { me: Me; onOpenClientPortal: (tab: ClientTab) => void }) {
-  const { signOut } = useSession();
+/** With `preview`, the account is sample data: there is no sign-out and the tools that need the server stay closed. */
+export function Workspace({
+  me,
+  onOpenClientPortal,
+  preview = false,
+}: {
+  me: Me;
+  onOpenClientPortal?: (tab: ClientTab) => void;
+  preview?: boolean;
+}) {
   const [active, setActive] = useState<WorkspaceTab>("pims");
 
   return (
@@ -33,16 +41,16 @@ export function Workspace({ me, onOpenClientPortal }: { me: Me; onOpenClientPort
         </Link>
         <span className="portal-topbar__label">Workspace</span>
         <div className="portal-topbar__spacer" />
+        {preview ? <span className="ws-badge">Preview</span> : null}
         <span className="portal-topbar__user" title={me.user.email}>
           {me.user.name ?? me.user.email}
         </span>
-        <button type="button" className="portal-link" onClick={() => void signOut()}>
-          Sign out
-        </button>
+        {preview ? null : <SignOut />}
       </header>
 
       <main className="ws-main" id="portal-content">
         <h1 className="sr-only">Neuravic workspace</h1>
+        {preview ? <p className="ws-banner">This is a preview with sample details. Sign-in opens when the portal goes live.</p> : null}
 
         <div className="ws-tabs" role="tablist" aria-label="Workspace sections">
           {TABS.map(({ id, label, caption, icon: Icon }, index) => (
@@ -75,12 +83,21 @@ export function Workspace({ me, onOpenClientPortal }: { me: Me; onOpenClientPort
         </div>
 
         <div className="ws-panel" role="tabpanel" id={`ws-panel-${active}`} aria-labelledby={`ws-tab-${active}`} tabIndex={0}>
-          {active === "pims" ? <PimsView me={me} /> : null}
+          {active === "pims" ? <PimsView me={me} details={preview ? PREVIEW_DETAILS : undefined} /> : null}
           {active === "calendar" ? <CalendarView /> : null}
           {active === "tools" ? <ToolsView staffRole={me.user.staffRole} onOpen={onOpenClientPortal} /> : null}
           {active === "support" ? <SupportView me={me} /> : null}
         </div>
       </main>
     </div>
+  );
+}
+
+function SignOut() {
+  const { signOut } = useSession();
+  return (
+    <button type="button" className="portal-link" onClick={() => void signOut()}>
+      Sign out
+    </button>
   );
 }

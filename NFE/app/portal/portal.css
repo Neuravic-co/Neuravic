@@ -856,248 +856,6 @@ button.portal-row:focus-visible {
   }
 }
 
-/* ---------- Under construction ---------- */
-
-.construction {
-  --muted: color-mix(in srgb, var(--paper) 62%, var(--ink));
-  --blue-text: color-mix(in srgb, var(--blue) 72%, var(--paper));
-  position: relative;
-  display: grid;
-  min-height: 100vh;
-  place-items: center;
-  overflow: hidden;
-  padding: 3rem var(--page-gutter);
-  background: var(--ink);
-  color: var(--paper);
-  text-align: center;
-  isolation: isolate;
-}
-
-.construction__backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-}
-
-.construction__glow {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.55;
-  animation: construction-drift 16s ease-in-out infinite alternate;
-}
-
-.construction__glow--one {
-  top: -14rem;
-  left: -10rem;
-  width: 38rem;
-  height: 38rem;
-  background: var(--blue);
-}
-
-.construction__glow--two {
-  right: -12rem;
-  bottom: -16rem;
-  width: 34rem;
-  height: 34rem;
-  background: color-mix(in srgb, var(--blue) 55%, #7c3aed);
-  animation-delay: -6s;
-}
-
-/* Fine blueprint grid that fades out towards the edges. */
-.construction__grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(color-mix(in srgb, var(--paper) 7%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--paper) 7%, transparent) 1px, transparent 1px);
-  background-size: 3.5rem 3.5rem;
-  mask-image: radial-gradient(ellipse 60% 55% at 50% 50%, #000 20%, transparent 75%);
-}
-
-.construction__ring {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  border: 1px solid color-mix(in srgb, var(--blue) 45%, transparent);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  animation: construction-ring 7s ease-out infinite;
-}
-
-.construction__ring--one {
-  width: 22rem;
-  height: 22rem;
-}
-
-.construction__ring--two {
-  width: 22rem;
-  height: 22rem;
-  animation-delay: -2.3s;
-}
-
-.construction__ring--three {
-  width: 22rem;
-  height: 22rem;
-  animation-delay: -4.6s;
-}
-
-.construction__content {
-  display: grid;
-  justify-items: center;
-  gap: 1.15rem;
-  width: min(40rem, 100%);
-}
-
-.construction__logo {
-  height: auto;
-  margin-bottom: 1.5rem;
-  opacity: 0.92;
-}
-
-.construction__icon {
-  display: grid;
-  width: 6.5rem;
-  height: 6.5rem;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--blue) 55%, transparent);
-  border-radius: 1.6rem;
-  background:
-    radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--blue) 45%, transparent), transparent 70%),
-    color-mix(in srgb, var(--slate) 80%, transparent);
-  box-shadow:
-    0 0 0 0.5rem color-mix(in srgb, var(--blue) 10%, transparent),
-    0 1.5rem 4rem color-mix(in srgb, var(--blue) 35%, transparent);
-  color: var(--paper);
-  animation: construction-float 5s ease-in-out infinite;
-}
-
-.construction__eyebrow {
-  margin: 1.25rem 0 0;
-  color: var(--blue-text);
-  font-size: 0.78rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-}
-
-.construction h1 {
-  margin: 0;
-  font-size: clamp(2.6rem, 7vw, 5rem);
-  font-weight: 300;
-  letter-spacing: -0.055em;
-  line-height: 1;
-}
-
-.construction__lede {
-  max-width: 31rem;
-  margin: 0;
-  color: var(--muted);
-  font-size: clamp(1rem, 1.3vw, 1.15rem);
-  line-height: 1.65;
-}
-
-.construction__status {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.7rem;
-  margin-top: 0.5rem;
-  padding: 0.55rem 1.1rem;
-  border: 1px solid color-mix(in srgb, var(--paper) 16%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--slate) 70%, transparent);
-  font-size: 0.82rem;
-  letter-spacing: 0.04em;
-}
-
-.construction__pulse {
-  width: 0.55rem;
-  height: 0.55rem;
-  border-radius: 50%;
-  background: #4ade80;
-  box-shadow: 0 0 0 0 color-mix(in srgb, #4ade80 60%, transparent);
-  animation: construction-pulse 2s ease-out infinite;
-}
-
-.construction__actions {
-  display: grid;
-  justify-items: center;
-  gap: 1.1rem;
-  margin-top: 1.5rem;
-}
-
-.construction__mail {
-  color: var(--muted);
-  font-size: 0.9rem;
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--paper) 30%, transparent);
-  text-underline-offset: 0.3em;
-  transition: color 200ms;
-}
-
-.construction__mail:hover {
-  color: var(--paper);
-}
-
-@keyframes construction-drift {
-  from {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  to {
-    transform: translate3d(3rem, 2rem, 0) scale(1.12);
-  }
-}
-
-@keyframes construction-ring {
-  from {
-    opacity: 0.7;
-    transform: translate(-50%, -50%) scale(0.5);
-  }
-  to {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(2.6);
-  }
-}
-
-@keyframes construction-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-0.6rem);
-  }
-}
-
-@keyframes construction-pulse {
-  to {
-    box-shadow: 0 0 0 0.7rem transparent;
-  }
-}
-
-@media (max-width: 640px) {
-  .construction__ring--one,
-  .construction__ring--two,
-  .construction__ring--three {
-    width: 16rem;
-    height: 16rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .construction__glow,
-  .construction__ring,
-  .construction__icon,
-  .construction__pulse {
-    animation: none;
-  }
-
-  .construction__ring {
-    opacity: 0.25;
-    transform: translate(-50%, -50%) scale(1.4);
-  }
-}
-
 /* ---------- Staff workspace: four tabs ---------- */
 
 .ws-main {
@@ -1729,4 +1487,29 @@ button.ws-tool:focus-visible {
   button.ws-tool:hover {
     transform: none;
   }
+}
+
+/* Preview mode */
+
+.ws-badge {
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--blue);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--blue) 20%, transparent);
+  color: var(--paper);
+  font-size: 0.65rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ws-banner {
+  margin: 0 0 1.25rem;
+  padding: 0.75rem 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--blue) 45%, transparent);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--blue) 12%, var(--ink));
+  color: var(--portal-text-2);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  text-align: center;
 }
