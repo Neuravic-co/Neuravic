@@ -35,7 +35,9 @@
   "include": [
     "src",
     "../Test/backend",
+    "../Test/browser",
     "drizzle.config.ts",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "vitest.browser.config.ts"
   ]
 }

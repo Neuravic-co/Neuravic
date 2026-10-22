@@ -161,13 +161,14 @@ orgsRoutes.patch("/:orgId/members/:userId", async (c) => {
     throw forbidden("You cannot change a role higher than your own");
   }
   const now = deps.now();
-  const changed = await deps.db
+  const [changed] = await runBatch(deps.db, [deps.db
     .update(schema.memberships)
     .set({ role })
     .where(and(memberOf(orgId, userId), keepsAnOwner(orgId, role === "owner")))
-    .returning({ userId: schema.memberships.userId });
-  if (changed.length === 0) throw conflict(LAST_OWNER_MESSAGE);
-  await auditInsert(deps.db, { actorId: actor.user.id, orgId, action: "org.member_role_changed", targetType: "user", targetId: userId, meta: { from: target.role, to: role } }, now);
+    .returning({ userId: schema.memberships.userId }),
+    auditInsert(deps.db, { actorId: actor.user.id, orgId, action: "org.member_role_changed", targetType: "user", targetId: userId, meta: { from: target.role, to: role } }, now, null, sql`changes() > 0`),
+  ]);
+  if (!Array.isArray(changed) || changed.length === 0) throw conflict(LAST_OWNER_MESSAGE);
   return c.json({ userId, role });
 });
 
@@ -186,11 +187,12 @@ orgsRoutes.delete("/:orgId/members/:userId", async (c) => {
   if (!target) throw notFound("Member not found");
   if (!leavingSelf && ROLE_RANK[target.role] > ROLE_RANK[callerRole]) throw forbidden();
   const now = deps.now();
-  const removed = await deps.db
+  const [removed] = await runBatch(deps.db, [deps.db
     .delete(schema.memberships)
     .where(and(memberOf(orgId, userId), keepsAnOwner(orgId, false)))
-    .returning({ userId: schema.memberships.userId });
-  if (removed.length === 0) throw conflict(LAST_OWNER_MESSAGE);
-  await auditInsert(deps.db, { actorId: actor.user.id, orgId, action: "org.member_removed", targetType: "user", targetId: userId }, now);
+    .returning({ userId: schema.memberships.userId }),
+    auditInsert(deps.db, { actorId: actor.user.id, orgId, action: "org.member_removed", targetType: "user", targetId: userId }, now, null, sql`changes() > 0`),
+  ]);
+  if (!Array.isArray(removed) || removed.length === 0) throw conflict(LAST_OWNER_MESSAGE);
   return c.body(null, 204);
 });

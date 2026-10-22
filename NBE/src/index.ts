@@ -22,12 +22,12 @@ function buildDeps(env: Env, ctx?: BackgroundContext): Deps {
     blobs: env.BUCKET ? new R2BlobStore(env.BUCKET) : null,
     mailer: config.resendApiKey
       ? new ResendMailer(config.resendApiKey, config.emailFrom)
-      : new ConsoleMailer(jsonLogger, config.environment === "development"),
+      : new ConsoleMailer(jsonLogger),
     rateLimiter: new DbRateLimiter(db),
     now: () => Date.now(),
     runInBackground: (task) => {
-      const promise = task().catch((error) =>
-        jsonLogger.error("background_task_failed", { error: String(error) }),
+      const promise = task().catch(() =>
+        jsonLogger.error("background_task_failed"),
       );
       ctx?.waitUntil(promise);
     },

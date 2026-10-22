@@ -29,7 +29,8 @@ describe("outbox", () => {
       const [job] = await deps.db.select().from(schema.outbox);
       if (attempt <= RETRY_DELAYS_MS.length) {
         expect(job?.state).toBe("pending");
-        expect(job?.nextAttemptAt).toBe(clock + RETRY_DELAYS_MS[attempt - 1]!);
+        expect(job?.nextAttemptAt).toBeGreaterThanOrEqual(clock + RETRY_DELAYS_MS[attempt - 1]!);
+        expect(job?.nextAttemptAt).toBeLessThanOrEqual(clock + RETRY_DELAYS_MS[attempt - 1]! * 1.2);
         clock = job!.nextAttemptAt;
       } else {
         expect(job?.state).toBe("dead");

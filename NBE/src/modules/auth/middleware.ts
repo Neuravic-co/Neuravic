@@ -1,5 +1,5 @@
 import type { MiddlewareHandler } from "hono";
-import { deleteCookie, getCookie } from "hono/cookie";
+import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { AppEnv } from "../../app";
 import { forbidden, unauthorized } from "../../lib/errors";
 import type { Actor } from "./actor";
@@ -17,7 +17,12 @@ export const loadActor: MiddlewareHandler<AppEnv> = async (c, next) => {
   c.set("actor", null);
   if (token) {
     const actor = await actorFromSession(deps, token);
-    if (actor) c.set("actor", actor);
+    if (actor) {
+      c.set("actor", actor);
+      if (actor.sessionRenewalSeconds) setCookie(c, cookieName, token, {
+        path: "/", httpOnly: true, secure: deps.config.cookieSecure, sameSite: "Lax", maxAge: actor.sessionRenewalSeconds,
+      });
+    }
     else deleteCookie(c, cookieName, { path: "/", secure: deps.config.cookieSecure });
   }
   await next();

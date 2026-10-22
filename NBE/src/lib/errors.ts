@@ -22,13 +22,23 @@ export const notFound = (message = "Resource not found") =>
 export const conflict = (message: string) => new AppError(409, "conflict", message);
 export const unprocessable = (message: string, details?: unknown) =>
   new AppError(422, "unprocessable", message, details);
-/** True when a database error (or the error that caused it) is a UNIQUE constraint violation. */
-export function isUniqueViolation(error: unknown): boolean {
-  for (let current = error, depth = 0; current && depth < 5; depth += 1) {
-    if (/UNIQUE constraint failed/i.test(String((current as Error).message ?? current))) return true;
-    current = (current as { cause?: unknown }).cause;
+/** Inspect the underlying database error, not a wrapper that may embed user-supplied query parameters. */
+function databaseMessage(error: unknown): string {
+  let current = error;
+  for (let depth = 0; current && depth < 8; depth += 1) {
+    const cause = (current as { cause?: unknown }).cause;
+    if (!cause) break;
+    current = cause;
   }
-  return false;
+  return String((current as Error | null)?.message ?? "");
+}
+
+export function isDatabaseGuard(error: unknown, marker: string): boolean {
+  return databaseMessage(error).includes(marker);
+}
+
+export function isUniqueViolation(error: unknown): boolean {
+  return /UNIQUE constraint failed/i.test(databaseMessage(error));
 }
 
 export const tooManyRequests = (message = "Too many requests, try again later") =>

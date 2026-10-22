@@ -20,4 +20,6 @@ export interface Env {
   SSO_PRIVATE_JWK?: string;
   /** Shared with the frontend proxy so the real visitor address can be trusted. */
   PROXY_SECRET?: string;
+  /** Dedicated HMAC key for pseudonymous audit and rate-limit identifiers (32+ random characters). */
+  PRIVACY_HASH_SECRET?: string;
 }

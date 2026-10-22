@@ -77,6 +77,8 @@ export const authTokens = sqliteTable(
     expiresAt: integer("expires_at").notNull(),
     usedAt: integer("used_at"),
     createdAt: integer("created_at").notNull(),
+    /** Hash of the session created by this token claim; makes claim + login one atomic batch. */
+    claimedSessionId: text("claimed_session_id"),
   },
   (t) => [index("auth_tokens_email").on(t.email), index("auth_tokens_expires").on(t.expiresAt)],
 );

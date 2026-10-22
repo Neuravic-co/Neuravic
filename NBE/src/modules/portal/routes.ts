@@ -2,7 +2,6 @@ import { and, asc, desc, eq, getTableColumns, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import type { AppEnv } from "../../app";
 import { runBatch, schema } from "../../db";
-import type { Deps } from "../../deps";
 import { conflict, forbidden } from "../../lib/errors";
 import { ulid } from "../../lib/ids";
 import { olderThan, pageQuery, toPage } from "../../lib/pagination";
@@ -228,13 +227,14 @@ portalRoutes.patch("/requests/:id", async (c) => {
   }
   const now = deps.now();
   // Only move the request if nobody changed it since we read it (for example a concurrent approval).
-  const moved = await deps.db
+  const [moved] = await runBatch(deps.db, [deps.db
     .update(schema.requests)
     .set({ state, updatedAt: now })
     .where(and(eq(schema.requests.id, request.id), eq(schema.requests.state, request.state)))
-    .returning({ id: schema.requests.id });
-  if (moved.length === 0) throw conflict("This request was just changed by someone else. Reload and try again");
-  await auditInsert(deps.db, { actorId: actor.user.id, orgId: request.orgId, action: `request.${state}`, targetType: "request", targetId: request.id }, now);
+    .returning({ id: schema.requests.id }),
+    auditInsert(deps.db, { actorId: actor.user.id, orgId: request.orgId, action: `request.${state}`, targetType: "request", targetId: request.id }, now, null, sql`changes() > 0`),
+  ]);
+  if (!Array.isArray(moved) || moved.length === 0) throw conflict("This request was just changed by someone else. Reload and try again");
   return c.json({ id: request.id, state });
 });
 
@@ -278,32 +278,24 @@ portalRoutes.post("/requests/:id/approvals", async (c) => {
       .update(schema.requests)
       .set({ state: nextState, updatedAt: now })
       .where(and(eq(schema.requests.id, request.id), eq(schema.requests.state, "open"))),
+    // Queue the terminal notification in the same transaction, only for the transition we made.
+    // A second approver cannot observe our result and queue a duplicate after its own batch.
+    deps.db.insert(schema.outbox).select(sql`select ${ulid(now)}, 'email',
+      json_object('to', u.email,
+        'subject', 'Your request was ' || r.state || ': ' || ${oneLine(request.title)},
+        'text', 'Your request "' || ${request.title} || '" is now ' || r.state || '.' ||
+          ${input.comment ? `\n\nComment: ${input.comment}` : ""} || ${`\n\n${deps.config.appUrl}/portal`}),
+      'pending', 0, ${now}, null, ${now}
+      from requests r join users u on u.id = r.requested_by
+      where r.id = ${request.id} and r.state in ('approved', 'rejected') and changes() > 0`),
     auditInsert(deps.db, { actorId: actor.user.id, orgId: request.orgId, action: `request.${input.decision}`, targetType: "request", targetId: request.id }, now),
   ]);
 
   const [decided] = await deps.db.select({ state: schema.requests.state }).from(schema.requests).where(eq(schema.requests.id, request.id)).limit(1);
   const state = decided?.state ?? request.state;
-  if (state !== "open") await notifyRequester(deps, request, state, input.comment, now);
+  if (state !== "open") await deps.runInBackground(() => drainOutbox(deps));
   return c.json({ requestId: request.id, decision: input.decision, state }, 201);
 });
-
-/** Emails the person who made the request once it is approved or rejected. */
-async function notifyRequester(
-  deps: Deps,
-  request: typeof schema.requests.$inferSelect,
-  state: string,
-  comment: string | undefined,
-  now: number,
-) {
-  const [requester] = await deps.db.select({ email: schema.users.email }).from(schema.users).where(eq(schema.users.id, request.requestedBy)).limit(1);
-  if (!requester) return;
-  await emailJob(deps.db, now, {
-    to: requester.email,
-    subject: `Your request was ${state}: ${oneLine(request.title)}`,
-    text: `Your request "${request.title}" is now ${state}.${comment ? `\n\nComment: ${comment}` : ""}\n\n${deps.config.appUrl}/portal`,
-  });
-  await deps.runInBackground(() => drainOutbox(deps));
-}
 
 // ---- Comments ----------------------------------------------------------
 

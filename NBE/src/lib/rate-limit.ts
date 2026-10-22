@@ -4,6 +4,7 @@ import type { AppEnv } from "../app";
 import { schema, type Db } from "../db";
 import { tooManyRequests } from "./errors";
 import { clientIp } from "./request";
+import { hashIdentifier } from "../modules/audit/audit";
 
 export interface RateLimiter {
   /** Records a hit and returns false once `limit` is exceeded inside the window. */
@@ -55,13 +56,17 @@ export function rateLimit(options: RateLimitOptions): MiddlewareHandler<AppEnv> 
   return async (c, next) => {
     const deps = c.get("deps");
     const identity = options.key ? await options.key(c) : clientIp(c);
+    const identifier = await hashIdentifier(identity, deps.config.privacyHashSecret, `rate:${options.name}`);
     const allowed = await deps.rateLimiter.hit(
-      `${options.name}:${identity}`,
+      `${options.name}:${identifier}`,
       options.limit,
       options.windowSeconds,
       deps.now(),
     );
-    if (!allowed) throw tooManyRequests();
+    if (!allowed) {
+      c.header("retry-after", String(options.windowSeconds - Math.floor(deps.now() / 1000) % options.windowSeconds));
+      throw tooManyRequests();
+    }
     await next();
   };
 }

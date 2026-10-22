@@ -18,6 +18,13 @@ export async function sha256Hex(input: string | ArrayBuffer): Promise<string> {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/** Domain-separated HMAC; unlike unkeyed IP hashes, these cannot be enumerated without the secret. */
+export async function hmacHex(secret: string, namespace: string, value: string): Promise<string> {
+  const key = await crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(`${namespace}\0${value}`));
+  return [...new Uint8Array(signature)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 /** Cryptographically random URL-safe token. */
 export function randomToken(bytes = 32): string {
   return toBase64Url(crypto.getRandomValues(new Uint8Array(bytes)));

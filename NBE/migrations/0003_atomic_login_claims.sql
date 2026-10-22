@@ -1,0 +1,1 @@
+ALTER TABLE `auth_tokens` ADD `claimed_session_id` text;

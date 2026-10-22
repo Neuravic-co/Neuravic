@@ -106,7 +106,7 @@ await run("Client portal", async (browser, errors) => {
   await owner.getByRole("button", { name: /Email me a link/ }).click();
   await owner.getByRole("heading", { name: /Check your inbox/ }).waitFor();
   const token = await waitForLoginToken(ownerEmail, afterOrg);
-  await owner.goto(`${BASE_URL}/portal/verify?token=${encodeURIComponent(token)}`);
+  await owner.goto(`${BASE_URL}/portal/verify#token=${encodeURIComponent(token)}`);
   await owner.getByRole("button", { name: "Sign out" }).waitFor({ timeout: 15000 });
   const ownerTabs = await owner.locator(".portal-tabs button").allTextContents();
   check("a client owner sees only the organisation tabs", ownerTabs.join(",") === "Projects,Requests,Activity,Members", ownerTabs.join(", "));
@@ -120,10 +120,12 @@ await run("Client portal", async (browser, errors) => {
   await owner.getByText(/someone else needs to approve/).waitFor();
   check("requester cannot approve their own request", true);
 
-  await owner.getByLabel("Add a comment").fill("Please prioritise this one.");
+  const injectionText = '<img src=x onerror="window.__injected=true">';
+  await owner.getByLabel("Add a comment").fill(injectionText);
   await owner.getByRole("button", { name: "Post comment" }).click();
-  await owner.getByText("Please prioritise this one.").waitFor();
+  await owner.getByText(injectionText, { exact: true }).waitFor();
   check("comment posted", true);
+  check("comment markup is escaped as text", !(await owner.evaluate(() => window.__injected)));
 
   writeFileSync(`${SCREENSHOTS}/note.txt`, "hello portal");
   await owner.locator('input[type="file"]').setInputFiles(`${SCREENSHOTS}/note.txt`);
