@@ -2,29 +2,42 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { effectiveRole, type ClientTab, type Me, type Org } from "@/lib/portal";
+import { CLIENTS_SECTION, type WorkspaceSectionId } from "@/lib/workspace";
 import { ActivityView } from "./activity-view";
 import { MembersView } from "./members-view";
 import { ProjectsView } from "./projects-view";
 import { RequestDetail } from "./request-detail";
 import { RequestsView } from "./requests-view";
-import { SessionProvider, useMe, useSession } from "./session";
+import { useMe, useSession } from "./session";
 import { SignIn } from "./sign-in";
 import { LeadsView, OrganisationsView } from "./staff-views";
 import { Workspace } from "./workspace";
+import { WorkspaceSection } from "./workspace-section";
 import { usePaged } from "./use-query";
 import { Empty, ErrorNote, Loading } from "./ui";
 
+/** The staff home at /portal. Clients have no workspace, so they go straight to the client portal. */
 export function PortalApp() {
   return (
-    <SessionProvider>
-      <Gate />
-    </SessionProvider>
+    <Gate>
+      <Home />
+    </Gate>
   );
 }
 
-function Gate() {
+/** A full workspace page, or the client portal at /portal/clients. Staff only. */
+export function PortalSectionApp({ section }: { section: WorkspaceSectionId | typeof CLIENTS_SECTION }) {
+  return (
+    <Gate>
+      <SectionPage section={section} />
+    </Gate>
+  );
+}
+
+function Gate({ children }: { children: ReactNode }) {
   const { state, refresh } = useSession();
 
   if (state.status === "loading") {
@@ -48,28 +61,35 @@ function Gate() {
   if (state.status === "anonymous") {
     return <SignIn notice={state.expired ? "Your session ended. Sign in again to continue." : undefined} />;
   }
-  return <Home />;
+  return children;
 }
 
-/** Staff land on the workspace; clients, and staff who open the client portal, get the portal shell. */
+/** Staff land on the workspace; clients get the client portal. */
 function Home() {
   const me = useMe();
-  const isStaff = me.user.staffRole !== null;
-  const [clientTab, setClientTab] = useState<ClientTab | null>(null);
-  const [showClients, setShowClients] = useState(!isStaff);
+  if (me.user.staffRole === null) return <Shell initialTab={null} />;
+  return <Workspace me={me} />;
+}
 
-  if (!showClients) {
-    return (
-      <Workspace
-        me={me}
-        onOpenClientPortal={(tab) => {
-          setClientTab(tab);
-          setShowClients(true);
-        }}
-      />
-    );
-  }
-  return <Shell initialTab={clientTab} onBackToWorkspace={isStaff ? () => setShowClients(false) : undefined} />;
+function SectionPage({ section }: { section: WorkspaceSectionId | typeof CLIENTS_SECTION }) {
+  const me = useMe();
+  const router = useRouter();
+  const isStaff = me.user.staffRole !== null;
+
+  useEffect(() => {
+    if (!isStaff) router.replace("/portal");
+  }, [isStaff, router]);
+
+  if (!isStaff) return null;
+  if (section === CLIENTS_SECTION) return <Shell initialTab={readHashTab()} backHref="/portal/tools" />;
+  return <WorkspaceSection section={section} me={me} />;
+}
+
+const CLIENT_TABS: ClientTab[] = ["projects", "requests", "activity", "members", "organisations", "leads"];
+
+function readHashTab(): ClientTab | null {
+  const hash = window.location.hash.slice(1);
+  return (CLIENT_TABS as string[]).includes(hash) ? (hash as ClientTab) : null;
 }
 
 type Tab = ClientTab;
@@ -110,7 +130,7 @@ function useOrgs(me: Me) {
   return { orgs, loading: staffSeesAll && all.loading, error: all.error, reload: all.reload };
 }
 
-function Shell({ initialTab, onBackToWorkspace }: { initialTab: Tab | null; onBackToWorkspace?: () => void }) {
+function Shell({ initialTab, backHref }: { initialTab: Tab | null; backHref?: string }) {
   const me = useMe();
   const { signOut } = useSession();
   const { orgs, loading: orgsLoading, error: orgsError, reload: reloadOrgs } = useOrgs(me);
@@ -157,10 +177,10 @@ function Shell({ initialTab, onBackToWorkspace }: { initialTab: Tab | null; onBa
           <Image src="/assets/neuravic-logo.png" alt="Neuravic" width={617} height={120} unoptimized priority />
         </Link>
         <span className="portal-topbar__label">Portal</span>
-        {onBackToWorkspace ? (
-          <button type="button" className="portal-link" onClick={onBackToWorkspace}>
-            ← Workspace
-          </button>
+        {backHref ? (
+          <Link className="portal-link" href={backHref}>
+            ← Tools
+          </Link>
         ) : null}
         <div className="portal-topbar__spacer" />
         {orgs.length > 0 ? (

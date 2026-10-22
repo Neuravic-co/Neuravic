@@ -867,6 +867,9 @@ button.portal-row:focus-visible {
 /* Each tab is a card with two cut corners, like the triangles in the Neuravic mark. The outline is the card
    itself and a slightly smaller copy sits on top of it, because clip-path would cut a real border off. */
 .ws-tabs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
@@ -900,6 +903,7 @@ button.portal-row:focus-visible {
   cursor: pointer;
   font: inherit;
   text-align: left;
+  text-decoration: none;
   transition: background 300ms var(--ease-out);
 }
 
@@ -984,7 +988,8 @@ button.portal-row:focus-visible {
   background: var(--slate);
 }
 
-.ws-card h3 {
+.ws-card h3,
+.ws-card__title {
   margin-bottom: 1rem;
   color: var(--blue-text);
   font-size: 0.7rem;
@@ -1512,4 +1517,377 @@ button.ws-tool:focus-visible {
   font-size: 0.82rem;
   line-height: 1.5;
   text-align: center;
+}
+
+/* Section pages: tabs down the left */
+
+.ws-section__head {
+  margin: 0.75rem 0 1.75rem;
+}
+
+.ws .ws-section__head h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 300;
+  letter-spacing: -0.04em;
+}
+
+.ws-section__head p {
+  margin: 0.5rem 0 0;
+  color: var(--portal-text-2);
+  font-size: 0.95rem;
+}
+
+.ws-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--portal-text-2);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.ws-back:hover,
+.ws-back:focus-visible {
+  color: var(--paper);
+}
+
+.ws-section__body {
+  display: grid;
+  grid-template-columns: 13.5rem minmax(0, 1fr);
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+  align-items: start;
+}
+
+.ws-section__body.is-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.ws-section__body .ws-panel {
+  margin-top: 0;
+  min-width: 0;
+}
+
+.ws-side {
+  position: sticky;
+  top: 1.5rem;
+  display: grid;
+  gap: 0.25rem;
+  padding-left: 0.25rem;
+  border-left: 1px solid var(--portal-line);
+}
+
+.ws-side__tab {
+  margin-left: -1px;
+  padding: 0.7rem 1rem;
+  border: 0;
+  border-left: 2px solid transparent;
+  background: none;
+  color: var(--portal-text-2);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.92rem;
+  text-align: left;
+  transition:
+    color 200ms var(--ease-out),
+    border-color 200ms var(--ease-out),
+    background 200ms var(--ease-out);
+}
+
+.ws-side__tab:hover {
+  color: var(--paper);
+}
+
+.ws-side__tab[aria-selected="true"] {
+  border-left-color: var(--blue);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--blue) 16%, transparent), transparent);
+  color: var(--paper);
+}
+
+.ws-side__tab:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+.ws-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.ws-people,
+.ws-papers,
+.ws-bullets {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ws-people li,
+.ws-papers li {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-top: 1px solid var(--portal-line);
+}
+
+.ws-people li:first-child,
+.ws-papers li:first-child {
+  border-top: 0;
+}
+
+.ws-people li div,
+.ws-papers li div {
+  display: grid;
+  flex: 1;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.ws-people strong,
+.ws-papers strong {
+  font-weight: 400;
+}
+
+.ws-people span,
+.ws-papers span {
+  color: var(--portal-text-2);
+  font-size: 0.82rem;
+}
+
+.ws-people em {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-style: normal;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.ws-avatar--small {
+  width: 2.6rem;
+  height: 2.6rem;
+  font-size: 0.85rem;
+}
+
+.ws-status {
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--portal-line-strong);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-style: normal;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ws-status--valid {
+  border-color: color-mix(in srgb, #4ade80 55%, transparent);
+  color: #86efac;
+}
+
+.ws-status--expiring {
+  border-color: color-mix(in srgb, #fbbf24 55%, transparent);
+  color: #fcd34d;
+}
+
+.ws-status--missing {
+  border-color: color-mix(in srgb, #f87171 55%, transparent);
+  color: #fca5a5;
+}
+
+.ws-bullets li {
+  padding: 0.55rem 0 0.55rem 1.1rem;
+  border-left: 2px solid var(--blue);
+  color: var(--portal-text-2);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.ws-bullets li + li {
+  margin-top: 0.5rem;
+}
+
+.ws-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--portal-text-2);
+  font-size: 0.85rem;
+}
+
+.ws-toolbar select,
+.ws-search input {
+  min-height: 2.5rem;
+  border: 1px solid var(--portal-line-strong);
+  border-radius: 0.6rem;
+  background: var(--slate);
+  color: var(--paper);
+  font: inherit;
+  padding: 0 0.8rem;
+}
+
+.ws-calendar__month-wrap {
+  min-width: 0;
+}
+
+.ws-balance {
+  margin: 0 0 0.75rem;
+  color: var(--portal-text-2);
+  font-size: 0.9rem;
+}
+
+.ws-balance strong {
+  color: var(--paper);
+  font-size: 2.2rem;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+}
+
+.ws-meter {
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--portal-line);
+}
+
+.ws-meter i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), #9db1ff);
+}
+
+/* Tools search and filter */
+
+.ws-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--portal-text-2);
+}
+
+.ws-search > svg {
+  flex: none;
+}
+
+.ws-search input {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.ws-search input:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.ws-filter {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--portal-line-strong);
+  border-radius: 999px;
+}
+
+.ws-filter button {
+  padding: 0.55rem 1rem;
+  border: 0;
+  background: none;
+  color: var(--portal-text-2);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+}
+
+.ws-filter button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--blue) 30%, transparent);
+  color: var(--paper);
+}
+
+.ws-filter button:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+.ws-count {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.ws-section__body a.ws-tool {
+  text-decoration: none;
+}
+
+a.ws-tool:hover,
+a.ws-tool:focus-visible {
+  border-color: var(--blue);
+  box-shadow: 0 1rem 2.5rem -1.5rem color-mix(in srgb, var(--blue) 80%, transparent);
+  transform: translateY(-0.25rem);
+}
+
+.ws-tool em.ws-licence {
+  position: static;
+  justify-self: start;
+  margin-top: 0.4rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--portal-line-strong);
+  border-radius: 999px;
+  color: var(--portal-text-2);
+}
+
+.ws-tool em.ws-licence--open {
+  border-color: color-mix(in srgb, #4ade80 50%, transparent);
+  color: #86efac;
+}
+
+.ws-tool small {
+  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ws .ws-tool-grid + .ws-subtitle,
+.ws-stack > section > .ws-subtitle {
+  margin-top: 1rem;
+}
+
+@media (max-width: 52rem) {
+  .ws-section__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ws-side {
+    position: static;
+    display: flex;
+    overflow-x: auto;
+    padding: 0 0 0.25rem;
+    border-bottom: 1px solid var(--portal-line);
+    border-left: 0;
+  }
+
+  .ws-side__tab {
+    margin: 0 0 -1px;
+    border-bottom: 2px solid transparent;
+    border-left: 0;
+    white-space: nowrap;
+  }
+
+  .ws-side__tab[aria-selected="true"] {
+    border-bottom-color: var(--blue);
+    background: none;
+  }
+}
+
+/* The home cards sit in the middle of the page */
+
+.ws-home {
+  display: grid;
+  min-height: calc(var(--screen-h, 100vh) - 14rem);
+  align-content: center;
+}
+
+.ws-home .ws-tab {
+  min-height: clamp(11rem, 26vh, 15rem);
 }

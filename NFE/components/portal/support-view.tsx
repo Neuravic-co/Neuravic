@@ -2,7 +2,7 @@
 
 import { Mail } from "lucide-react";
 import { useId, useState, type FormEvent } from "react";
-import { SUPPORT_EMAIL, type Me } from "@/lib/portal";
+import { mailtoUrl, SUPPORT_EMAIL, type Me } from "@/lib/portal";
 import { Field } from "./ui";
 
 const CATEGORIES = ["Access and sign-in", "Hardware", "Software", "Network", "Security concern", "Something else"];
@@ -24,7 +24,7 @@ const ANSWERS = [
   },
 ];
 
-export function SupportView({ me }: { me: Me }) {
+export function TicketForm({ me }: { me: Me }) {
   const id = useId();
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [priority, setPriority] = useState(PRIORITIES[1]);
@@ -41,13 +41,12 @@ export function SupportView({ me }: { me: Me }) {
     if (Object.keys(next).length > 0) return;
 
     const body = [`Category: ${category}`, `Priority: ${priority}`, `From: ${me.user.name ?? me.user.email} <${me.user.email}>`, "", details.trim()].join("\n");
-    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`[IT] ${subject.trim()}`)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoUrl(`[IT] ${subject.trim()}`, body);
   }
 
   return (
-    <div className="ws-support">
-      <section className="ws-card ws-support__form">
-        <h2>Raise a ticket</h2>
+    <section className="ws-card">
+        <h2 className="ws-card__title">Raise a ticket</h2>
         <p className="ws-lede">Describe the problem and we will pick it up. This opens an email to the IT team with the details filled in.</p>
         <form className="portal-form" onSubmit={submit} noValidate>
           <div className="portal-form__row">
@@ -91,26 +90,130 @@ export function SupportView({ me }: { me: Me }) {
             Create ticket by email
           </button>
         </form>
-      </section>
+    </section>
+  );
+}
 
-      <div className="ws-support__side">
-        <section className="ws-card">
-          <h3>Contact IT directly</h3>
-          <a className="ws-mail" href={`mailto:${SUPPORT_EMAIL}`}>
-            <Mail aria-hidden="true" size={18} strokeWidth={1.5} />
-            {SUPPORT_EMAIL}
-          </a>
-        </section>
-        <section className="ws-card">
-          <h3>Quick answers</h3>
-          {ANSWERS.map((item) => (
-            <details key={item.question} className="ws-answer">
-              <summary>{item.question}</summary>
-              <p>{item.answer}</p>
-            </details>
+const REQUEST_KINDS = [
+  { id: "equipment", label: "Equipment", hint: "Laptop, screen, phone, headset" },
+  { id: "access", label: "Access", hint: "A system, folder or tool" },
+  { id: "software", label: "Software", hint: "A licence or install" },
+  { id: "account", label: "New starter account", hint: "Email, chat and tools for someone joining" },
+];
+
+export function RequestsView({ me }: { me: Me }) {
+  const id = useId();
+  const [kind, setKind] = useState(REQUEST_KINDS[0].id);
+  const [what, setWhat] = useState("");
+  const [error, setError] = useState<string>();
+  const current = REQUEST_KINDS.find((item) => item.id === kind) ?? REQUEST_KINDS[0];
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    if (what.trim().length < 5) {
+      setError("Say what you need.");
+      return;
+    }
+    setError(undefined);
+    const body = [`Type: ${current.label}`, `From: ${me.user.name ?? me.user.email} <${me.user.email}>`, "", what.trim()].join("\n");
+    window.location.href = mailtoUrl(`[Request] ${current.label}`, body);
+  }
+
+  return (
+    <section className="ws-card">
+      <h2 className="ws-card__title">Make a request</h2>
+      <p className="ws-lede">Ask for equipment, access or software. This opens an email to the IT team with the details filled in.</p>
+      <form className="portal-form" onSubmit={submit} noValidate>
+        <Field label="What kind of request" htmlFor={`${id}-kind`} hint={current.hint}>
+          <select id={`${id}-kind`} value={kind} onChange={(e) => setKind(e.target.value)}>
+            {REQUEST_KINDS.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="What you need" htmlFor={`${id}-what`} error={error}>
+          <textarea
+            id={`${id}-what`}
+            rows={4}
+            value={what}
+            onChange={(e) => setWhat(e.target.value)}
+            maxLength={2000}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? `${id}-what-error` : undefined}
+          />
+        </Field>
+        <button type="submit" className="portal-button portal-button--primary">
+          Send request by email
+        </button>
+      </form>
+    </section>
+  );
+}
+
+export function MyTicketsView() {
+  return (
+    <section className="ws-card">
+      <h2 className="ws-card__title">My tickets</h2>
+      <p className="ws-empty">No tickets to show.</p>
+      <p className="ws-notice ws-notice--inline">
+        Tickets are sent by email for now, so replies arrive in your inbox. A list of your open and closed tickets will appear here once tickets are stored in the portal.
+      </p>
+    </section>
+  );
+}
+
+const SECURITY_TIPS = [
+  "Use a password manager and a different password for every account.",
+  "Never share a sign-in link. It works for whoever opens it.",
+  "Lock your screen when you step away.",
+  "Be careful with unexpected attachments and links, even from people you know.",
+  "Report a lost or stolen device straight away.",
+];
+
+export function SecurityView({ me }: { me: Me }) {
+  const report = mailtoUrl("[Security] Concern", `From: ${me.user.name ?? me.user.email} <${me.user.email}>\n\n`);
+  return (
+    <div className="ws-grid">
+      <section className="ws-card">
+        <h2 className="ws-card__title">Report a concern</h2>
+        <p className="ws-lede">If you think an account, device or message is not safe, tell us now. Do not share the details anywhere else.</p>
+        <a className="portal-button portal-button--primary" href={report}>
+          Report by email
+        </a>
+      </section>
+      <section className="ws-card">
+        <h2 className="ws-card__title">Stay safe</h2>
+        <ul className="ws-bullets">
+          {SECURITY_TIPS.map((tip) => (
+            <li key={tip}>{tip}</li>
           ))}
-        </section>
-      </div>
+        </ul>
+      </section>
+    </div>
+  );
+}
+
+export function HelpView() {
+  return (
+    <div className="ws-grid">
+      <section className="ws-card">
+        <h2 className="ws-card__title">Contact IT directly</h2>
+        <a className="ws-mail" href={`mailto:${SUPPORT_EMAIL}`}>
+          <Mail aria-hidden="true" size={18} strokeWidth={1.5} />
+          {SUPPORT_EMAIL}
+        </a>
+      </section>
+      <section className="ws-card">
+        <h2 className="ws-card__title">Quick answers</h2>
+        {ANSWERS.map((item) => (
+          <details key={item.question} className="ws-answer">
+            <summary>{item.question}</summary>
+            <p>{item.answer}</p>
+          </details>
+        ))}
+      </section>
     </div>
   );
 }

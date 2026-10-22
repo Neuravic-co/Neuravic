@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PortalProviders } from "@/components/portal/portal-providers";
 import "./portal.css";
 
 export const metadata: Metadata = {
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <PortalProviders>{children}</PortalProviders>;
 }

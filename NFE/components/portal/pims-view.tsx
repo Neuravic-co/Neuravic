@@ -1,6 +1,7 @@
 "use client";
 
 import { STAFF_ROLE_LABELS, type Me } from "@/lib/portal";
+import { PAPER_LABELS, SAMPLE_CONTRACT, SAMPLE_HR, SAMPLE_PAPERS, SAMPLE_TEAM } from "@/lib/workspace";
 
 const NOT_ADDED = "Not added yet";
 
@@ -14,7 +15,7 @@ function initials(name: string | null, email: string) {
 function Details({ title, rows }: { title: string; rows: { label: string; value: string | null }[] }) {
   return (
     <section className="ws-card">
-      <h3>{title}</h3>
+      <h2 className="ws-card__title">{title}</h2>
       <dl className="ws-details">
         {rows.map((row) => (
           <div key={row.label}>
@@ -28,7 +29,7 @@ function Details({ title, rows }: { title: string; rows: { label: string; value:
 }
 
 /** Personal information. Name, email, role and organisations come from the account; the rest is not stored yet. */
-export function PimsView({ me, details = {} }: { me: Me; details?: Record<string, string> }) {
+export function PersonalInfo({ me, details = {} }: { me: Me; details?: Record<string, string> }) {
   const { user, memberships } = me;
   const detail = (label: string) => details[label] ?? null;
   return (
@@ -81,7 +82,7 @@ export function PimsView({ me, details = {} }: { me: Me; details?: Record<string
           ]}
         />
         <section className="ws-card">
-          <h3>Organisations</h3>
+          <h2 className="ws-card__title">Organisations</h2>
           {memberships.length > 0 ? (
             <ul className="ws-chips">
               {memberships.map((membership) => (
@@ -96,6 +97,115 @@ export function PimsView({ me, details = {} }: { me: Me; details?: Record<string
           )}
         </section>
       </div>
+    </div>
+  );
+}
+
+export function TeamView({ me }: { me: Me }) {
+  return (
+    <div className="ws-stack">
+      <section className="ws-card">
+        <h2 className="ws-card__title">Your team</h2>
+        <ul className="ws-people">
+          {SAMPLE_TEAM.map((person) => (
+            <li key={person.name}>
+              <span className="ws-avatar ws-avatar--small" aria-hidden="true">
+                {initials(person.name, "")}
+              </span>
+              <div>
+                <strong>{person.name}</strong>
+                <span>
+                  {person.role} · {person.city}
+                </span>
+              </div>
+              <em>{person.relation}</em>
+            </li>
+          ))}
+        </ul>
+        <p className="ws-notice ws-notice--inline">
+          Example people. Your real team appears here once it is set up{me.user.staffRole ? "" : " for your account"}.
+        </p>
+      </section>
+    </div>
+  );
+}
+
+export function PapersView() {
+  return (
+    <section className="ws-card">
+      <h2 className="ws-card__title">Papers</h2>
+      <ul className="ws-papers">
+        {SAMPLE_PAPERS.map((paper) => (
+          <li key={paper.name}>
+            <div>
+              <strong>{paper.name}</strong>
+              <span>{paper.detail}</span>
+            </div>
+            <em className={`ws-status ws-status--${paper.status}`}>{PAPER_LABELS[paper.status]}</em>
+          </li>
+        ))}
+      </ul>
+      <p className="ws-notice ws-notice--inline">Examples. Uploading and checking papers opens once documents are stored securely.</p>
+    </section>
+  );
+}
+
+function Rows({ rows }: { rows: { label: string; value: string }[] }) {
+  return (
+    <dl className="ws-details">
+      {rows.map((row) => (
+        <div key={row.label}>
+          <dt>{row.label}</dt>
+          <dd>{row.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+export function HrView() {
+  return (
+    <div className="ws-grid">
+      <section className="ws-card">
+        <h2 className="ws-card__title">Employment</h2>
+        <Rows rows={SAMPLE_HR.employment} />
+      </section>
+      <section className="ws-card">
+        <h2 className="ws-card__title">Pay</h2>
+        <Rows rows={SAMPLE_HR.payroll} />
+      </section>
+      <section className="ws-card">
+        <h2 className="ws-card__title">Benefits</h2>
+        <ul className="ws-chips">
+          {SAMPLE_HR.benefits.map((benefit) => (
+            <li key={benefit}>{benefit}</li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+}
+
+export function ContractView() {
+  return (
+    <div className="ws-grid">
+      <section className="ws-card">
+        <h2 className="ws-card__title">Contract terms</h2>
+        <Rows rows={SAMPLE_CONTRACT.terms} />
+      </section>
+      <section className="ws-card">
+        <h2 className="ws-card__title">Documents</h2>
+        <ul className="ws-papers">
+          {SAMPLE_CONTRACT.documents.map((name) => (
+            <li key={name}>
+              <div>
+                <strong>{name}</strong>
+                <span>Copy available from HR</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   );
 }

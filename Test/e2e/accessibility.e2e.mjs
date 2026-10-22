@@ -46,13 +46,18 @@ await run("Accessibility", async (browser, errors) => {
   await context.addCookies([cookie]);
   await page.goto(`${BASE_URL}/portal`, { waitUntil: "networkidle" });
   await page.getByRole("button", { name: "Sign out" }).waitFor();
-  await scan(page, "portal workspace (PIMS)");
-  for (const tab of ["Calendar", "Tools", "IT & Support"]) {
-    await page.getByRole("tab", { name: new RegExp(tab) }).click();
-    await scan(page, `portal workspace (${tab})`);
+  await scan(page, "portal workspace (home)");
+  for (const section of ["pims", "calendar", "support", "tools"]) {
+    await page.goto(`${BASE_URL}/portal/${section}`, { waitUntil: "networkidle" });
+    await page.getByRole("heading", { level: 1 }).waitFor();
+    const tabs = await page.getByRole("tab").allTextContents();
+    if (tabs.length === 0) await scan(page, `portal ${section}`);
+    for (const label of tabs) {
+      await page.getByRole("tab", { name: label, exact: true }).click();
+      await scan(page, `portal ${section} / ${label}`);
+    }
   }
-  await page.getByRole("tab", { name: /Tools/ }).click();
-  await page.getByRole("button", { name: /^Client portal/ }).click();
+  await page.goto(`${BASE_URL}/portal/clients`, { waitUntil: "networkidle" });
   await page.getByRole("button", { name: "Enquiries" }).waitFor();
   await scan(page, "portal (staff view)");
 

@@ -1,122 +1,158 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Mail } from "lucide-react";
+import { useCallback, useId, useMemo, useState, type FormEvent } from "react";
+import { mailtoUrl, type Me } from "@/lib/portal";
+import { COUNTRY_LABELS, FIXED_HOLIDAYS, LEAVE, type Country, type LeaveKind } from "@/lib/workspace";
+import { MonthGrid } from "./month-grid";
+import { Field } from "./ui";
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const monthName = new Intl.DateTimeFormat("en-GB", { month: "long" });
 
-/** Example events so the layout can be judged; they follow the month being viewed. */
-const SAMPLE_EVENTS = [
-  { day: 3, title: "Team stand-up", kind: "Meeting" },
-  { day: 9, title: "Client review", kind: "Meeting" },
-  { day: 14, title: "Sprint deadline", kind: "Deadline" },
-  { day: 21, title: "Planning session", kind: "Meeting" },
-  { day: 27, title: "Annual leave", kind: "Leave" },
-];
+export function HolidaysView() {
+  const [country, setCountry] = useState<Country>("uae");
+  const [year, setYear] = useState(() => new Date().getFullYear());
+  const selectId = useId();
 
-const monthFormat = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" });
-
-function buildMonth(year: number, month: number) {
-  const first = new Date(year, month, 1);
-  const lead = (first.getDay() + 6) % 7; // Monday first
-  const length = new Date(year, month + 1, 0).getDate();
-  const cells: (number | null)[] = [...Array(lead).fill(null), ...Array.from({ length }, (_, i) => i + 1)];
-  while (cells.length % 7 !== 0) cells.push(null);
-  return cells;
-}
-
-export function CalendarView() {
-  const today = useMemo(() => new Date(), []);
-  const [cursor, setCursor] = useState({ year: today.getFullYear(), month: today.getMonth() });
-  const weeks = useMemo(() => {
-    const cells = buildMonth(cursor.year, cursor.month);
-    return Array.from({ length: cells.length / 7 }, (_, i) => cells.slice(i * 7, i * 7 + 7));
-  }, [cursor]);
-  const isThisMonth = cursor.year === today.getFullYear() && cursor.month === today.getMonth();
-  const eventsByDay = useMemo(() => new Map(SAMPLE_EVENTS.map((event) => [event.day, event])), []);
-
-  function shift(step: number) {
-    setCursor(({ year, month }) => {
-      const next = new Date(year, month + step, 1);
-      return { year: next.getFullYear(), month: next.getMonth() };
-    });
-  }
+  const eventsFor = useCallback(
+    (y: number, month: number) => FIXED_HOLIDAYS[country].filter((h) => h.month === month).map((h) => ({ day: h.day, title: h.title })),
+    [country],
+  );
+  const list = useMemo(() => [...FIXED_HOLIDAYS[country]].sort((a, b) => a.month - b.month || a.day - b.day), [country]);
 
   return (
     <div className="ws-calendar">
-      <section className="ws-card ws-calendar__month">
-        <header>
-          <h2>{monthFormat.format(new Date(cursor.year, cursor.month, 1))}</h2>
-          <div>
-            <button type="button" className="ws-icon-button" onClick={() => shift(-1)} aria-label="Previous month">
-              <ChevronLeft aria-hidden="true" size={18} strokeWidth={1.5} />
-            </button>
-            <button
-              type="button"
-              className="ws-pill-button"
-              onClick={() => setCursor({ year: today.getFullYear(), month: today.getMonth() })}
-              disabled={isThisMonth}
-            >
-              Today
-            </button>
-            <button type="button" className="ws-icon-button" onClick={() => shift(1)} aria-label="Next month">
-              <ChevronRight aria-hidden="true" size={18} strokeWidth={1.5} />
-            </button>
-          </div>
-        </header>
-
-        <table className="ws-calendar__grid">
-          <caption className="sr-only">{monthFormat.format(new Date(cursor.year, cursor.month, 1))}</caption>
-          <thead>
-            <tr>
-              {WEEKDAYS.map((day) => (
-                <th key={day} scope="col">
-                  {day}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {weeks.map((week, row) => (
-              <tr key={row}>
-                {week.map((day, column) => {
-                  const event = day ? eventsByDay.get(day) : undefined;
-                  const isToday = isThisMonth && day === today.getDate();
-                  return (
-                    <td
-                      key={column}
-                      className={`ws-day${day ? "" : " is-blank"}${isToday ? " is-today" : ""}${event ? " has-event" : ""}`}
-                      aria-current={isToday ? "date" : undefined}
-                    >
-                      {day ? <span>{day}</span> : null}
-                      {event ? <span className="sr-only">{event.title}</span> : null}
-                      {event ? <i aria-hidden="true" /> : null}
-                    </td>
-                  );
-                })}
-              </tr>
+      <div className="ws-stack">
+        <div className="ws-toolbar">
+          <label htmlFor={selectId}>Country</label>
+          <select id={selectId} value={country} onChange={(e) => setCountry(e.target.value as Country)}>
+            {(Object.keys(COUNTRY_LABELS) as Country[]).map((key) => (
+              <option key={key} value={key}>
+                {COUNTRY_LABELS[key]}
+              </option>
             ))}
-          </tbody>
-        </table>
-      </section>
-
+          </select>
+        </div>
+        <MonthGrid eventsFor={eventsFor} onMonthChange={setYear} />
+      </div>
       <section className="ws-card ws-calendar__upcoming">
-        <h3>Coming up</h3>
+        <h2 className="ws-card__title">Public holidays {year}</h2>
         <ul>
-          {SAMPLE_EVENTS.map((event) => (
-            <li key={event.day}>
+          {list.map((holiday) => (
+            <li key={`${holiday.month}-${holiday.day}`}>
               <span className="ws-date" aria-hidden="true">
-                {event.day}
+                {holiday.day}
               </span>
               <div>
-                <strong>{event.title}</strong>
-                <span>{event.kind}</span>
+                <strong>{holiday.title}</strong>
+                <span>{monthName.format(new Date(year, holiday.month, 1))}</span>
               </div>
             </li>
           ))}
         </ul>
-        <p className="ws-notice ws-notice--inline">Example events. Your own calendar will appear here once it is connected.</p>
+        <p className="ws-notice ws-notice--inline">
+          Fixed-date holidays only. Holidays that follow the moon, such as Eid, are announced each year and added then.
+        </p>
       </section>
+    </div>
+  );
+}
+
+export function LeaveView({ kind, me }: { kind: LeaveKind; me: Me }) {
+  const config = LEAVE[kind];
+  const id = useId();
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [error, setError] = useState<string>();
+  const remaining = config.entitlement !== undefined ? config.entitlement - (config.taken ?? 0) : null;
+  const percent = config.entitlement ? Math.round(((config.taken ?? 0) / config.entitlement) * 100) : 0;
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!from || !to || to < from) {
+      setError("Choose a start date and an end date that is the same or later.");
+      return;
+    }
+    setError(undefined);
+    const body = [`Type: ${config.label}`, `From: ${from}`, `To: ${to}`, `Name: ${me.user.name ?? me.user.email} <${me.user.email}>`].join("\n");
+    window.location.href = mailtoUrl(`[Leave] ${config.label} request`, body);
+  }
+
+  return (
+    <div className="ws-grid">
+      <section className="ws-card">
+        <h2 className="ws-card__title">{config.label}</h2>
+        <p className="ws-lede">{config.summary}</p>
+        {remaining !== null && config.entitlement ? (
+          <>
+            <p className="ws-balance">
+              <strong>{remaining}</strong> of {config.entitlement} days left
+            </p>
+            <div className="ws-meter" role="img" aria-label={`${config.taken ?? 0} of ${config.entitlement} days taken`}>
+              <i style={{ width: `${percent}%` }} />
+            </div>
+          </>
+        ) : null}
+        {config.scheduled ? (
+          <ul className="ws-papers">
+            {config.scheduled.map((item) => (
+              <li key={item.title}>
+                <div>
+                  <strong>{item.title}</strong>
+                  <span>{item.dates}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <p className="ws-notice ws-notice--inline">{config.note} Balances shown are examples.</p>
+      </section>
+
+      {config.mode === "balance" ? (
+        <>
+          <section className="ws-card">
+            <h2 className="ws-card__title">Request</h2>
+            <form className="portal-form" onSubmit={submit} noValidate>
+              <div className="portal-form__row">
+                <Field label="From" htmlFor={`${id}-from`}>
+                  <input id={`${id}-from`} type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+                </Field>
+                <Field label="To" htmlFor={`${id}-to`} error={error}>
+                  <input
+                    id={`${id}-to`}
+                    type="date"
+                    value={to}
+                    onChange={(e) => setTo(e.target.value)}
+                    aria-invalid={error ? true : undefined}
+                    aria-describedby={error ? `${id}-to-error` : undefined}
+                  />
+                </Field>
+              </div>
+              <button type="submit" className="portal-button portal-button--primary">
+                <Mail aria-hidden="true" size={16} strokeWidth={1.5} /> Request by email
+              </button>
+            </form>
+          </section>
+          <section className="ws-card">
+            <h2 className="ws-card__title">History</h2>
+            {config.history.length > 0 ? (
+              <ul className="ws-papers">
+                {config.history.map((entry) => (
+                  <li key={entry.dates}>
+                    <div>
+                      <strong>{entry.dates}</strong>
+                      <span>{entry.days} days</span>
+                    </div>
+                    <em className="ws-status ws-status--valid">{entry.status}</em>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="ws-empty">Nothing taken yet.</p>
+            )}
+          </section>
+        </>
+      ) : null}
     </div>
   );
 }
