@@ -34,6 +34,19 @@ await run("Client portal", async (browser, errors) => {
 
   // Staff admin signs in
   await signInThroughUi(admin, ADMIN_EMAIL);
+
+  // Staff land on the four-tab workspace
+  const workspaceTabs = await admin.getByRole("tab").allTextContents();
+  check("staff land on the four workspace tabs", workspaceTabs.length === 4 && /PIMS/.test(workspaceTabs[0]) && /Calendar/.test(workspaceTabs[1]) && /Tools/.test(workspaceTabs[2]) && /IT & Support/.test(workspaceTabs[3]), workspaceTabs.join(" | "));
+  check("PIMS shows the signed-in email", await admin.getByRole("tabpanel").getByText(ADMIN_EMAIL).first().isVisible());
+  await admin.getByRole("tab", { name: /Calendar/ }).click();
+  check("calendar shows a month grid", (await admin.getByRole("cell").count()) >= 28);
+  await admin.getByRole("tab", { name: /IT & Support/ }).click();
+  await admin.getByRole("button", { name: "Create ticket by email" }).click();
+  check("support form asks for a subject and details", (await admin.locator(".portal-field__error").count()) === 2);
+  await admin.getByRole("tab", { name: /Tools/ }).click();
+  await admin.screenshot({ path: `${SCREENSHOTS}/portal-workspace-tools.png` });
+  await admin.getByRole("button", { name: /^Client portal/ }).click();
   const tabs = await admin.locator(".portal-tabs button").allTextContents();
   check("staff admin sees staff tabs", tabs.includes("Organisations") && tabs.includes("Enquiries"), tabs.join(", "));
 
