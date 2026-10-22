@@ -24,6 +24,27 @@ export interface Me {
   memberships: { orgId: string; name: string; slug: string; role: OrgRole }[];
 }
 
+/** The account shown in the portal preview. Every value is sample data. */
+export const PREVIEW_ME: Me = {
+  user: { id: "preview", email: "sample.user@neuravic.com", name: "Sample User", staffRole: "admin" },
+  memberships: [],
+};
+
+/** Example personal details for the preview, so the PIMS tab shows how a filled-in profile looks. */
+export const PREVIEW_DETAILS: Record<string, string> = {
+  Phone: "+971 00 000 0000",
+  "Date of birth": "01 Jan 1990",
+  Nationality: "Sample country",
+  "Home address": "1 Example Street, Dubai",
+  "Job title": "Operations lead",
+  Department: "Delivery",
+  "Employee ID": "NV-0001",
+  "Start date": "01 Mar 2025",
+  Office: "Dubai",
+  Name: "Sample Contact",
+  Relationship: "Family",
+};
+
 export interface Org {
   id: string;
   name: string;

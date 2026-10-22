@@ -28,8 +28,9 @@ function Details({ title, rows }: { title: string; rows: { label: string; value:
 }
 
 /** Personal information. Name, email, role and organisations come from the account; the rest is not stored yet. */
-export function PimsView({ me }: { me: Me }) {
+export function PimsView({ me, details = {} }: { me: Me; details?: Record<string, string> }) {
   const { user, memberships } = me;
+  const detail = (label: string) => details[label] ?? null;
   return (
     <div className="ws-pims">
       <section className="ws-profile">
@@ -54,29 +55,29 @@ export function PimsView({ me }: { me: Me }) {
           rows={[
             { label: "Full name", value: user.name },
             { label: "Email", value: user.email },
-            { label: "Phone", value: null },
-            { label: "Date of birth", value: null },
-            { label: "Nationality", value: null },
-            { label: "Home address", value: null },
+            { label: "Phone", value: detail("Phone") },
+            { label: "Date of birth", value: detail("Date of birth") },
+            { label: "Nationality", value: detail("Nationality") },
+            { label: "Home address", value: detail("Home address") },
           ]}
         />
         <Details
           title="Employment"
           rows={[
             { label: "Staff role", value: user.staffRole ? STAFF_ROLE_LABELS[user.staffRole] : null },
-            { label: "Job title", value: null },
-            { label: "Department", value: null },
-            { label: "Employee ID", value: null },
-            { label: "Start date", value: null },
-            { label: "Office", value: null },
+            { label: "Job title", value: detail("Job title") },
+            { label: "Department", value: detail("Department") },
+            { label: "Employee ID", value: detail("Employee ID") },
+            { label: "Start date", value: detail("Start date") },
+            { label: "Office", value: detail("Office") },
           ]}
         />
         <Details
           title="Emergency contact"
           rows={[
-            { label: "Name", value: null },
-            { label: "Relationship", value: null },
-            { label: "Phone", value: null },
+            { label: "Name", value: detail("Name") },
+            { label: "Relationship", value: detail("Relationship") },
+            { label: "Phone", value: detail("Phone") },
           ]}
         />
         <section className="ws-card">

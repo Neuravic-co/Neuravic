@@ -42,19 +42,28 @@ const COMING_SOON: { title: string; description: string; icon: LucideIcon }[] = 
   { title: "Knowledge base", description: "How we work, written down.", icon: BookOpen },
 ];
 
-export function ToolsView({ staffRole, onOpen }: { staffRole: Me["user"]["staffRole"]; onOpen: (tab: ClientTab) => void }) {
+export function ToolsView({ staffRole, onOpen }: { staffRole: Me["user"]["staffRole"]; onOpen?: (tab: ClientTab) => void }) {
   return (
     <div className="ws-tools">
       <h2 className="sr-only">Available tools</h2>
       <ul className="ws-tool-grid">
         {LIVE_TOOLS.filter((tool) => tool.allowed(staffRole)).map(({ title, description, icon: Icon, tab }) => (
           <li key={title}>
-            <button type="button" className="ws-tool" onClick={() => onOpen(tab)}>
-              <Icon aria-hidden="true" size={26} strokeWidth={1.25} />
-              <strong>{title}</strong>
-              <span>{description}</span>
-              <ArrowUpRight className="ws-tool__go" aria-hidden="true" size={18} strokeWidth={1.5} />
-            </button>
+            {onOpen ? (
+              <button type="button" className="ws-tool" onClick={() => onOpen(tab)}>
+                <Icon aria-hidden="true" size={26} strokeWidth={1.25} />
+                <strong>{title}</strong>
+                <span>{description}</span>
+                <ArrowUpRight className="ws-tool__go" aria-hidden="true" size={18} strokeWidth={1.5} />
+              </button>
+            ) : (
+              <div className="ws-tool is-soon">
+                <Icon aria-hidden="true" size={26} strokeWidth={1.25} />
+                <strong>{title}</strong>
+                <span>{description}</span>
+                <em>Needs sign-in</em>
+              </div>
+            )}
           </li>
         ))}
       </ul>
