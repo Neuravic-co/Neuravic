@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   check:
+    name: NBE checks
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:

@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   check:
+    name: Security checks
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -29,6 +30,7 @@ jobs:
       - run: node Security/scripts/security-check.mjs --history
 
   codeql:
+    name: CodeQL analysis
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:

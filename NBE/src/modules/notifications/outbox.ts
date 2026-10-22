@@ -90,7 +90,8 @@ async function processJob(deps: Deps, job: OutboxJob): Promise<JobResult> {
     const permanent = error instanceof DeliveryError && !error.retryable;
     const dead = permanent || delay === undefined;
     // Positive jitter preserves the minimum delay and spreads a provider outage across workers.
-    const jitter = delay === undefined ? 0 : Math.floor(crypto.getRandomValues(new Uint32Array(1))[0]! / 2 ** 32 * delay * 0.2);
+    // Retry timing is not secret material; ordinary scheduling randomness is appropriate here.
+    const jitter = delay === undefined ? 0 : Math.floor(Math.random() * delay * 0.2);
     await db
       .update(schema.outbox)
       .set({
