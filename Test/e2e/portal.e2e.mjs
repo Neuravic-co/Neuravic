@@ -35,18 +35,44 @@ await run("Client portal", async (browser, errors) => {
   // Staff admin signs in
   await signInThroughUi(admin, ADMIN_EMAIL);
 
-  // Staff land on the four-tab workspace
-  const workspaceTabs = await admin.getByRole("tab").allTextContents();
-  check("staff land on the four workspace tabs", workspaceTabs.length === 4 && /PIMS/.test(workspaceTabs[0]) && /Calendar/.test(workspaceTabs[1]) && /Tools/.test(workspaceTabs[2]) && /IT & Support/.test(workspaceTabs[3]), workspaceTabs.join(" | "));
+  // Staff land on the workspace: four cards, each a link to a full page
+  const cards = await admin.getByRole("navigation", { name: "Workspace sections" }).getByRole("link").allTextContents();
+  check("staff land on the four workspace cards", cards.length === 4 && /PIMS/.test(cards[0]) && /Calendar/.test(cards[1]) && /Tools/.test(cards[2]) && /IT & Support/.test(cards[3]), cards.join(" | "));
+
+  await admin.getByRole("link", { name: /PIMS/ }).click();
+  await admin.waitForURL(/\/portal\/pims$/);
+  const pimsTabs = await admin.getByRole("tab").allTextContents();
+  check("PIMS has five tabs on the left", pimsTabs.join(",") === "Personal info,Team,Papers,HR,Contract", pimsTabs.join(", "));
   check("PIMS shows the signed-in email", await admin.getByRole("tabpanel").getByText(ADMIN_EMAIL).first().isVisible());
-  await admin.getByRole("tab", { name: /Calendar/ }).click();
+  await admin.getByRole("tab", { name: "Papers" }).click();
+  await admin.getByRole("heading", { name: "Papers" }).waitFor();
+  check("PIMS papers tab opens", true);
+
+  await admin.goto(`${BASE_URL}/portal/calendar`, { waitUntil: "networkidle" });
+  const calendarTabs = await admin.getByRole("tab").allTextContents();
+  check("calendar has holidays and four leave tabs", calendarTabs.join(",") === "Public holidays,Annual leave,Sick leave,Maternity leave,Forced leave", calendarTabs.join(", "));
   check("calendar shows a month grid", (await admin.getByRole("cell").count()) >= 28);
-  await admin.getByRole("tab", { name: /IT & Support/ }).click();
+  await admin.getByRole("tab", { name: "Annual leave" }).click();
+  await admin.getByText(/days left/).waitFor();
+  check("annual leave shows a balance", true);
+
+  await admin.goto(`${BASE_URL}/portal/support`, { waitUntil: "networkidle" });
   await admin.getByRole("button", { name: "Create ticket by email" }).click();
   check("support form asks for a subject and details", (await admin.locator(".portal-field__error").count()) === 2);
-  await admin.getByRole("tab", { name: /Tools/ }).click();
+
+  await admin.goto(`${BASE_URL}/portal/tools`, { waitUntil: "networkidle" });
+  const allTools = await admin.locator(".ws-tool").count();
+  await admin.getByRole("button", { name: "Open source" }).click();
+  const openTools = await admin.locator(".ws-tool").count();
+  check("the open source filter narrows the tools", openTools > 0 && openTools < allTools, `${openTools} of ${allTools}`);
+  await admin.getByRole("button", { name: "All", exact: true }).click();
+  await admin.getByLabel("Search tools").fill("grafana");
+  check("search finds a tool", (await admin.locator(".ws-tool").count()) === 1);
+  await admin.getByLabel("Search tools").fill("");
   await admin.screenshot({ path: `${SCREENSHOTS}/portal-workspace-tools.png` });
-  await admin.getByRole("button", { name: /^Client portal/ }).click();
+  await admin.getByRole("link", { name: /^Client portal/ }).click();
+  await admin.waitForURL(/\/portal\/clients/);
+  await admin.getByRole("button", { name: "Organisations" }).waitFor();
   const tabs = await admin.locator(".portal-tabs button").allTextContents();
   check("staff admin sees staff tabs", tabs.includes("Organisations") && tabs.includes("Enquiries"), tabs.join(", "));
 

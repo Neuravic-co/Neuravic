@@ -16,8 +16,13 @@ export const STAFF_ROLE_LABELS: Record<StaffRole, string> = {
   sales: "Sales",
 };
 
-/** Where portal support emails go until tickets are stored by the backend. */
+/** Where portal support and HR emails go until tickets and requests are stored by the backend. */
 export const SUPPORT_EMAIL = "neuravic2026@gmail.com";
+
+/** A mailto link with the subject and body already filled in. */
+export function mailtoUrl(subject: string, body = "", to = SUPPORT_EMAIL) {
+  return `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
 
 export interface Me {
   user: { id: string; email: string; name: string | null; staffRole: StaffRole | null };

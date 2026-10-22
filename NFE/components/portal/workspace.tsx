@@ -1,103 +1,39 @@
-"use client";
-
 import { CalendarDays, LayoutGrid, LifeBuoy, UserRound, type LucideIcon } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { PREVIEW_DETAILS, type ClientTab, type Me } from "@/lib/portal";
-import { CalendarView } from "./calendar-view";
-import { PimsView } from "./pims-view";
-import { useSession } from "./session";
-import { SupportView } from "./support-view";
-import { ToolsView } from "./tools-view";
+import type { Me } from "@/lib/portal";
+import { SECTION_META, WORKSPACE_SECTION_IDS, type WorkspaceSectionId } from "@/lib/workspace";
+import { WorkspaceFrame } from "./workspace-frame";
 
-type WorkspaceTab = "pims" | "calendar" | "tools" | "support";
+const ICONS: Record<WorkspaceSectionId, LucideIcon> = {
+  pims: UserRound,
+  calendar: CalendarDays,
+  tools: LayoutGrid,
+  support: LifeBuoy,
+};
 
-const TABS: { id: WorkspaceTab; label: string; caption: string; icon: LucideIcon }[] = [
-  { id: "pims", label: "PIMS", caption: "Your details", icon: UserRound },
-  { id: "calendar", label: "Calendar", caption: "Your schedule", icon: CalendarDays },
-  { id: "tools", label: "Tools", caption: "Apps and systems", icon: LayoutGrid },
-  { id: "support", label: "IT & Support", caption: "Help when you need it", icon: LifeBuoy },
-];
-
-/** The staff home: four tabs, each a card with two cut corners that echo the Neuravic mark. */
-/** With `preview`, the account is sample data: there is no sign-out and the tools that need the server stay closed. */
-export function Workspace({
-  me,
-  onOpenClientPortal,
-  preview = false,
-}: {
-  me: Me;
-  onOpenClientPortal?: (tab: ClientTab) => void;
-  preview?: boolean;
-}) {
-  const [active, setActive] = useState<WorkspaceTab>("pims");
-
+/** The staff home: four cards with two cut corners that echo the Neuravic mark. Each one opens a full page. */
+export function Workspace({ me, preview = false }: { me: Me; preview?: boolean }) {
   return (
-    <div className="portal-shell ws">
-      <header className="portal-topbar">
-        <Link className="portal-topbar__brand" href="/" aria-label="Neuravic home">
-          <Image src="/assets/neuravic-logo.png" alt="Neuravic" width={617} height={120} unoptimized priority />
-        </Link>
-        <span className="portal-topbar__label">Workspace</span>
-        <div className="portal-topbar__spacer" />
-        {preview ? <span className="ws-badge">Preview</span> : null}
-        <span className="portal-topbar__user" title={me.user.email}>
-          {me.user.name ?? me.user.email}
-        </span>
-        {preview ? null : <SignOut />}
-      </header>
-
-      <main className="ws-main" id="portal-content">
-        <h1 className="sr-only">Neuravic workspace</h1>
-        {preview ? <p className="ws-banner">This is a preview with sample details. Sign-in opens when the portal goes live.</p> : null}
-
-        <div className="ws-tabs" role="tablist" aria-label="Workspace sections">
-          {TABS.map(({ id, label, caption, icon: Icon }, index) => (
-            <div key={id} className="ws-tab-wrap" role="presentation" data-active={active === id}>
-              <button
-                type="button"
-                role="tab"
-                id={`ws-tab-${id}`}
-                aria-selected={active === id}
-                aria-controls={`ws-panel-${id}`}
-                tabIndex={active === id ? 0 : -1}
-                className="ws-tab"
-                onClick={() => setActive(id)}
-                onKeyDown={(event) => {
-                  if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
-                  event.preventDefault();
-                  const step = event.key === "ArrowRight" ? 1 : TABS.length - 1;
-                  const next = TABS[(index + step) % TABS.length].id;
-                  setActive(next);
-                  document.getElementById(`ws-tab-${next}`)?.focus();
-                }}
-              >
-                <span className="ws-tab__number">{String(index + 1).padStart(2, "0")}</span>
-                <Icon className="ws-tab__icon" aria-hidden="true" size={26} strokeWidth={1.25} />
-                <strong>{label}</strong>
-                <span className="ws-tab__caption">{caption}</span>
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <div className="ws-panel" role="tabpanel" id={`ws-panel-${active}`} aria-labelledby={`ws-tab-${active}`} tabIndex={0}>
-          {active === "pims" ? <PimsView me={me} details={preview ? PREVIEW_DETAILS : undefined} /> : null}
-          {active === "calendar" ? <CalendarView /> : null}
-          {active === "tools" ? <ToolsView staffRole={me.user.staffRole} onOpen={onOpenClientPortal} /> : null}
-          {active === "support" ? <SupportView me={me} /> : null}
-        </div>
-      </main>
-    </div>
-  );
-}
-
-function SignOut() {
-  const { signOut } = useSession();
-  return (
-    <button type="button" className="portal-link" onClick={() => void signOut()}>
-      Sign out
-    </button>
+    <WorkspaceFrame me={me} preview={preview}>
+      <h1 className="sr-only">Neuravic workspace</h1>
+      <nav className="ws-home" aria-label="Workspace sections">
+        <ul className="ws-tabs">
+          {WORKSPACE_SECTION_IDS.map((id, index) => {
+            const Icon = ICONS[id];
+            const { label, caption } = SECTION_META[id];
+            return (
+              <li key={id} className="ws-tab-wrap">
+                <Link className="ws-tab" href={`/portal/${id}`}>
+                  <span className="ws-tab__number">{String(index + 1).padStart(2, "0")}</span>
+                  <Icon className="ws-tab__icon" aria-hidden="true" size={26} strokeWidth={1.25} />
+                  <strong>{label}</strong>
+                  <span className="ws-tab__caption">{caption}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    </WorkspaceFrame>
   );
 }
