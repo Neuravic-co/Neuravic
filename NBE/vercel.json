@@ -2,7 +2,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "npm ci",
-  "buildCommand": "",
-  "rewrites": [{ "source": "/(.*)", "destination": "/api" }],
-  "crons": [{ "path": "/internal/maintenance", "schedule": "0 4 * * *" }]
+  "buildCommand": "node scripts/build-vercel.mjs"
 }
