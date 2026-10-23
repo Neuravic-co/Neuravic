@@ -8,7 +8,7 @@ BOOTSTRAP_ADMIN_EMAIL=you@example.com
 # STAFF_MFA_REQUIRED=true  (defaults to true in staging/production, false in development)
 # MAINTENANCE_MODE=false  (owner-controlled API containment; health/version remain available)
 # MALWARE_SCANNER is a private service binding, not an HTTP credential or public callback.
-# TURNSTILE_SECRET=
+# TURNSTILE_SECRET=  (required for contact intake in staging/production; verified hostname must match ALLOWED_ORIGINS)
 # RESEND_API_KEY=
 # SLACK_WEBHOOK_URL=
 # PROXY_SECRET=     (32+ characters; must equal API_PROXY_SECRET on NFE)

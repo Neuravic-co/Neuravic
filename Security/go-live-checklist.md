@@ -32,7 +32,7 @@
 
 ## Exact proposed settings for `main` (owner must apply)
 
-Initially main was unprotected. A later read-only inspection confirms the owner activated **Protect Main Branch**, with no bypass actors. It currently requires mismatched `backend` / `frontend` / `codeql` contexts, uses the Actions source for the separate CodeQL findings result, and has zero required approving reviews. See [exact observed settings and proposed corrections](integration-verification.md#github-ruleset-integration--owner-action-required). The settings below remain the target, not a claim they are all configured. No administrative setting was changed by the agent.
+Read-only reinspection on 23 October confirms the owner corrected **Protect Main Branch** to require all five real check contexts with the correct source applications, including Advanced Security for `CodeQL`, with no bypass actors. The earlier mismatch described in the [historical integration record](integration-verification.md#github-ruleset-integration--owner-action-required) is resolved. Required approvals remain zero, stale/last-push approvals are off, and strict/up-to-date checks are off. The stronger review settings below remain the target, not a claim they are configured. No administrative setting was changed by the agent.
 
 Create one active protection rule matching **`main`** (or an equivalent enforced ruleset with no bypass actors):
 

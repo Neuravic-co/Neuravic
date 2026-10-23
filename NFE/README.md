@@ -64,10 +64,10 @@ npm run build
 
 | Setting (`.env.local`) | Purpose |
 |---|---|
-| `NEXT_PUBLIC_API_BASE_URL` | Where the browser reaches the API. Unset in production: it defaults to same-origin `/api/v1`, so route `yourdomain.com/api/*` to the NBE Worker. |
-| `API_ORIGIN` | Where the server reads site content while rendering. Optional; without it the built-in content is used. |
+| `NEXT_PUBLIC_API_BASE_URL` | Where the browser reaches the API. Leave unset on Vercel to use same-origin `/api/v1` through the built-in server proxy. |
+| `API_ORIGIN` | Required HTTPS backend origin for that API proxy; missing configuration returns 503. Page rendering also uses it for content, with built-in content as a fallback. A working home page does not verify backend connectivity. |
 | `API_PROXY_SECRET` | Server-only shared proxy credential (32+ characters); never expose it through `NEXT_PUBLIC_` variables. |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Optional bot check on the contact form (set `TURNSTILE_SECRET` on NBE too). |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Required for staging/production contact intake; set the matching `TURNSTILE_SECRET` on NBE and configure the actual website hostname. The verifier requires a successful result from a hostname in NBE's `ALLOWED_ORIGINS`. Optional only in development. |
 
 What is connected:
 
