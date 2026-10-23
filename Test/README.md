@@ -30,7 +30,7 @@ cd ../NBE
 npm run test:browser
 ```
 
-On Windows, `CHROMIUM_PATH` can select an existing Chrome executable. The fixture starts a Next.js dev server on a free loopback port, a migrated in-memory API, and a mailbox protected with a random fixture secret. It runs the contact, portal and accessibility suites, then stops its servers. It exercises real API calls, invitation/login flows, projects, requests/approvals, comments, files and staff enquiries; script-like comments must render as escaped text and login credentials must leave the browser URL. No real email is sent, and tokens are never scraped from logs.
+On Windows, `CHROMIUM_PATH` can select an existing Chrome executable. The fixture starts a Next.js dev server on a free loopback port, a migrated in-memory API, and a mailbox protected with a random fixture secret. It runs contact, portal, accessibility and staff MFA suites, then stops its servers. Separate local production servers verify CSP in the two prebuilt frontend runtimes. It exercises real API calls, invitation/login flows, projects, requests/approvals, comments, files and staff enquiries; script-like comments must render as escaped text and login credentials must leave the browser URL. No real email is sent, and tokens are never scraped from logs.
 
 The mailbox lives only under `Test/browser/`; it is not a deployed Worker route. Do not point these mutating tests at production. The lower-level `Test/e2e/*.mjs` scripts require fixture-provided `E2E_BASE_URL`, `E2E_API_URL`, `E2E_MAILBOX_URL` and `E2E_MAILBOX_SECRET`; normally use the wrapper above.
 
