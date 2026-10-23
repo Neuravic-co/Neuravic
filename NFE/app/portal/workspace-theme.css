@@ -1,0 +1,232 @@
+/* The staff workspace (the four tabs and their pages): a light page with white cards, a dark top bar like the
+   main page, and blue accents. Scoped to .ws so the main site and the client area are untouched. */
+
+.portal-shell.ws {
+  --ink: #f2f5fb;
+  --slate: #ffffff;
+  --paper: #0e1424;
+  --portal-line: #dde3ee;
+  --portal-line-strong: #c5cddd;
+  --portal-text-2: #4a566c;
+  --muted: #566078;
+  --blue: #365bff;
+  --blue-text: #2447e6;
+  --ws-ink: #070a12;
+  --ws-shadow: 0 1px 2px rgb(14 20 36 / 0.05), 0 14px 32px -20px rgb(14 20 36 / 0.28);
+  background: var(--ink);
+  color: var(--paper);
+  color-scheme: light;
+}
+
+/* Top bar: dark, like the main site's header. */
+.ws .portal-topbar {
+  --paper: #f5f7fa;
+  --portal-text-2: rgb(245 247 250 / 0.78);
+  --muted: rgb(245 247 250 / 0.66);
+  --portal-line: rgb(245 247 250 / 0.14);
+  background: var(--ws-ink);
+  border-bottom: 1px solid rgb(245 247 250 / 0.1);
+  color: var(--paper);
+}
+
+.ws .portal-topbar .portal-link:hover,
+.ws .portal-topbar .portal-link:focus-visible {
+  color: #fff;
+  border-bottom-color: var(--blue);
+}
+
+.ws .ws-badge {
+  border-color: #6f8bff;
+  background: rgb(54 91 255 / 0.28);
+  color: #fff;
+}
+
+.ws .ws-banner {
+  border-color: rgb(54 91 255 / 0.35);
+  background: #e8eeff;
+  color: #2b3858;
+}
+
+/* Page headings */
+.ws .ws-section__head h1 {
+  color: var(--paper);
+}
+
+.ws .ws-back {
+  color: var(--portal-text-2);
+}
+
+.ws .ws-back:hover,
+.ws .ws-back:focus-visible {
+  color: var(--blue-text);
+}
+
+/* Home: four cards with two cut corners. Pale outline, white face, blue when hovered. */
+.ws .ws-tab-wrap {
+  filter: drop-shadow(0 0.7rem 1.2rem rgb(54 91 255 / 0.14));
+}
+
+.ws .ws-tab {
+  background: #b7c4ee;
+  color: var(--paper);
+}
+
+.ws .ws-tab::before {
+  background: linear-gradient(160deg, #ffffff 30%, #e9eeff);
+}
+
+.ws .ws-tab:hover,
+.ws .ws-tab:focus-visible {
+  background: linear-gradient(135deg, var(--blue), #8ea4ff);
+}
+
+.ws .ws-tab:hover::before,
+.ws .ws-tab:focus-visible::before {
+  background: linear-gradient(160deg, #ffffff, #eaf0ff);
+}
+
+.ws .ws-tab-wrap:hover {
+  filter: drop-shadow(0 0.9rem 1.5rem rgb(54 91 255 / 0.3));
+}
+
+.ws .ws-tab__number,
+.ws .ws-tab__icon {
+  color: var(--blue-text);
+}
+
+.ws .ws-tab strong {
+  color: var(--paper);
+  font-weight: 400;
+}
+
+.ws .ws-tab__caption {
+  color: var(--portal-text-2);
+}
+
+/* Cards */
+.ws .ws-card,
+.ws .ws-tool,
+.ws .ws-search input,
+.ws .ws-toolbar select {
+  box-shadow: var(--ws-shadow);
+}
+
+.ws .ws-card h3,
+.ws .ws-card__title {
+  color: var(--blue-text);
+}
+
+.ws .ws-tool.is-soon,
+.ws .ws-tool.is-soon:hover {
+  box-shadow: none;
+}
+
+.ws a.ws-tool:hover,
+.ws a.ws-tool:focus-visible {
+  border-color: var(--blue);
+  box-shadow: 0 1.2rem 2.4rem -1.4rem rgb(54 91 255 / 0.55);
+}
+
+.ws .ws-tool > svg:first-child {
+  color: var(--blue-text);
+}
+
+/* Side tabs */
+.ws .ws-side__tab[aria-selected="true"] {
+  background: linear-gradient(90deg, rgb(54 91 255 / 0.12), transparent);
+  color: var(--blue-text);
+  font-weight: 500;
+}
+
+/* Forms inside cards: white fields on a white card need a visible edge. */
+.ws .portal-field input,
+.ws .portal-field textarea,
+.ws .portal-field select,
+.ws .ws-search input,
+.ws .ws-toolbar select {
+  border-color: var(--portal-line-strong);
+  background: #fff;
+  color: var(--paper);
+}
+
+.ws .portal-field input:focus-visible,
+.ws .portal-field textarea:focus-visible,
+.ws .portal-field select:focus-visible,
+.ws .ws-search input:focus-visible,
+.ws .ws-toolbar select:focus-visible {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgb(54 91 255 / 0.2);
+  outline: none;
+}
+
+.ws .portal-field [aria-invalid="true"] {
+  border-color: #b42318;
+}
+
+.ws .portal-field__error {
+  color: #b42318;
+}
+
+.ws .portal-button--primary {
+  background: var(--blue);
+  color: #fff;
+}
+
+.ws .portal-button--primary:hover:not(:disabled) {
+  border-color: #2447e6;
+  background: #2447e6;
+  color: #fff;
+}
+
+/* Calendar and avatar sit on blue: keep their text white. */
+.ws .ws-day.is-today > span:not(.sr-only),
+.ws .ws-avatar {
+  color: #fff;
+}
+
+.ws .ws-day.has-event {
+  background: rgb(54 91 255 / 0.06);
+}
+
+.ws .ws-pill-button:hover:not(:disabled),
+.ws .ws-icon-button:hover {
+  border-color: var(--blue);
+  background: rgb(54 91 255 / 0.08);
+}
+
+/* Status colours need to be darker on white. */
+.ws .ws-status--valid,
+.ws .ws-tool em.ws-licence--open {
+  border-color: #6bbf8f;
+  background: #eaf7f0;
+  color: #067647;
+}
+
+.ws .ws-status--expiring {
+  border-color: #e3b25a;
+  background: #fff6e5;
+  color: #93510a;
+}
+
+.ws .ws-status--missing {
+  border-color: #eb9b94;
+  background: #fdeeee;
+  color: #b42318;
+}
+
+.ws .ws-filter button[aria-pressed="true"] {
+  background: var(--blue);
+  color: #fff;
+}
+
+.ws .ws-filter button:hover:not([aria-pressed="true"]) {
+  color: var(--paper);
+}
+
+.ws .ws-meter i {
+  background: linear-gradient(90deg, var(--blue), #8ea4ff);
+}
+
+.ws .ws-notice {
+  border-left-color: var(--blue);
+}
