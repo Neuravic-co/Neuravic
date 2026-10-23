@@ -78,10 +78,13 @@ orgsRoutes.get("/:orgId/members", async (c) => {
   const actor = requireActor(c);
   const orgId = c.req.param("orgId");
   requireOrgRole(actor, orgId, "viewer");
+  const { cursor, limit } = parseQuery(c, pageQuery);
   const rows = await c
     .get("deps")
     .db.select({
       userId: schema.users.id,
+      id: schema.users.id,
+      createdAt: schema.memberships.createdAt,
       email: schema.users.email,
       name: schema.users.name,
       status: schema.users.status,
@@ -89,9 +92,9 @@ orgsRoutes.get("/:orgId/members", async (c) => {
     })
     .from(schema.memberships)
     .innerJoin(schema.users, eq(schema.users.id, schema.memberships.userId))
-    .where(eq(schema.memberships.orgId, orgId))
-    .orderBy(asc(schema.users.email));
-  return c.json({ items: rows });
+    .where(and(eq(schema.memberships.orgId, orgId), olderThan(schema.memberships.createdAt, schema.memberships.userId, cursor)))
+    .orderBy(desc(schema.memberships.createdAt), desc(schema.memberships.userId)).limit(limit + 1);
+  return c.json(toPage(rows, limit));
 });
 
 /** Creates the user if needed, adds the membership and emails a sign-in invitation. */

@@ -4,7 +4,7 @@ import { useId, useState, type FormEvent } from "react";
 import { api } from "@/lib/api";
 import { atLeast, displayName, type Member, type OrgRole } from "@/lib/portal";
 import { useMe } from "./session";
-import { useAction, useQuery } from "./use-query";
+import { useAction, usePaged } from "./use-query";
 import { Badge, Empty, ErrorNote, Field, Loading, SectionHeader } from "./ui";
 
 const ROLES: OrgRole[] = ["viewer", "member", "admin", "owner"];
@@ -12,7 +12,7 @@ const ROLE_RANK: Record<OrgRole, number> = { viewer: 1, member: 2, admin: 3, own
 
 export function MembersView({ orgId, role }: { orgId: string; role: OrgRole }) {
   const me = useMe();
-  const members = useQuery(() => api<{ items: Member[] }>(`/orgs/${orgId}/members`), [orgId]);
+  const members = usePaged<Member>(`/orgs/${orgId}/members`, {});
   const action = useAction();
   const canManage = atLeast(role, "admin");
 
@@ -36,12 +36,12 @@ export function MembersView({ orgId, role }: { orgId: string; role: OrgRole }) {
     <section>
       <SectionHeader title="Members" />
       {canManage ? <InviteForm orgId={orgId} role={role} onInvited={members.reload} /> : null}
-      {members.loading && !members.data ? <Loading label="Loading members" /> : null}
+      {members.loading ? <Loading label="Loading members" /> : null}
       {members.error ? <ErrorNote error={members.error} onRetry={members.reload} /> : null}
       {action.error ? <ErrorNote error={action.error} /> : null}
-      {members.data && members.data.items.length === 0 ? <Empty title="No members yet" /> : null}
+      {!members.loading && members.items.length === 0 ? <Empty title="No members yet" /> : null}
       <ul className="portal-list">
-        {members.data?.items.map((member) => {
+        {members.items.map((member) => {
           const outranks = ROLE_RANK[member.role] > ROLE_RANK[role];
           return (
             <li key={member.userId} className="portal-row portal-row--static">
@@ -79,6 +79,7 @@ export function MembersView({ orgId, role }: { orgId: string; role: OrgRole }) {
           );
         })}
       </ul>
+      {members.hasMore ? <button type="button" className="portal-button" onClick={() => void members.loadMore()} disabled={members.loadingMore}>Load more members</button> : null}
     </section>
   );
 }

@@ -198,15 +198,29 @@ portalRoutes.get("/requests/:id", async (c) => {
       .from(schema.comments)
       .innerJoin(schema.users, eq(schema.users.id, schema.comments.authorId))
       .where(eq(schema.comments.requestId, request.id))
-      .orderBy(asc(schema.comments.createdAt)),
+      .orderBy(desc(schema.comments.createdAt), desc(schema.comments.id)).limit(101),
     deps.db
-      .select({ id: schema.files.id, name: schema.files.name, size: schema.files.size, mime: schema.files.mime, createdAt: schema.files.createdAt, uploadedBy: schema.files.uploadedBy })
+      .select({ id: schema.files.id, name: schema.files.name, size: schema.files.size, mime: schema.files.mime, scanState: schema.files.scanState, createdAt: schema.files.createdAt, uploadedBy: schema.files.uploadedBy })
       .from(schema.files)
       .where(eq(schema.files.requestId, request.id))
       .orderBy(asc(schema.files.createdAt)),
     deps.db.select({ name: schema.users.name, email: schema.users.email }).from(schema.users).where(eq(schema.users.id, request.requestedBy)).limit(1),
   ]);
-  return c.json({ ...request, requesterName: requester?.name ?? null, requesterEmail: requester?.email ?? null, approvals, comments, files });
+  const commentsPage = toPage(comments, 100);
+  return c.json({ ...request, requesterName: requester?.name ?? null, requesterEmail: requester?.email ?? null, approvals, comments: commentsPage.items.reverse(), commentsNextCursor: commentsPage.nextCursor, files });
+});
+
+portalRoutes.get("/requests/:id/comments", async (c) => {
+  const actor = requireActor(c);
+  const deps = c.get("deps");
+  const request = await loadRequest(deps.db, c.req.param("id"));
+  requireOrgRole(actor, request.orgId, "viewer");
+  const { cursor, limit } = parseQuery(c, pageQuery);
+  const rows = await deps.db.select({ ...getTableColumns(schema.comments), authorName: schema.users.name, authorEmail: schema.users.email })
+    .from(schema.comments).innerJoin(schema.users, eq(schema.users.id, schema.comments.authorId))
+    .where(and(eq(schema.comments.requestId, request.id), olderThan(schema.comments.createdAt, schema.comments.id, cursor)))
+    .orderBy(desc(schema.comments.createdAt), desc(schema.comments.id)).limit(limit + 1);
+  return c.json(toPage(rows, limit));
 });
 
 /** Requester (or an org admin) can cancel an open request; admins mark approved work completed. */

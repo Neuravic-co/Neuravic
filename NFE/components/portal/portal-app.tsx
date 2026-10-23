@@ -13,6 +13,7 @@ import { RequestDetail } from "./request-detail";
 import { RequestsView } from "./requests-view";
 import { useMe, useSession } from "./session";
 import { SignIn } from "./sign-in";
+import { StaffMfa } from "./staff-mfa";
 import { LeadsView, OrganisationsView } from "./staff-views";
 import { Workspace } from "./workspace";
 import { WorkspaceSection } from "./workspace-section";
@@ -61,6 +62,7 @@ function Gate({ children }: { children: ReactNode }) {
   if (state.status === "anonymous") {
     return <SignIn notice={state.expired ? "Your session ended. Sign in again to continue." : undefined} />;
   }
+  if (state.status === "mfa") return <StaffMfa />;
   return children;
 }
 

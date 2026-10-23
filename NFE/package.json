@@ -38,6 +38,10 @@
     "tailwind-merge": "3.7.0",
     "vaul": "^1.1.2"
   },
+  "overrides": {
+    "drizzle-kit": { "@esbuild-kit/esm-loader": "npm:tsx@4.23.15" },
+    "satori": { "fflate": "0.7.5" }
+  },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.64.0",
     "@cloudflare/workers-types": "5.20261018.1",

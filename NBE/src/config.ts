@@ -17,6 +17,8 @@ export interface Config {
   ssoPrivateJwk: string | null;
   proxySecret: string | null;
   privacyHashSecret: string;
+  mfaEncryptionKey: string | null;
+  staffMfaRequired: boolean;
   cookieSecure: boolean;
   maxUploadBytes: number;
 }
@@ -35,6 +37,8 @@ const envSchema = z.object({
   NOTIFY_TO: z.string().email(),
   PROXY_SECRET: z.string().min(32).optional(),
   PRIVACY_HASH_SECRET: z.string().min(32).optional(),
+  MFA_ENCRYPTION_KEY: z.string().regex(/^[a-fA-F0-9]{64}$/).optional(),
+  STAFF_MFA_REQUIRED: z.enum(["true", "false"]).optional(),
 });
 
 /** Validates the Worker environment once and returns typed configuration. */
@@ -59,6 +63,14 @@ export function loadConfig(env: Env): Config {
     throw new Error("APP_URL and ALLOWED_ORIGINS must be explicit website origins (HTTPS outside development)");
   }
   if (deployed && !env.PRIVACY_HASH_SECRET) throw new Error("PRIVACY_HASH_SECRET is required outside development");
+  if (env.PRIVACY_HASH_SECRET && (env.PRIVACY_HASH_SECRET.trim().length < 32 ||
+    env.PRIVACY_HASH_SECRET === "neuravic-development-identifiers-only" ||
+    [env.PROXY_SECRET, env.RESEND_API_KEY, env.TURNSTILE_SECRET, env.MFA_ENCRYPTION_KEY, env.SSO_PRIVATE_JWK].includes(env.PRIVACY_HASH_SECRET))) {
+    throw new Error("PRIVACY_HASH_SECRET must be an independent private key");
+  }
+  const staffMfaRequired = env.STAFF_MFA_REQUIRED ? env.STAFF_MFA_REQUIRED === "true" : deployed;
+  if (staffMfaRequired && !env.MFA_ENCRYPTION_KEY) throw new Error("MFA_ENCRYPTION_KEY is required for staff MFA enforcement");
+  if (env.MFA_ENCRYPTION_KEY && [env.PROXY_SECRET, env.PRIVACY_HASH_SECRET, env.SSO_PRIVATE_JWK].includes(env.MFA_ENCRYPTION_KEY)) throw new Error("MFA_ENCRYPTION_KEY must be independent");
   if (env.SLACK_WEBHOOK_URL) {
     const webhook = new URL(env.SLACK_WEBHOOK_URL);
     if (webhook.protocol !== "https:" || !["hooks.slack.com", "hooks.slack-gov.com"].includes(webhook.hostname) || webhook.username || webhook.password) {
@@ -83,6 +95,8 @@ export function loadConfig(env: Env): Config {
     proxySecret: env.PROXY_SECRET || null,
     // Development only: deployed environments must provide their own independent random key.
     privacyHashSecret: env.PRIVACY_HASH_SECRET ?? "neuravic-development-identifiers-only",
+    mfaEncryptionKey: env.MFA_ENCRYPTION_KEY ?? null,
+    staffMfaRequired,
     cookieSecure: environment !== "development",
     maxUploadBytes: 10 * 1024 * 1024,
   };

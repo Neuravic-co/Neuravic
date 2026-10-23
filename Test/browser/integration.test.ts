@@ -61,7 +61,8 @@ it("runs the real contact, portal and accessibility suites against an isolated A
   frontend.stderr.on("data", (chunk) => { startup = (startup + chunk).slice(-8000); });
   try {
     let ready = false;
-    for (let attempt = 0; attempt < 240; attempt += 1) {
+    const startupDeadline = Date.now() + 60_000;
+    while (Date.now() < startupDeadline) {
       if (frontend.exitCode !== null) break;
       try { ready = (await fetch(site, { signal: AbortSignal.timeout(2000) })).ok; } catch { /* Starting. */ }
       if (ready) break;
@@ -82,6 +83,20 @@ it("runs the real contact, portal and accessibility suites against an isolated A
       throw new Error("Browser integration suite failed; see redacted diagnostics above");
     }
     expect(ctx.mailer.sent.length).toBeGreaterThan(0);
+    ctx.deps.config.staffMfaRequired = true;
+    ctx.deps.config.mfaEncryptionKey = Array.from(crypto.getRandomValues(new Uint8Array(32)), (byte) => byte.toString(16).padStart(2, "0")).join("");
+    try {
+      const { stdout, stderr } = await run(process.execPath, [resolve(root, "Test/e2e/mfa.e2e.mjs")], {
+        cwd: resolve(root, "Test"), timeout: 90_000, maxBuffer: 256 * 1024, windowsHide: true,
+        env: { ...process.env, E2E_BASE_URL: site, E2E_API_URL: `${apiOrigin}/api/v1`, E2E_MAILBOX_URL: `${apiOrigin}/_test/mailbox`, E2E_MAILBOX_SECRET: mailboxSecret },
+      });
+      process.stdout.write(redact(stdout)); process.stderr.write(redact(stderr));
+    } catch (error) {
+      // Test helpers never print setup keys or recovery values.
+      const output = error as { stdout?: string; stderr?: string };
+      process.stderr.write(redact(`${output.stdout ?? ""}\n${output.stderr ?? ""}`));
+      throw new Error("Staff MFA browser suite failed");
+    }
   } finally {
     if (process.platform === "win32" && frontend.pid) spawnSync("taskkill", ["/pid", String(frontend.pid), "/t", "/f"], { windowsHide: true, stdio: "ignore" });
     else frontend.kill("SIGTERM");

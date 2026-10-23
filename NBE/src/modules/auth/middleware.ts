@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { AppEnv } from "../../app";
-import { forbidden, unauthorized } from "../../lib/errors";
+import { AppError, forbidden, unauthorized } from "../../lib/errors";
 import type { Actor } from "./actor";
 import { actorFromSession } from "./service";
 
@@ -24,6 +24,17 @@ export const loadActor: MiddlewareHandler<AppEnv> = async (c, next) => {
       });
     }
     else deleteCookie(c, cookieName, { path: "/", secure: deps.config.cookieSecure });
+  }
+  await next();
+};
+
+/** A first-factor staff session has no application or SSO access, including client memberships. */
+export const requireStaffMfa: MiddlewareHandler<AppEnv> = async (c, next) => {
+  if (c.get("actor")?.mfaRequired) {
+    const path = c.req.path.replace(/\/+$/, "");
+    const allowed = path === "/api/v1/auth/logout" || path === "/api/v1/auth/verify" ||
+      path === "/api/v1/auth/magic-link" || /^\/api\/v1\/auth\/mfa(?:\/(?:setup|confirm|verify))?$/.test(path);
+    if (!allowed) throw new AppError(403, "mfa_required", "Complete staff verification to continue");
   }
   await next();
 };

@@ -9,6 +9,9 @@ import { createTestDb } from "./helpers";
  * list's filter or ordering changes.
  */
 const QUERIES: Record<string, string> = {
+  "paged request comments": "select * from comments where request_id = 'r' order by created_at desc, id desc limit 101",
+  "paged organisation memberships": "select * from memberships where org_id = 'o' order by created_at desc, user_id desc limit 26",
+  "due quarantined files": "select * from files where scan_state = 'pending' and next_scan_at <= 1 order by next_scan_at limit 5",
   "lead inbox filtered by status": "select * from leads where status = 'new' order by created_at desc, id desc limit 26",
   "lead inbox, all statuses": "select * from leads order by created_at desc, id desc limit 26",
   "lead duplicate check": "select id from leads where email = 'a' and message_hash = 'h' and created_at >= 0 limit 1",

@@ -120,7 +120,7 @@ describe("deployment configuration", () => {
     expect(() => loadConfig({ ...testEnv, ALLOWED_ORIGINS: "*" })).toThrow("origins");
     expect(() => loadConfig({ ...testEnv, APP_ENV: "production", APP_URL: "http://app.test" })).toThrow("HTTPS");
     expect(() => loadConfig({ ...testEnv, APP_ENV: "production" })).toThrow("PRIVACY_HASH_SECRET");
-    const config = loadConfig({ ...testEnv, APP_ENV: "production", PRIVACY_HASH_SECRET: "test-only-key-with-at-least-32-characters" });
+    const config = loadConfig({ ...testEnv, APP_ENV: "production", PRIVACY_HASH_SECRET: "test-only-key-with-at-least-32-characters", MFA_ENCRYPTION_KEY: "19".repeat(32) });
     expect(config.cookieSecure).toBe(true);
   });
 });

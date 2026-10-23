@@ -5,7 +5,7 @@ import type { NextConfig } from "next";
  *
  * `frame-ancestors 'none'` stops other sites embedding the portal (clickjacking), `base-uri` and
  * `form-action` limit injected markup, and `object-src` blocks plugins. A full `script-src` policy is
- * not set yet because the framework injects inline scripts; see Security/hardening-checklist.md.
+ * is extended with request nonces by proxy.ts for HTML documents.
  */
 const securityHeaders = [
   { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" },

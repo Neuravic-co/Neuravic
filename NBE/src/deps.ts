@@ -16,6 +16,7 @@ export interface Deps {
   sso: JwtSigner | null;
   /** Null when no R2 bucket is bound; file endpoints then answer 503. */
   blobs: BlobStore | null;
+  scanner?: import("./modules/files/scanner").MalwareScanner | null;
   /** Outbound HTTP (injected so tests never hit the network). */
   http: typeof fetch;
   rateLimiter: RateLimiter;
