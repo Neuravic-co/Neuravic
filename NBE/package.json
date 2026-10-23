@@ -16,9 +16,11 @@
     "db:migrate:local": "wrangler d1 migrations apply neuravic-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply neuravic-db --remote",
     "sso:keygen": "node scripts/generate-sso-key.mjs",
-    "db:migrate:libsql": "node scripts/migrate-libsql.mjs"
+    "db:migrate:libsql": "node scripts/migrate-libsql.mjs",
+    "build:vercel": "node scripts/build-vercel.mjs"
   },
   "dependencies": {
+    "@hono/node-server": "^2.1.5",
     "@libsql/client": "^0.18.0",
     "@vercel/functions": "^3.0.0",
     "drizzle-orm": "0.45.4",
@@ -36,6 +38,7 @@
     "drizzle-kit": "0.31.11",
     "typescript": "7.0.2",
     "vitest": "^5.0.5",
-    "wrangler": "4.151.1"
+    "wrangler": "4.151.1",
+    "esbuild": "^0.28.2"
   }
 }
