@@ -13,7 +13,6 @@ export const createLeadSchema = z.object({
   budgetBand: z.string().trim().max(60).optional(),
   source: z.string().trim().max(60).default("website"),
   consent: z.literal(true, { error: "Consent is required" }),
-  turnstileToken: z.string().max(2048).optional(),
   /** Honeypot. Real users never fill this in. */
   website: z.string().max(200).optional(),
 });

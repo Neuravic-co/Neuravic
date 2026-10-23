@@ -6,31 +6,34 @@ import { useCallback, useEffect, useId, useState, type FormEvent } from "react";
 import { ApiError, api } from "@/lib/api";
 import { SUPPORT_EMAIL } from "@/lib/portal";
 import { emailError } from "@/lib/validation";
-import { useTurnstile } from "../use-turnstile";
 import { Field } from "./ui";
 
 export type AuthMode = "login" | "signup";
-type Errors = { name?: string; email?: string; consent?: string; form?: string };
+type Errors = { name?: string; email?: string; password?: string; consent?: string; form?: string };
 
 function failureMessage(error: unknown, action: string): string {
   if (error instanceof ApiError) {
     if (error.status === 429) return "Too many attempts. Please wait a while and try again.";
+    if (error.status === 401) return "Email or password is incorrect.";
+    if (error.status === 409) return "An account with this email already exists. Log in instead.";
     if (error.status === 422) return "The verification check failed. Please try again.";
     if (error.status === 503) return `${action} is not available right now. Please try again later.`;
   }
   return `We could not reach the server. Check your connection and try again.`;
 }
 
-/** Log in and sign up share one form: both end in a one-time link emailed to the person. */
+/** Log in and sign up share one form: email and password, with an optional one-time sign-in link for existing accounts. */
 export function AuthForm({ mode, notice }: { mode: AuthMode; notice?: string }) {
   const id = useId();
   const signup = mode === "signup";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  /** Log in with an emailed one-time link instead of a password. */
+  const [useLink, setUseLink] = useState(false);
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
-  const { container: widget, token, reset: resetCheck, enabled: checkEnabled } = useTurnstile();
   /** False when the server cannot be reached, so the person is told before they type anything. */
   const [available, setAvailable] = useState(true);
   const [cooldown, setCooldown] = useState(0);
@@ -55,14 +58,16 @@ export function AuthForm({ mode, notice }: { mode: AuthMode; notice?: string }) 
 
   const send = useCallback(async () => {
     if (signup) {
-      await api("/auth/signup", {
+      await api("/auth/register", {
         method: "POST",
-        body: { name: name.trim(), email: email.trim(), consent: true, turnstileToken: token || undefined },
+        body: { name: name.trim(), email: email.trim(), password, consent: true },
       });
-    } else {
+    } else if (useLink) {
       await api("/auth/magic-link", { method: "POST", body: { email: email.trim() } });
+    } else {
+      await api("/auth/login", { method: "POST", body: { email: email.trim(), password } });
     }
-  }, [signup, name, email, token]);
+  }, [signup, useLink, name, email, password]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -71,11 +76,12 @@ export function AuthForm({ mode, notice }: { mode: AuthMode; notice?: string }) 
     if (signup && name.trim().length < 2) next.name = "Tell us your name";
     const invalid = emailError(email);
     if (invalid) next.email = invalid;
+    if (signup && password.length < 8) next.password = "Use at least 8 characters";
+    else if (!signup && !useLink && !password) next.password = "Enter your password";
     if (signup && !consent) next.consent = "Please agree to continue";
-    if (signup && checkEnabled && !token) next.form = "Please complete the verification check first.";
     setErrors(next);
     if (Object.keys(next).length > 0) {
-      const first = next.name ? "name" : next.email ? "email" : next.consent ? "consent" : null;
+      const first = next.name ? "name" : next.email ? "email" : next.password ? "password" : next.consent ? "consent" : null;
       if (first) document.getElementById(`${id}-${first}`)?.focus();
       return;
     }
@@ -83,15 +89,19 @@ export function AuthForm({ mode, notice }: { mode: AuthMode; notice?: string }) 
     setStatus("sending");
     try {
       await send();
+      if (signup || !useLink) {
+        window.location.replace("/portal");
+        return;
+      }
       setCooldown(30);
       setStatus("sent");
     } catch (caught) {
       setStatus("idle");
-      if (signup) resetCheck();
       if (caught instanceof ApiError && caught.status === 400 && caught.fieldErrors.length > 0) {
         setErrors({
           name: caught.fieldMessage("name"),
           email: caught.fieldMessage("email"),
+          password: caught.fieldMessage("password"),
           consent: caught.fieldMessage("consent"),
         });
         return;
@@ -109,17 +119,8 @@ export function AuthForm({ mode, notice }: { mode: AuthMode; notice?: string }) 
         <div role="status">
           <h1>Check your inbox.</h1>
           <p>
-            {signup ? (
-              <>
-                We sent a link to <strong>{email.trim()}</strong>. Open it to finish creating your account. It works
-                once and expires in 15 minutes.
-              </>
-            ) : (
-              <>
-                If <strong>{email.trim()}</strong> has a Neuravic account, we sent a sign-in link. It works once and
-                expires in 15 minutes.
-              </>
-            )}
+            If <strong>{email.trim()}</strong> has a Neuravic account, we sent a sign-in link. It works once and expires
+            in 15 minutes.
           </p>
           <div className="auth-sent-actions">
             <button
@@ -148,8 +149,10 @@ export function AuthForm({ mode, notice }: { mode: AuthMode; notice?: string }) 
           <h1>{signup ? "Create your account." : "Sign in to your portal."}</h1>
           <p>
             {signup
-              ? "Tell us who you are and we will email you a one-time link. No password to remember."
-              : "Enter your email and we will send you a one-time link. No password needed."}
+              ? "Tell us who you are and choose a password."
+              : useLink
+                ? "Enter your email and we will send you a one-time link."
+                : "Enter your email and password."}
           </p>
           {notice ? (
             <p className="auth-notice" role="status">
@@ -195,6 +198,23 @@ export function AuthForm({ mode, notice }: { mode: AuthMode; notice?: string }) 
               }}
             />
           </Field>
+          {signup || !useLink ? (
+            <Field label="Password" htmlFor={`${id}-password`} error={errors.password}>
+              <input
+                id={`${id}-password`}
+                type="password"
+                autoComplete={signup ? "new-password" : "current-password"}
+                maxLength={128}
+                value={password}
+                aria-invalid={errors.password ? true : undefined}
+                aria-describedby={errors.password ? `${id}-password-error` : undefined}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  edit("password");
+                }}
+              />
+            </Field>
+          ) : null}
           {signup ? (
             <div className="portal-consent">
               <label className="portal-check">
@@ -221,16 +241,24 @@ export function AuthForm({ mode, notice }: { mode: AuthMode; notice?: string }) 
               ) : null}
             </div>
           ) : null}
-          {signup && checkEnabled ? <div ref={widget} className="auth-check" /> : null}
           <div aria-live="polite">
             {errors.form ? <p className="portal-field__error auth-form-error" role="alert">{errors.form}</p> : null}
           </div>
           <button className="auth-submit" type="submit" disabled={status === "sending"}>
-            <span>{status === "sending" ? "Sending…" : signup ? "Create account" : "Email me a link"}</span>
+            <span>
+              {status === "sending" ? (signup || !useLink ? "Please wait…" : "Sending…") : signup ? "Create account" : useLink ? "Email me a link" : "Log in"}
+            </span>
             <ArrowUpRight aria-hidden="true" size={18} strokeWidth={1.5} />
           </button>
         </form>
       )}
+      {!signup && status !== "sent" ? (
+        <p className="auth-switch">
+          <button type="button" className="portal-link" onClick={() => { setUseLink(!useLink); setErrors({}); }}>
+            {useLink ? "Use my password instead" : "Email me a sign-in link instead"}
+          </button>
+        </p>
+      ) : null}
       <p className="auth-switch">
         {signup ? (
           <>

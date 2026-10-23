@@ -19,7 +19,6 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   async headers() {
-    // The root path is listed explicitly: "/:path*" does not match "/" in the vinext router.
     return [
       { source: "/", headers: securityHeaders },
       { source: "/:path*", headers: securityHeaders },

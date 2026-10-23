@@ -4,7 +4,6 @@ import { ArrowUpRight } from "lucide-react";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { ApiError, api } from "@/lib/api";
 import { validateContact } from "@/lib/validation";
-import { useTurnstile } from "./use-turnstile";
 
 const SERVICES = [
   { value: "ai", label: "AI systems" },
@@ -27,7 +26,6 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
   const [emailInstead, setEmailInstead] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [sentTo, setSentTo] = useState("");
-  const { container: widget, token, reset: resetCheck, enabled: checkEnabled } = useTurnstile();
   const confirmation = useRef<HTMLDivElement>(null);
 
   // The form collapses on success: bring the confirmation into view and announce it.
@@ -69,10 +67,6 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
       document.getElementById(`${uid}-${Object.keys(parsed.errors)[0]}`)?.focus();
       return;
     }
-    if (checkEnabled && !token) {
-      setErrors({ form: "Please complete the verification check first." });
-      return;
-    }
 
     setErrors({});
     setEmailInstead(null);
@@ -86,7 +80,6 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
           // The API stores one full name.
           name: `${firstName} ${lastName}`,
           serviceInterest: services,
-          turnstileToken: token || undefined,
           website: String(form.get("website") ?? ""),
         },
       });
@@ -94,7 +87,6 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
       setStatus("sent");
     } catch (error) {
       setStatus("idle");
-      resetCheck();
       if (error instanceof ApiError && error.status === 400 && error.fieldErrors.length) {
         const next: Errors = {};
         for (const item of error.fieldErrors) {
@@ -224,7 +216,6 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
         </span>
       ) : null}
 
-      {checkEnabled ? <div ref={widget} className="contact-form__turnstile" /> : null}
 
       <div aria-live="polite">
         {errors.form ? <p className="contact-form__error contact-form__error--form">{errors.form}</p> : null}

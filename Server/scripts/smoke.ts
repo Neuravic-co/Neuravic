@@ -314,5 +314,26 @@ console.log("\nStaff safety rules");
   check("the only admin cannot disable themselves (409)", demote.status === 409, demote.status);
 }
 
+console.log("\nPassword sign-in");
+{
+  const carol = `carol+${run}@example.com`;
+  const person = new Client();
+  const weak = await person.call("POST", "/auth/register", { name: "Carol", email: carol, password: "short", consent: true });
+  check("a short password is refused (400)", weak.status === 400, weak.status);
+  const made = await person.call("POST", "/auth/register", { name: "Carol", email: carol, password: "correct horse 1", consent: true });
+  check("sign up with a password signs the person in", made.status === 200 && (await person.call("GET", "/me")).status === 200, made.status);
+  const again = await new Client().call("POST", "/auth/register", { name: "Carol", email: carol, password: "another pass 1", consent: true });
+  check("the same email cannot sign up twice (409)", again.status === 409, again.status);
+  const wrong = await new Client().call("POST", "/auth/login", { email: carol, password: "wrong password" });
+  check("a wrong password is refused (401)", wrong.status === 401, wrong.status);
+  const unknown = await new Client().call("POST", "/auth/login", { email: `nobody+${run}@example.com`, password: "whatever 123" });
+  check("an unknown email gets the same refusal (401)", unknown.status === 401 && unknown.data.title === wrong.data.title, unknown.status);
+  const back = new Client();
+  const ok = await back.call("POST", "/auth/login", { email: carol, password: "correct horse 1" });
+  check("log in with the right password", ok.status === 200 && (await back.call("GET", "/me")).data.user.email === carol, ok.status);
+  const out = await back.call("POST", "/auth/logout");
+  check("log out ends the session", out.status === 204 && (await back.call("GET", "/me")).status === 401, out.status);
+}
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed === 0 ? 0 : 1);

@@ -8,9 +8,9 @@ import { rateLimit } from "../../lib/rate-limit";
 import { clientIp } from "../../lib/request";
 import { parseJson } from "../../lib/validate";
 import { requireActor, sessionCookieName } from "./middleware";
-import { verifyTurnstile } from "../leads/turnstile";
-import { unprocessable } from "../../lib/errors";
-import { endSession, requestMagicLink, requestSignup, verifyMagicLink } from "./service";
+import { endSession, requestMagicLink, requestSignup, verifyMagicLink, type VerifiedLogin } from "./service";
+import { loginWithPassword, registerWithPassword } from "./password";
+import type { Context } from "hono";
 import { mfaRecord, requireMfaStaff, setupMfa, verifyMfa } from "./mfa";
 
 export const authRoutes = new Hono<AppEnv>();
@@ -21,7 +21,17 @@ const signupSchema = z.object({
   name: z.string().trim().min(2).max(100),
   email: z.string().trim().toLowerCase().email().max(254),
   consent: z.literal(true),
-  turnstileToken: z.string().max(2048).optional(),
+});
+const passwordSchema = z.string().min(8, "Use at least 8 characters").max(128);
+const registerSchema = z.object({
+  name: z.string().trim().min(2).max(100),
+  email: z.string().trim().toLowerCase().email().max(254),
+  password: passwordSchema,
+  consent: z.literal(true),
+});
+const passwordLoginSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(254),
+  password: z.string().min(1).max(128),
 });
 const verifySchema = z.object({ token: z.string().min(20).max(200) });
 
@@ -52,9 +62,30 @@ authRoutes.post("/signup", rateLimit({ name: "signup-ip", limit: 10, windowSecon
   const deps = c.get("deps");
   const input = await parseJson(c, signupSchema);
   const ip = clientIp(c);
-  if (!(await verifyTurnstile(deps, input.turnstileToken, ip))) throw unprocessable("Bot check failed");
   await requestSignup(deps, input, ip);
   return c.json({ status: "link_sent" }, 202);
+});
+
+function startCookieSession(c: Context<AppEnv>, login: VerifiedLogin) {
+  const secure = c.get("deps").config.cookieSecure;
+  setCookie(c, sessionCookieName(secure), login.sessionToken, {
+    httpOnly: true,
+    secure,
+    sameSite: "Lax",
+    path: "/",
+    maxAge: login.maxAgeSeconds,
+  });
+  return c.json({ user: { id: login.user.id, email: login.user.email, name: login.user.name } });
+}
+
+authRoutes.post("/register", rateLimit({ name: "register-ip", limit: 20, windowSeconds: 3600 }), async (c) => {
+  const input = await parseJson(c, registerSchema);
+  return startCookieSession(c, await registerWithPassword(c.get("deps"), input, clientIp(c), c.req.header("user-agent")));
+});
+
+authRoutes.post("/login", rateLimit({ name: "login-ip", limit: 30, windowSeconds: 900 }), async (c) => {
+  const input = await parseJson(c, passwordLoginSchema);
+  return startCookieSession(c, await loginWithPassword(c.get("deps"), input, clientIp(c), c.req.header("user-agent")));
 });
 
 authRoutes.post("/verify", rateLimit({ name: "verify-ip", limit: 30, windowSeconds: 3600 }), async (c) => {

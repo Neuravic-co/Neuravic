@@ -71,7 +71,7 @@ export function main(args = process.argv.slice(2)) {
       passed = false;
     }
   }
-  if (!args.includes("--secrets-only")) for (const folder of ["NBE", "NFE", "Test"]) if (!dependencyAudit(folder)) passed = false;
+  if (!args.includes("--secrets-only")) for (const folder of ["Server", "NFE"]) if (!dependencyAudit(folder)) passed = false;
   console.log(passed ? "Security check passed" : "Security check failed");
   return passed ? 0 : 1;
 }

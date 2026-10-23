@@ -294,3 +294,10 @@ export const rateLimits = mysqlTable(
   },
   (t) => [index("rate_limits_expires").on(t.expiresAt)],
 );
+
+export const userPasswords = mysqlTable("user_passwords", {
+  userId: id("user_id").primaryKey().references(() => users.id),
+  /** scrypt$N$r$p$salt$hash (base64url). Never returned by any endpoint. */
+  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+  updatedAt: epoch("updated_at").notNull(),
+});

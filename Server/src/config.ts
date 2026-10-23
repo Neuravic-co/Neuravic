@@ -10,7 +10,6 @@ export interface Config {
   emailFrom: string;
   notifyTo: string;
   bootstrapAdminEmail: string | null;
-  turnstileSecret: string | null;
   slackWebhookUrl: string | null;
   resendApiKey: string | null;
   ssoAudiences: string[];
@@ -68,7 +67,7 @@ export function loadConfig(env: Env): Config {
   if (deployed && !env.PRIVACY_HASH_SECRET) throw new Error("PRIVACY_HASH_SECRET is required outside development");
   if (env.PRIVACY_HASH_SECRET && (env.PRIVACY_HASH_SECRET.trim().length < 32 ||
     env.PRIVACY_HASH_SECRET === "neuravic-development-identifiers-only" ||
-    [env.PROXY_SECRET, env.RESEND_API_KEY, env.TURNSTILE_SECRET, env.MFA_ENCRYPTION_KEY, env.SSO_PRIVATE_JWK].includes(env.PRIVACY_HASH_SECRET))) {
+    [env.PROXY_SECRET, env.RESEND_API_KEY, env.MFA_ENCRYPTION_KEY, env.SSO_PRIVATE_JWK].includes(env.PRIVACY_HASH_SECRET))) {
     throw new Error("PRIVACY_HASH_SECRET must be an independent private key");
   }
   const staffMfaRequired = env.STAFF_MFA_REQUIRED ? env.STAFF_MFA_REQUIRED === "true" : deployed;
@@ -90,7 +89,6 @@ export function loadConfig(env: Env): Config {
     emailFrom: env.EMAIL_FROM,
     notifyTo: env.NOTIFY_TO,
     bootstrapAdminEmail: env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase() || null,
-    turnstileSecret: env.TURNSTILE_SECRET || null,
     slackWebhookUrl: env.SLACK_WEBHOOK_URL || null,
     resendApiKey: env.RESEND_API_KEY || null,
     ssoAudiences: list(env.SSO_AUDIENCES),

@@ -15,7 +15,6 @@ export interface Env {
 
   // Secrets
   BOOTSTRAP_ADMIN_EMAIL?: string;
-  TURNSTILE_SECRET?: string;
   RESEND_API_KEY?: string;
   SLACK_WEBHOOK_URL?: string;
   SSO_PRIVATE_JWK?: string;

@@ -79,6 +79,6 @@ roles, privacy requests and the safety rules (last owner, last admin, foreign or
 ## Not production-ready yet
 
 Review these before real use: set `APP_ENV=production` with HTTPS origins, a dedicated `PRIVACY_HASH_SECRET`, `MFA_ENCRYPTION_KEY`,
-`RESEND_API_KEY` (real email), `TURNSTILE_SECRET`, and `MALWARE_SCANNER_URL` (without a scanner, uploads stay quarantined; the
+`RESEND_API_KEY` (real email), and `MALWARE_SCANNER_URL` (without a scanner, uploads stay quarantined; the
 development scanner marks everything clean and only runs in development). Put the process behind HTTPS, and run it with a
 process manager. The existing unit tests in `../Test/backend` still target NBE and SQLite; they were not ported.

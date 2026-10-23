@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-# Neuravic repository. Folder-level .gitignore files (NFE, NBE, Test) add
+# Neuravic repository. Folder-level .gitignore files (NFE, Server) add
 # rules for their own tools; this file covers the whole repository.
 # ---------------------------------------------------------------------------
 
@@ -17,7 +17,6 @@ node_modules/
 dist/
 out/
 .next/
-.vinext/
 .wrangler/
 .turbo/
 .cache/

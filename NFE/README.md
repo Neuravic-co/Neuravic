@@ -11,8 +11,6 @@ The production frontend for Neuravic, a multidisciplinary technology company ope
 - Next.js 16 and React 19
 - TypeScript
 - Tailwind CSS 4
-- Vinext and Vite 8
-- Cloudflare Workers deployment output
 - Lucide icons
 
 ## Brand system
@@ -39,11 +37,11 @@ Project-image frames intentionally remain empty until original project photograp
 
 ## Local development
 
-Node.js 22.13 or newer is required. The site talks to the Neuravic API in [`../NBE`](../NBE), so run both:
+Node.js 22.13 or newer is required. The site talks to the Neuravic API in [`../Server`](../Server), so run both:
 
 ```bash
 # terminal 1: backend (http://localhost:8787)
-cd NBE && npm install && cp .dev.vars.example .dev.vars && npm run db:migrate:local && npm run dev
+cd Server && npm install && npm run mysql:local && npm run migrate && npm start
 
 # terminal 2: frontend (http://localhost:5173)
 cd NFE && npm install && cp .env.example .env.local && npm run dev
@@ -56,7 +54,7 @@ Checks and production build:
 
 ```bash
 npm run lint
-npx tsc --noEmit
+npm run typecheck
 npm run build
 ```
 
@@ -67,18 +65,17 @@ npm run build
 | `NEXT_PUBLIC_API_BASE_URL` | Where the browser reaches the API. Leave unset on Vercel to use same-origin `/api/v1` through the built-in server proxy. |
 | `API_ORIGIN` | Required HTTPS backend origin for that API proxy; missing configuration returns 503. Page rendering also uses it for content, with built-in content as a fallback. A working home page does not verify backend connectivity. |
 | `API_PROXY_SECRET` | Server-only shared proxy credential (32+ characters); never expose it through `NEXT_PUBLIC_` variables. |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Required for staging/production contact intake; set the matching `TURNSTILE_SECRET` on NBE and configure the actual website hostname. The verifier requires a successful result from a hostname in NBE's `ALLOWED_ORIGINS`. Optional only in development. |
 
 What is connected:
 
 - **Contact form** (`components/contact-form.tsx`) posts to `POST /leads`. It validates in the browser, has a honeypot, explains errors, and keeps a `mailto:` fallback.
 - **Site content** (`lib/site-content.ts`) is read from `GET /content`, section by section, and falls back to the built-in copy on any error or timeout. Staff can edit it through the API without redeploying the site.
-- **Portal** (`/portal`) is the client area: passwordless sign-in, projects, requests with approvals, comments and file attachments, activity, members. Staff also get organisations and the enquiries inbox. The email link lands on `/portal/verify`.
+- **Portal** (`/portal`) is the client area: email and password sign-in (or an emailed one-time link), projects, requests with approvals, comments and file attachments, activity, members. Staff also get organisations and the enquiries inbox. The email link lands on `/portal/verify`.
 - The API client is `lib/api.ts`; portal state lives in `components/portal/`.
 
 New sign-in links use a URL fragment so the token is not sent to the web server. Verification still accepts older query links
 and removes credentials from browser history before exchange. Deploy this dual-format frontend before the new backend.
-Normal development sign-in requires a mail provider; `npm run test:browser` in NBE provides an isolated test mailbox instead.
+In development, emailed links appear in the API's dev mailbox at `/api/v1/dev/mailbox`.
 
 ## Security headers
 
@@ -103,4 +100,4 @@ Small text on dark surfaces uses mixes of the approved palette (see the comment 
 
 © Neuravic. All rights reserved.
 
-Phase 2 adds staff authenticator verification, quarantine download states and paging for comments/members. `proxy.ts` generates a fresh script nonce; `app/layout.tsx` opts into request rendering and carries it to the root script. HTML is private/no-store on both Next and Vinext. Update only approved CSP sources in `lib/csp.ts`; scripts have no inline/eval exception in production. See `../Security/phase-2-verification.md` for validation and the unresolved development dependency blocker.
+Phase 2 adds staff authenticator verification, quarantine download states and paging for comments/members. `proxy.ts` generates a fresh script nonce; `app/layout.tsx` opts into request rendering and carries it to the root script. HTML is private/no-store. Update only approved CSP sources in `lib/csp.ts`; scripts have no inline/eval exception in production. See `../Security/phase-2-verification.md` for validation and the unresolved development dependency blocker.
