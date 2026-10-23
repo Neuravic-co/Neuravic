@@ -11,6 +11,7 @@ import { readBoundedBody } from "./lib/body";
 import { ulid } from "./lib/ids";
 import type { Actor } from "./modules/auth/actor";
 import { loadActor, requireStaffMfa, requireTrustedOrigin } from "./modules/auth/middleware";
+import { privacyAdminRoutes, privacyRoutes } from "./modules/privacy/routes";
 import { authRoutes, meRoutes } from "./modules/auth/routes";
 import { adminRoutes } from "./modules/admin/routes";
 import { contentRoutes } from "./modules/content/routes";
@@ -97,6 +98,14 @@ export function createApp(makeDeps: DepsFactory) {
   });
 
   const api = new Hono<AppEnv>();
+  api.use("*", async (c, next) => {
+    const path = c.req.path.replace(/\/+$/, "");
+    if (c.get("deps").config.maintenanceMode && !["/api/v1/health", "/api/v1/version"].includes(path)) {
+      c.header("retry-after", "300");
+      return problem(c, 503, "maintenance", "The service is temporarily unavailable for maintenance");
+    }
+    return next();
+  });
   // JSON bodies are small. File uploads (PUT .../files) have their own, larger limit in the files module.
   const MAX_JSON_BYTES = 256 * 1024;
   api.use("*", async (c, next) => {
@@ -109,11 +118,13 @@ export function createApp(makeDeps: DepsFactory) {
   });
   api.use("*", requireTrustedOrigin, loadActor, requireStaffMfa);
 
-  api.get("/health", (c) => c.json({ status: "ok" }));
+  api.get("/health", (c) => c.json({ status: c.get("deps").config.maintenanceMode ? "maintenance" : "ok" }));
   api.get("/version", (c) => c.json({ version: c.get("deps").config.version }));
 
   api.route("/auth", authRoutes);
   api.route("/me", meRoutes);
+  api.route("/me/privacy", privacyRoutes);
+  api.route("/admin/privacy-requests", privacyAdminRoutes);
   api.route("/token", ssoRoutes);
   api.route("/content", contentRoutes);
   api.route("/admin", adminRoutes);

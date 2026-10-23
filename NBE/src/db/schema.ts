@@ -1,4 +1,5 @@
 import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 
 /** All timestamps are UTC epoch milliseconds. All ids are ULIDs. */
 
@@ -77,6 +78,19 @@ export const staffMfa = sqliteTable("staff_mfa", {
   lastUsedStep: integer("last_used_step").notNull().default(-1),
   recoveryHashes: text("recovery_hashes", { mode: "json" }).$type<string[]>().notNull().default([]),
 });
+
+/** Request tracking only. Fulfillment must follow the approved identity/retention review. */
+export const privacyRequests = sqliteTable("privacy_requests", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id),
+  kind: text("kind", { enum: ["export", "erasure"] }).notNull(),
+  state: text("state", { enum: ["pending", "in_review", "fulfilled", "declined"] }).notNull().default("pending"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+  reviewedBy: text("reviewed_by").references(() => users.id),
+  reviewReference: text("review_reference"),
+}, (t) => [index("privacy_requests_user").on(t.userId, t.createdAt, t.id), index("privacy_requests_created").on(t.createdAt, t.id),
+  uniqueIndex("privacy_requests_open").on(t.userId, t.kind).where(sql`state in ('pending', 'in_review')`)]);
 
 export const authTokens = sqliteTable(
   "auth_tokens",

@@ -1,5 +1,7 @@
 # Phase 2 security verification — 23 October 2026
 
+> Historical Phase 2 record. Current combined verification, implemented follow-ups, evidence and outstanding launch blockers are in [Phase 3 readiness](phase-3-readiness.md). Earlier gaps below describe the Phase 2 head, not the later implementation.
+
 ## Scope and review basis
 
 Reviewed the actual PR #55 changes from `8c23a6dbb306d66514909c533c0d3039a78ecb0b` to `cebb4ea7949f2e3b9c9948440608ac40ace5fcc9`, including authentication, D1 migrations/guards, request limits, proxy trust, identifiers, notifications, retention, JWT validation, frontend credential handling and CI scripts. The local source matched the GitHub PR head. PR #55 was open/unmerged when reviewed. This branch and PR depend on `security/backend-hardening`; their base is that branch, not `main`.

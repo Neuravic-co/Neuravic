@@ -19,7 +19,7 @@ function buildDeps(env: Env, ctx?: BackgroundContext): Deps {
     db,
     log: jsonLogger,
     http: fetch,
-    sso: config.ssoPrivateJwk ? createJwtSigner(config.ssoPrivateJwk, config.ssoKeyId) : null,
+    sso: config.ssoPrivateJwk ? createJwtSigner(config.ssoPrivateJwk, config.ssoKeyId, config.ssoPublicJwks) : null,
     blobs: env.BUCKET ? new R2BlobStore(env.BUCKET) : null,
     scanner: env.MALWARE_SCANNER ? new ServiceMalwareScanner(env.MALWARE_SCANNER) : null,
     mailer: config.resendApiKey

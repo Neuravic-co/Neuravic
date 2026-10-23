@@ -9,6 +9,8 @@ import { createTestDb } from "./helpers";
  * list's filter or ordering changes.
  */
 const QUERIES: Record<string, string> = {
+  "paged privacy requests": "select * from privacy_requests order by created_at desc, id desc limit 26",
+  "personal privacy requests": "select * from privacy_requests where user_id = 'u' order by created_at desc, id desc limit 26",
   "paged request comments": "select * from comments where request_id = 'r' order by created_at desc, id desc limit 101",
   "paged organisation memberships": "select * from memberships where org_id = 'o' order by created_at desc, user_id desc limit 26",
   "due quarantined files": "select * from files where scan_state = 'pending' and next_scan_at <= 1 order by next_scan_at limit 5",

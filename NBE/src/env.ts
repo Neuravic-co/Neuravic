@@ -7,12 +7,16 @@ export interface Env {
 
   APP_ENV?: string;
   APP_VERSION?: string;
+  /** Owner-controlled containment for an approved recovery/key cutover. */
+  MAINTENANCE_MODE?: string;
   APP_URL: string;
   ALLOWED_ORIGINS: string;
   EMAIL_FROM: string;
   NOTIFY_TO: string;
   SSO_KEY_ID?: string;
   SSO_AUDIENCES?: string;
+  /** Public-only JWKS for prepublication/overlap. Never include private d values. */
+  SSO_PUBLIC_JWKS?: string;
 
   // Secrets
   BOOTSTRAP_ADMIN_EMAIL?: string;

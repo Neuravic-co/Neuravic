@@ -1,5 +1,7 @@
 # API and integration inventory
 
+> Updated by the Phase 3 additions below, 23 October 2026. The later inventory supersedes earlier single-key JWKS/download descriptions. Owner-controlled maintenance mode contains API application traffic and newly scheduled work; health/version remain available.
+
 Reviewed 22 October 2026. Paths below are relative to `/api/v1` except JWKS. Hono also serves HEAD for GET routes. Undeclared methods/paths have no handler. All writes parse an explicit field allow-list; supplying `orgId`, `staffRole` or ownership fields in an unrelated body does not override server values. Every protected route calls `requireActor`, `requireStaff` or `requireOrgRole` on the server. UI role checks only hide controls.
 
 Global boundary: bounded request body → origin check on cookie-authenticated writes and sign-in → session lookup → route policy → parameterized Drizzle/D1 operation. Private responses/errors are no-store; successful public content and JWKS opt into caching. Staff admin has owner access across tenants; delivery has admin access; sales needs a membership for portal data.
@@ -81,3 +83,17 @@ All application/SSO routes deny staff sessions awaiting MFA (`403 mfa_required`)
 | GET `/admin/security-status` | Staff admin with completed MFA when required | DB/control presence, enrolled staff and quarantine/outbox aggregate evidence; no secrets or client content |
 
 Downloads require an exact `clean` scan state for every role. Scan verdicts enter only through the private service adapter/cron, not a public API or client-writable field. Uploads stay bounded to 10 MiB/20 attachments and add basic byte-signature/UTF-8 checks. See the operations runbook for scanner provisioning.
+
+## Phase 3 additions
+
+| Endpoint | Authorization | Behavior |
+|---|---|---|
+| POST `/auth/mfa/recovery-codes` | Already MFA-verified staff session, trusted origin, shared account guessing limit, fresh unused TOTP | Atomically replace all recovery hashes, consume step, upgrade session and audit; show eight replacement codes once. Unverified sessions and recovery-code proof cannot authorize replacement. |
+| GET `/me/privacy/export` | Authenticated caller, session age at most 15 minutes, account limit | Limited profile/current memberships only, bounded to 100; attachment/no-store and audit. No other people, security credentials or tenant/internal records; full response needs supervised review. |
+| GET `/me/privacy/requests` | Authenticated caller | Paginated own requests; omit private reviewer/reference. Portal Privacy screen. |
+| POST `/me/privacy/requests` | Recent caller, trusted origin, account limit | Strict export/erasure kind, server-derived subject, one open request per kind, race-safe dedup and audit. Never deletes records. |
+| GET `/admin/privacy-requests` | Staff admin, MFA when required | Paginated private review queue. |
+| PATCH `/admin/privacy-requests/:id` | Recent staff admin other than subject; trusted origin | Compare-and-set pending/in_review transition, opaque reference and identity/retention attestations; atomic audit. Records supervised fulfillment, not automated erasure/full export. |
+| GET `/.well-known/jwks.json` | Public | Validated current/overlap public-only keys with 300-second cache. `SSO_PUBLIC_JWKS` accepts bounded public key set; private/conflicting/duplicate IDs rejected. |
+
+Clean downloads now verify bounded complete stored bytes against database size/SHA-256 before release and use database MIME. Changed/read-failed content returns to pending and remains inaccessible; the scanner protocol also bounds stalled verdict streams. Enrolled factor removal/reset revokes sessions/outstanding links via migration 0009. See the [readiness report](phase-3-readiness.md) for tests and operational limits.

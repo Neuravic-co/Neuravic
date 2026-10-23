@@ -120,4 +120,19 @@ describe("files", () => {
     expect((await ctx.request(`/api/v1/requests/${request.id}/files`, upload(member, "text/plain", new Uint8Array([0xff])))).status).toBe(415);
     expect((ctx.deps.blobs as MemoryBlobStore).objects.size).toBe(0);
   });
+
+  it("never serves storage bytes replaced after a clean scan and ignores storage MIME changes", async () => {
+    const { ctx, member, request } = await setup();
+    ctx.deps.scanner = { scan: async () => "clean" };
+    const file = await body(await ctx.request(`/api/v1/requests/${request.id}/files?name=a.txt`, upload(member, "text/plain", "clean")));
+    const [row] = await ctx.deps.db.select().from(schema.files);
+    const stored = (ctx.deps.blobs as MemoryBlobStore).objects.get(row!.storageKey)!;
+    stored.contentType = "text/html";
+    expect((await ctx.request(`/api/v1/files/${file.id}/content`, as(member))).headers.get("content-type")).toBe("text/plain");
+    stored.data = new TextEncoder().encode("other").buffer as ArrayBuffer; // same length, different digest
+    const response = await ctx.request(`/api/v1/files/${file.id}/content`, as(member));
+    expect(response.status).toBe(423);
+    expect(await response.text()).not.toContain("other");
+    expect((await ctx.deps.db.select().from(schema.files))[0]!.scanState).toBe("pending");
+  });
 });

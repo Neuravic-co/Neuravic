@@ -6,9 +6,11 @@ BOOTSTRAP_ADMIN_EMAIL=you@example.com
 # PRIVACY_HASH_SECRET=  (dedicated random value, 32+ characters; required in staging/production)
 # MFA_ENCRYPTION_KEY=  (independent random 32-byte key, 64 hex characters; required for enforced staff MFA)
 # STAFF_MFA_REQUIRED=true  (defaults to true in staging/production, false in development)
+# MAINTENANCE_MODE=false  (owner-controlled API containment; health/version remain available)
 # MALWARE_SCANNER is a private service binding, not an HTTP credential or public callback.
 # TURNSTILE_SECRET=
 # RESEND_API_KEY=
 # SLACK_WEBHOOK_URL=
 # PROXY_SECRET=     (32+ characters; must equal API_PROXY_SECRET on NFE)
 # SSO_PRIVATE_JWK=   (generate with: npm run sso:keygen)
+# SSO_PUBLIC_JWKS=   (public-only {"keys":[...]} for approved overlapping rotation; never include d)

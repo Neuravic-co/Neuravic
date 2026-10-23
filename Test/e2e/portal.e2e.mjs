@@ -135,6 +135,18 @@ await run("Client portal", async (browser, errors) => {
   check("file upload works, or reports clearly that storage is not configured", uploaded || unavailable);
   await owner.screenshot({ path: `${SCREENSHOTS}/portal-request-owner.png`, fullPage: true });
 
+  await owner.goto(`${BASE_URL}/portal/privacy`, { waitUntil: "networkidle" });
+  await owner.getByRole("heading", { name: "Your privacy requests" }).waitFor();
+  const downloaded = owner.waitForEvent("download");
+  await owner.getByRole("button", { name: "Download account copy" }).click();
+  const download = await downloaded;
+  check("privacy account copy downloads with a fixed filename", download.suggestedFilename() === "neuravic-account.json");
+  await owner.getByRole("button", { name: "Request reviewed export" }).click();
+  await owner.getByText("Export — pending", { exact: true }).waitFor();
+  await owner.getByRole("button", { name: "Request erasure review" }).click();
+  await owner.getByText("Erasure — pending", { exact: true }).waitFor();
+  check("privacy requests remain pending review and explain retention", /No records have been deleted/.test(await owner.getByRole("status").textContent()));
+
   // The admin approves from the queue
   await admin.getByRole("button", { name: "Requests" }).click();
   await admin.getByRole("button", { name: /Badge for contractor/ }).click();

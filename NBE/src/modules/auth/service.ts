@@ -158,7 +158,9 @@ export async function actorFromSession(deps: Deps, sessionToken: string): Promis
   const { session, user } = row;
   if (user.status !== "active" || session.expiresAt <= now || session.absoluteExpiresAt <= now) return null;
   const factor = user.staffRole ? await mfaRecord(deps, user.id) : undefined;
-  const mfaRequired = Boolean(user.staffRole && (deps.config.staffMfaRequired || factor?.enabledAt != null) && session.mfaVerifiedAt === null);
+  // A proof is valid only for a currently enrolled factor, including after supervised recovery.
+  const verified = factor?.enabledAt != null && session.mfaVerifiedAt !== null && session.mfaVerifiedAt >= factor.enabledAt;
+  const mfaRequired = Boolean(user.staffRole && (deps.config.staffMfaRequired || factor?.enabledAt != null) && !verified);
   if (mfaRequired && session.createdAt <= now - MFA_PENDING_TTL_MS) return null;
 
   const { idleMs } = sessionLifetimes(user);

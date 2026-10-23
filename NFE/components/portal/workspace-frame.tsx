@@ -21,6 +21,7 @@ export function WorkspaceFrame({ me, preview, children }: { me: Me; preview: boo
           {me.user.name ?? me.user.email}
         </span>
         {preview ? null : <SignOut />}
+        {preview ? null : <Link className="portal-link" href="/portal/privacy">Privacy</Link>}
       </header>
 
       <main className="ws-main" id="portal-content">

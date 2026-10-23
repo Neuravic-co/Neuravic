@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { ServiceMalwareScanner } from "../../NBE/src/modules/files/scanner";
+import { ServiceMalwareScanner, withScanDeadline } from "../../NBE/src/modules/files/scanner";
 
 describe("private malware scanner protocol", () => {
   it("sends bytes only to its binding and accepts only a digest-bound verdict", async () => {
@@ -17,10 +17,27 @@ describe("private malware scanner protocol", () => {
     for (const result of [
       new Response("outage", { status: 503 }), Response.json({ status: "clean", sha256: "other" }),
       Response.json({ status: "clean" }), Response.json({ status: "pending", sha256: "digest" }),
+      Response.json({ status: ["clean"], sha256: "digest" }),
       new Response("not-json", { headers: { "content-type": "application/json" } }), Response.json({ data: "x".repeat(2048) }),
     ]) {
       const scanner = new ServiceMalwareScanner({ fetch: async () => result } as never);
       await expect(scanner.scan(new ArrayBuffer(1), "digest")).rejects.toThrow();
     }
+  });
+
+  it("aborts an unresponsive scanner and cancels a stalled verdict stream", async () => {
+    vi.useFakeTimers();
+    try {
+      let signal: AbortSignal | undefined;
+      const pending = withScanDeadline((value) => { signal = value; return new Promise(() => {}); });
+      const failure = expect(pending).rejects.toThrow("scan_timeout");
+      await vi.advanceTimersByTimeAsync(10001); await failure;
+      expect(signal!.aborted).toBe(true);
+      let cancelled = false;
+      const scanner = new ServiceMalwareScanner({ fetch: async () => new Response(new ReadableStream({ cancel() { cancelled = true; } }), { headers: { "content-type": "application/json" } }) } as never);
+      const stalled = expect(scanner.scan(new ArrayBuffer(1), "digest")).rejects.toThrow();
+      await vi.advanceTimersByTimeAsync(10001); await stalled;
+      expect(cancelled).toBe(true);
+    } finally { vi.useRealTimers(); }
   });
 });

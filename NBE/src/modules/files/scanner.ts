@@ -10,22 +10,36 @@ export interface MalwareScanner {
   scan(data: ArrayBuffer, sha256: string): Promise<"clean" | "infected">;
 }
 
+/** Enforce a deadline even if a private binding does not honor AbortSignal. */
+export async function withScanDeadline<T>(task: (signal: AbortSignal) => Promise<T>, ms = 10_000): Promise<T> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      task(controller.signal),
+      new Promise<never>((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new Error("scan_timeout")); }, ms); }),
+    ]);
+  } finally { clearTimeout(timer); }
+}
+
 /** Private binding only. No client-chosen URL, public callback, filename or tenant data. */
 export class ServiceMalwareScanner implements MalwareScanner {
   constructor(private readonly service: Pick<Fetcher, "fetch">) {}
   async scan(data: ArrayBuffer, sha256: string): Promise<"clean" | "infected"> {
+    return withScanDeadline(async (signal) => {
     const result = await this.service.fetch("https://scanner.internal/scan", {
-      method: "POST", body: data, redirect: "error", signal: AbortSignal.timeout(10_000),
+      method: "POST", body: data, redirect: "error", signal,
       headers: { "content-type": "application/octet-stream", "x-content-sha256": sha256 },
     });
     if (!result.ok || !result.headers.get("content-type")?.startsWith("application/json")) {
       await result.body?.cancel(); throw new Error("scan_unavailable");
     }
-    const bytes = await readBoundedBody(new Request("https://scanner.internal/verdict", { method: "POST", body: result.body, duplex: "half" } as RequestInit), 1024);
+    const bytes = await readBoundedBody(new Request("https://scanner.internal/verdict", { method: "POST", body: result.body, signal, duplex: "half" } as RequestInit), 1024);
     const verdict: unknown = JSON.parse(new TextDecoder().decode(bytes));
     if (!verdict || typeof verdict !== "object" || !("sha256" in verdict) || verdict.sha256 !== sha256 ||
-      !("status" in verdict) || !["clean", "infected"].includes(String(verdict.status))) throw new Error("invalid_scan_verdict");
+      !("status" in verdict) || (verdict.status !== "clean" && verdict.status !== "infected")) throw new Error("invalid_scan_verdict");
     return verdict.status as "clean" | "infected";
+    });
   }
 }
 
@@ -63,7 +77,8 @@ export async function scanPendingFiles(deps: Deps, fileId?: string) {
       if (!blob) throw new Error("scan_blob_missing");
       const bytes = await readBoundedBody(new Request("https://storage.internal/file", { method: "POST", body: blob.body, duplex: "half" } as RequestInit), deps.config.maxUploadBytes);
       if (bytes.byteLength !== file.size || await sha256Hex(bytes) !== file.sha256) throw new Error("scan_blob_changed");
-      const state = await deps.scanner.scan(bytes, file.sha256);
+      const state = await withScanDeadline(() => deps.scanner!.scan(bytes, file.sha256));
+      if (state !== "clean" && state !== "infected") throw new Error("invalid_scan_verdict");
       await runBatch(deps.db, [
         deps.db.update(schema.files).set({ scanState: state, scanAttempts: file.scanAttempts + 1 }).where(ownsLease),
         auditInsert(deps.db, { orgId: file.orgId, action: `file.scan_${state}`, targetType: "file", targetId: file.id }, deps.now(), null, sql`changes() > 0`),

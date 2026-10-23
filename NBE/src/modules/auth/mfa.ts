@@ -90,7 +90,7 @@ export async function setupMfa(deps: Deps, actor: Actor) {
 }
 
 /** Atomically consumes a code and upgrades only this live session. No email-only reset exists. */
-export async function verifyMfa(deps: Deps, actor: Actor, code: string, enrollment: boolean) {
+export async function verifyMfa(deps: Deps, actor: Actor, code: string, enrollment: boolean, rotateRecovery = false) {
   requireMfaStaff(actor);
   const now = deps.now();
   const record = await mfaRecord(deps, actor.user.id);
@@ -102,12 +102,12 @@ export async function verifyMfa(deps: Deps, actor: Actor, code: string, enrollme
   let recoveryHashes = record.recoveryHashes;
   let recoveryCodes: string[] = [];
   if (step === null) {
-    if (enrollment || !/^[A-Za-z0-9_-]{22}$/.test(code)) throw unauthorized("Verification code is invalid or has already been used");
+    if (enrollment || rotateRecovery || !/^[A-Za-z0-9_-]{22}$/.test(code)) throw unauthorized("Verification code is invalid or has already been used");
     const hash = await sha256Hex(`${actor.user.id}\0${code}`);
     if (!recoveryHashes.includes(hash)) throw unauthorized("Verification code is invalid or has already been used");
     recoveryHashes = recoveryHashes.filter((item) => item !== hash);
   } else if (step <= record.lastUsedStep) throw unauthorized("Verification code is invalid or has already been used");
-  if (enrollment) {
+  if (enrollment || rotateRecovery) {
     recoveryCodes = Array.from({ length: 8 }, () => randomToken(16));
     recoveryHashes = await Promise.all(recoveryCodes.map((code) => sha256Hex(`${actor.user.id}\0${code}`)));
   }
@@ -121,7 +121,7 @@ export async function verifyMfa(deps: Deps, actor: Actor, code: string, enrollme
       eq(schema.staffMfa.lastUsedStep, record.lastUsedStep), eq(schema.staffMfa.recoveryHashes, record.recoveryHashes), liveSession,
     )).returning({ userId: schema.staffMfa.userId }),
     deps.db.update(schema.sessions).set({ mfaVerifiedAt: now }).where(and(eq(schema.sessions.id, actor.sessionId), sql`changes() > 0`)),
-    auditInsert(deps.db, { actorId: actor.user.id, action: enrollment ? "auth.mfa_enrolled" : step === null ? "auth.mfa_recovery_used" : "auth.mfa_verified" }, now, null, sql`changes() > 0`),
+    auditInsert(deps.db, { actorId: actor.user.id, action: enrollment ? "auth.mfa_enrolled" : rotateRecovery ? "auth.mfa_recovery_replaced" : step === null ? "auth.mfa_recovery_used" : "auth.mfa_verified" }, now, null, sql`changes() > 0`),
   ]);
   if (!Array.isArray(changed) || changed.length !== 1) throw unauthorized("Verification code is invalid or has already been used");
   return { recoveryCodes };

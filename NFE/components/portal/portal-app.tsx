@@ -14,6 +14,7 @@ import { RequestsView } from "./requests-view";
 import { useMe, useSession } from "./session";
 import { SignIn } from "./sign-in";
 import { StaffMfa } from "./staff-mfa";
+import { PrivacyView } from "./privacy-view";
 import { LeadsView, OrganisationsView } from "./staff-views";
 import { Workspace } from "./workspace";
 import { WorkspaceSection } from "./workspace-section";
@@ -27,6 +28,10 @@ export function PortalApp() {
       <Home />
     </Gate>
   );
+}
+
+export function PortalPrivacyApp() {
+  return <Gate><PrivacyView /></Gate>;
 }
 
 /** A full workspace page, or the client portal at /portal/clients. Staff only. */
@@ -203,6 +208,7 @@ function Shell({ initialTab, backHref }: { initialTab: Tab | null; backHref?: st
         <button type="button" className="portal-link" onClick={() => void signOut()}>
           Sign out
         </button>
+          <Link className="portal-link" href="/portal/privacy">Privacy</Link>
       </header>
 
       <nav className="portal-tabs" aria-label="Portal sections">

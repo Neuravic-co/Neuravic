@@ -2,6 +2,8 @@
 
 This is a reviewed change plan, not a record of a production deployment. Production deployment, credential rotation, repository protection changes and production recovery require the owner's separate approval.
 
+**Phase 3 update:** use [production configuration and recovery](production-configuration.md), [go-live checklist](go-live-checklist.md) and [current evidence/NO-GO assessment](phase-3-readiness.md) alongside this earlier rollout procedure. The later procedure covers all ten migrations, factor recovery guards, overlapping SSO keys, supervised privacy fulfillment, schema-first local restore and API/scheduled-work containment. Do not interpret the earlier additive-schema rollback discussion as approval to restore weaker MFA/quarantine code.
+
 ## Prepare and stage
 
 1. Provision staging with its own Worker, D1 and optional private R2 bucket. Never point test fixtures at production. Set `APP_ENV=staging`, an HTTPS `APP_URL`, and exact `ALLOWED_ORIGINS` including that website origin. Unknown environment names, wildcard/path-bearing origins and non-HTTPS deployed origins fail configuration validation.
@@ -17,6 +19,7 @@ cd NBE
 npm ci
 npm run typecheck
 npm test
+node scripts/verify-local-recovery.mjs # new isolated local databases only; never --remote
 npm run test:browser   # also needs NFE and Test dependencies plus Playwright Chromium
 npx drizzle-kit generate --name ci_check   # must produce no schema diff
 npx wrangler d1 migrations apply neuravic-db --local
