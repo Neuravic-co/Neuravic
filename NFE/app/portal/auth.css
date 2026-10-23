@@ -366,3 +366,32 @@
     transform: none;
   }
 }
+
+/* Notices and the resend actions */
+
+.auth-notice a {
+  color: var(--auth-blue-deep);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.auth-notice--warn {
+  padding: 0.75rem 1rem;
+  border: 1px solid #e3b25a;
+  border-left-width: 3px;
+  border-radius: 0.5rem;
+  background: #fff6e5;
+  font-size: 0.88rem !important;
+}
+
+.auth-sent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+}
+
+.auth-card .portal-link:disabled {
+  color: var(--auth-muted);
+  cursor: default;
+  text-decoration: none;
+}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { BackLink } from "@/components/back-link";
 import { notFound } from "next/navigation";
 import { LEGAL_DOCUMENTS, getLegalDocument } from "@/lib/legal-content";
 
@@ -50,7 +51,7 @@ export default async function LegalPage({
                 </Link>
               ))}
             </nav>
-            <Link href="/" className="legal__back">← Back to site</Link>
+            <BackLink fallback="/" className="legal__back">← Back to site</BackLink>
           </aside>
 
           <article className="legal__article">
