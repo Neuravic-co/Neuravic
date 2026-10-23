@@ -9,6 +9,7 @@ Everything about the security of the Neuravic website, portal and API lives here
 | [`hardening-checklist.md`](hardening-checklist.md) | What must be done before and after going live, and what is still missing |
 | [`scripts/security-check.sh`](scripts/security-check.sh) | Automated check: secrets in the repo and known-vulnerable dependencies. Runs in CI every week and on every change |
 | [`audit-2026-10-22.md`](audit-2026-10-22.md) | Confirmed findings, remediation evidence, validation results and remaining risks |
+| [`phase-2-verification.md`](phase-2-verification.md) | PR #55 diff verification, MFA/quarantine/CSP fixes, dependency blocker and production prerequisites |
 | [`api-inventory.md`](api-inventory.md) | Endpoint, authorization, data-operation and frontend integration map |
 | [`operations-runbook.md`](operations-runbook.md) | Staging, rollout order, monitoring, incident response, backup validation and rollback |
 
@@ -23,8 +24,7 @@ This folder explains it and checks it.
 node Security/scripts/security-check.mjs --history
 ```
 
-It fails if a secret-looking file or value is committed, or if the backend or the frontend has a high or critical
-vulnerability in a production dependency.
+It fails if a secret-looking file or value is found, or if NBE, NFE or Test has a moderate-or-worse advisory, including development dependencies. The current unpatched NFE build-tool advisory deliberately keeps this gate red; see the Phase 2 report. `--secrets-only` runs the offline source/history checks separately; it does not establish dependency safety.
 
 ## Status at a glance
 
@@ -33,9 +33,9 @@ deny-by-default access control with tenant isolation, input validation everywher
 checks, safe file uploads, hashed IP addresses, an audit log, short-lived signed tokens for product sign-on,
 and security headers on both the API and the website.
 
-**Not in place yet:** second factor for staff (passkeys or authenticator app), virus scanning of uploads,
-database-level backups and exports beyond the platform's own, a full script-source Content-Security-Policy on the
-website, and endpoints for data-subject access and deletion requests. Details and priorities are in
+**Phase 2 code:** staff authenticator MFA, fail-closed upload quarantine with a private scanner adapter, enforced nonce CSP, bounded member/comment collections and private operational status.
+
+**Still requires production work:** MFA key/enrollment, an actual malware engine, private alerts/backups and data-subject access/deletion workflows. Details and priorities are in
 [`hardening-checklist.md`](hardening-checklist.md).
 
 ## Dependency status (22 October 2026)

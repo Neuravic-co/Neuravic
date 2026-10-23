@@ -7,6 +7,7 @@ import { ulid } from "../../lib/ids";
 import { auditInsert, hashIdentifier } from "../audit/audit";
 import { drainOutbox, emailJob } from "../notifications/outbox";
 import type { Actor, OrgRole, User } from "./actor";
+import { MFA_PENDING_TTL_MS, mfaRecord } from "./mfa";
 
 export const LOGIN_TOKEN_TTL_MS = 15 * 60_000;
 const HOUR = 3_600_000;
@@ -134,7 +135,7 @@ export async function verifyMagicLink(
     )),
     // The per-claim session hash distinguishes even simultaneous verifications at the same timestamp.
     deps.db.insert(schema.sessions).select(sql`select ${sessionId}, ${user.id}, ${now + idleMs},
-      ${now + absoluteMs}, ${ipHash}, ${userAgentHash}, ${now} where ${claimBelongsToUs}`),
+      ${now + absoluteMs}, ${ipHash}, ${userAgentHash}, null, ${now} where ${claimBelongsToUs}`),
     ...(previousSessionId ? [deps.db.delete(schema.sessions).where(and(eq(schema.sessions.id, previousSessionId), claimBelongsToUs))] : []),
     auditInsert(deps.db, { actorId: user.id, action: "auth.login" }, now, ipHash, claimBelongsToUs),
   ]);
@@ -156,6 +157,9 @@ export async function actorFromSession(deps: Deps, sessionToken: string): Promis
   if (!row) return null;
   const { session, user } = row;
   if (user.status !== "active" || session.expiresAt <= now || session.absoluteExpiresAt <= now) return null;
+  const factor = user.staffRole ? await mfaRecord(deps, user.id) : undefined;
+  const mfaRequired = Boolean(user.staffRole && (deps.config.staffMfaRequired || factor?.enabledAt != null) && session.mfaVerifiedAt === null);
+  if (mfaRequired && session.createdAt <= now - MFA_PENDING_TTL_MS) return null;
 
   const { idleMs } = sessionLifetimes(user);
   let sessionRenewalSeconds: number | undefined;
@@ -173,7 +177,7 @@ export async function actorFromSession(deps: Deps, sessionToken: string): Promis
     .from(schema.memberships)
     .where(eq(schema.memberships.userId, user.id));
   const memberships = new Map<string, OrgRole>(memberRows.map((m) => [m.orgId, m.role]));
-  return { user, memberships, sessionId, sessionRenewalSeconds };
+  return { user, memberships, sessionId, sessionRenewalSeconds, sessionCreatedAt: session.createdAt, mfaRequired };
 }
 
 export async function endSession(deps: Deps, actor: Actor): Promise<void> {

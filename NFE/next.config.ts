@@ -4,8 +4,8 @@ import type { NextConfig } from "next";
  * Baseline security headers for every page.
  *
  * `frame-ancestors 'none'` stops other sites embedding the portal (clickjacking), `base-uri` and
- * `form-action` limit injected markup, and `object-src` blocks plugins. A full `script-src` policy is
- * not set yet because the framework injects inline scripts; see Security/hardening-checklist.md.
+ * `form-action` limit injected markup, and `object-src` blocks plugins. proxy.ts adds a nonce-based
+ * `script-src` policy for HTML documents.
  */
 const securityHeaders = [
   { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" },

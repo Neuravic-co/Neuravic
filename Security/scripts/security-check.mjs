@@ -39,7 +39,7 @@ export function scanFiles(directory) {
 }
 
 function dependencyAudit(folder) {
-  const args = ["audit", "--json", "--package-lock-only", "--omit=dev", "--audit-level=high", "--fetch-retries=0", "--fetch-timeout=30000"];
+  const args = ["audit", "--json", "--package-lock-only", "--audit-level=moderate", "--fetch-retries=0", "--fetch-timeout=30000"];
   const npmCli = path.join(path.dirname(process.execPath), "node_modules/npm/bin/npm-cli.js");
   const command = process.platform === "win32" ? process.execPath : "npm";
   const result = spawnSync(command, process.platform === "win32" ? [npmCli, ...args] : args, {
@@ -52,8 +52,8 @@ function dependencyAudit(folder) {
     console.error(`FAIL ${folder}: dependency audit unavailable; check registry connectivity and rerun`);
     return false;
   }
-  console.log(`${folder}: production advisories: critical=${counts.critical}, high=${counts.high}, moderate=${counts.moderate}, low=${counts.low}`);
-  return counts.high === 0 && counts.critical === 0;
+  console.log(`${folder}: all dependency advisories: critical=${counts.critical}, high=${counts.high}, moderate=${counts.moderate}, low=${counts.low}`);
+  return counts.moderate === 0 && counts.high === 0 && counts.critical === 0;
 }
 
 export function main(args = process.argv.slice(2)) {
@@ -71,7 +71,7 @@ export function main(args = process.argv.slice(2)) {
       passed = false;
     }
   }
-  if (!args.includes("--secrets-only")) for (const folder of ["NBE", "NFE"]) if (!dependencyAudit(folder)) passed = false;
+  if (!args.includes("--secrets-only")) for (const folder of ["NBE", "NFE", "Test"]) if (!dependencyAudit(folder)) passed = false;
   console.log(passed ? "Security check passed" : "Security check failed");
   return passed ? 0 : 1;
 }

@@ -22,6 +22,11 @@
     "hono": "^4.13.13",
     "zod": "^4.6.7"
   },
+  "overrides": {
+    "drizzle-kit": {
+      "@esbuild-kit/esm-loader": "npm:tsx@4.23.15"
+    }
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20261018.1",
     "@libsql/client": "^0.18.0",

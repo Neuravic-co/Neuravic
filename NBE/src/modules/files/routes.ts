@@ -10,6 +10,7 @@ import { auditInsert } from "../audit/audit";
 import { requireActor } from "../auth/middleware";
 import { requireOrgRole } from "../orgs/policy";
 import { loadRequest } from "../portal/loaders";
+import { scanPendingFiles, validateFileSignature } from "./scanner";
 
 /** Attachments on requests. Bytes live in R2; metadata and access control live here. */
 export const filesRoutes = new Hono<AppEnv>();
@@ -52,6 +53,7 @@ filesRoutes.put("/requests/:id/files", async (c) => {
 
   const data = await readBoundedBody(c.req.raw, deps.config.maxUploadBytes);
   if (data.byteLength === 0) throw badRequest("File is empty");
+  validateFileSignature(data, mime);
 
   const [{ total: attached } = { total: 0 }] = await deps.db
     .select({ total: count() })
@@ -85,6 +87,7 @@ filesRoutes.put("/requests/:id/files", async (c) => {
     await blobs.delete(file.storageKey).catch(() => deps.log.warn("blob_cleanup_failed", { fileId: id }));
     throw error;
   }
+  await deps.runInBackground(() => scanPendingFiles(deps, id));
   const { storageKey: _key, ...publicFile } = file;
   return c.json(publicFile, 201);
 });
@@ -115,7 +118,7 @@ filesRoutes.get("/files/:id/content", async (c) => {
   const blobs = requireBlobs(deps);
   const file = await loadFile(deps, c.req.param("id"));
   requireOrgRole(actor, file.orgId, "viewer");
-  if (file.scanState === "infected") throw forbidden("This file was blocked by a security scan");
+  if (file.scanState !== "clean") throw new AppError(423, "file_quarantined", "This file is unavailable until a security scan confirms it is clean");
   const blob = await blobs.get(file.storageKey);
   if (!blob) throw notFound("File content not found");
   return new Response(blob.body, {
@@ -125,6 +128,7 @@ filesRoutes.get("/files/:id/content", async (c) => {
       "content-disposition": `attachment; filename="${file.name.replace(/[^\x20-\x7e]/g, "_")}"; filename*=UTF-8''${encodeURIComponent(file.name)}`,
       "cache-control": "private, no-store",
       "x-content-type-options": "nosniff",
+      "content-security-policy": "default-src 'none'; sandbox",
     },
   });
 });

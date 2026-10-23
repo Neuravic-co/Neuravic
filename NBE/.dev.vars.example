@@ -4,6 +4,9 @@ BOOTSTRAP_ADMIN_EMAIL=you@example.com
 
 # Optional in development
 # PRIVACY_HASH_SECRET=  (dedicated random value, 32+ characters; required in staging/production)
+# MFA_ENCRYPTION_KEY=  (independent random 32-byte key, 64 hex characters; required for enforced staff MFA)
+# STAFF_MFA_REQUIRED=true  (defaults to true in staging/production, false in development)
+# MALWARE_SCANNER is a private service binding, not an HTTP credential or public callback.
 # TURNSTILE_SECRET=
 # RESEND_API_KEY=
 # SLACK_WEBHOOK_URL=

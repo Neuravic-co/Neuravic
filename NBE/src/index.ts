@@ -7,6 +7,7 @@ import { jsonLogger } from "./lib/logger";
 import { DbRateLimiter } from "./lib/rate-limit";
 import { runMaintenance } from "./modules/maintenance/service";
 import { R2BlobStore } from "./modules/files/blob-store";
+import { ServiceMalwareScanner } from "./modules/files/scanner";
 import { createJwtSigner } from "./modules/sso/jwt";
 import { ConsoleMailer, ResendMailer } from "./modules/notifications/mailer";
 
@@ -20,6 +21,7 @@ function buildDeps(env: Env, ctx?: BackgroundContext): Deps {
     http: fetch,
     sso: config.ssoPrivateJwk ? createJwtSigner(config.ssoPrivateJwk, config.ssoKeyId) : null,
     blobs: env.BUCKET ? new R2BlobStore(env.BUCKET) : null,
+    scanner: env.MALWARE_SCANNER ? new ServiceMalwareScanner(env.MALWARE_SCANNER) : null,
     mailer: config.resendApiKey
       ? new ResendMailer(config.resendApiKey, config.emailFrom)
       : new ConsoleMailer(jsonLogger),

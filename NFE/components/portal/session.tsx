@@ -9,6 +9,7 @@ type SessionState =
   /** `expired` is true when a signed-in session ended, so the sign-in screen can say so. */
   | { status: "anonymous"; expired: boolean }
   | { status: "unavailable" }
+  | { status: "mfa" }
   | { status: "ready"; me: Me };
 
 interface SessionContextValue {
@@ -27,6 +28,7 @@ async function loadSession(): Promise<SessionState> {
     return { status: "ready", me: await api<Me>("/me") };
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) return { status: "anonymous", expired: false };
+    if (error instanceof ApiError && error.code === "mfa_required") return { status: "mfa" };
     return { status: "unavailable" };
   }
 }

@@ -44,7 +44,7 @@ export const memberships = sqliteTable(
     role: text("role", { enum: ORG_ROLES }).notNull(),
     createdAt: integer("created_at").notNull(),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.orgId] }), index("memberships_org").on(t.orgId)],
+  (t) => [primaryKey({ columns: [t.userId, t.orgId] }), index("memberships_org").on(t.orgId), index("memberships_org_page").on(t.orgId, t.createdAt, t.userId)],
 );
 
 export const sessions = sqliteTable(
@@ -57,6 +57,7 @@ export const sessions = sqliteTable(
     absoluteExpiresAt: integer("absolute_expires_at").notNull(),
     ipHash: text("ip_hash"),
     userAgentHash: text("ua_hash"),
+    mfaVerifiedAt: integer("mfa_verified_at"),
     createdAt: integer("created_at").notNull(),
   },
   (t) => [
@@ -66,6 +67,16 @@ export const sessions = sqliteTable(
     index("sessions_absolute_expires").on(t.absoluteExpiresAt),
   ],
 );
+
+/** Staff factors are encrypted separately from the database; recovery codes are one-way hashes. */
+export const staffMfa = sqliteTable("staff_mfa", {
+  userId: text("user_id").primaryKey().references(() => users.id),
+  encryptedSecret: text("encrypted_secret").notNull(),
+  enabledAt: integer("enabled_at"),
+  createdAt: integer("created_at").notNull(),
+  lastUsedStep: integer("last_used_step").notNull().default(-1),
+  recoveryHashes: text("recovery_hashes", { mode: "json" }).$type<string[]>().notNull().default([]),
+});
 
 export const authTokens = sqliteTable(
   "auth_tokens",
@@ -181,7 +192,7 @@ export const comments = sqliteTable(
     body: text("body").notNull(),
     createdAt: integer("created_at").notNull(),
   },
-  (t) => [index("comments_request").on(t.requestId, t.createdAt)],
+  (t) => [index("comments_request").on(t.requestId, t.createdAt), index("comments_request_page").on(t.requestId, t.createdAt, t.id)],
 );
 
 export const files = sqliteTable(
@@ -196,10 +207,12 @@ export const files = sqliteTable(
     mime: text("mime").notNull(),
     sha256: text("sha256").notNull(),
     scanState: text("scan_state", { enum: ["pending", "clean", "infected"] }).notNull().default("pending"),
+    scanAttempts: integer("scan_attempts").notNull().default(0),
+    nextScanAt: integer("next_scan_at").notNull().default(0),
     uploadedBy: text("uploaded_by").notNull().references(() => users.id),
     createdAt: integer("created_at").notNull(),
   },
-  (t) => [index("files_request").on(t.requestId, t.createdAt)],
+  (t) => [index("files_request").on(t.requestId, t.createdAt), index("files_scan_due").on(t.scanState, t.nextScanAt)],
 );
 
 export const contentItems = sqliteTable(

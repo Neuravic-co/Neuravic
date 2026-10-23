@@ -1,4 +1,4 @@
-import { and, count, desc, eq, isNotNull, isNull, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, isNotNull, isNull, min, sql, type SQL } from "drizzle-orm";
 import { Hono } from "hono";
 import type { AppEnv } from "../../app";
 import { runBatch, schema } from "../../db";
@@ -17,6 +17,25 @@ import { auditQuery, inviteStaffSchema, listUsersQuery, updateUserSchema } from 
 export const adminRoutes = new Hono<AppEnv>();
 
 adminRoutes.route("/content", contentAdminRoutes);
+
+/** Private operational evidence, never keys, hashes, recipients or file content. */
+adminRoutes.get("/security-status", async (c) => {
+  requireStaff(c, ["admin"]);
+  const deps = c.get("deps");
+  const [staff, factors, scans, jobs] = await Promise.all([
+    deps.db.select({ total: count() }).from(schema.users).where(and(eq(schema.users.status, "active"), isNotNull(schema.users.staffRole))),
+    deps.db.select({ total: count() }).from(schema.staffMfa).innerJoin(schema.users, eq(schema.users.id, schema.staffMfa.userId)).where(and(isNotNull(schema.staffMfa.enabledAt), eq(schema.users.status, "active"), isNotNull(schema.users.staffRole))),
+    deps.db.select({ state: schema.files.scanState, total: count(), oldest: min(schema.files.createdAt) }).from(schema.files).groupBy(schema.files.scanState),
+    deps.db.select({ state: schema.outbox.state, total: count(), oldest: min(schema.outbox.createdAt) }).from(schema.outbox).groupBy(schema.outbox.state),
+  ]);
+  await deps.db.get(sql`select 1 as ready`);
+  return c.json({
+    database: "reachable",
+    controls: { deployedEnvironment: deps.config.environment !== "development", dedicatedPrivacyKey: deps.config.privacyHashSecret !== "neuravic-development-identifiers-only", staffMfaRequired: deps.config.staffMfaRequired, mfaKeyConfigured: Boolean(deps.config.mfaEncryptionKey), mailConfigured: Boolean(deps.config.resendApiKey), storageBound: Boolean(deps.blobs), scannerBound: Boolean(deps.scanner) },
+    staff: { active: staff[0]?.total ?? 0, enrolled: factors[0]?.total ?? 0 },
+    files: scans, outbox: jobs,
+  });
+});
 
 /** Counts for the admin console landing page. */
 adminRoutes.get("/overview", async (c) => {

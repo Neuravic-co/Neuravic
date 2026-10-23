@@ -2,6 +2,7 @@ import { and, eq, inArray, lt, or } from "drizzle-orm";
 import { runBatch, schema } from "../../db";
 import type { Deps } from "../../deps";
 import { drainOutbox } from "../notifications/outbox";
+import { scanPendingFiles } from "../files/scanner";
 
 const DAY = 24 * 3_600_000;
 export const CLEANUP_BATCH_LIMIT = 500;
@@ -30,6 +31,7 @@ export async function runMaintenance(deps: Deps): Promise<MaintenanceReport> {
   const now = deps.now();
 
   const { sent } = await drainOutbox(deps);
+  await scanPendingFiles(deps);
 
   const sessions = await db
     .delete(schema.sessions)

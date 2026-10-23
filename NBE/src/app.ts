@@ -10,7 +10,7 @@ import { AppError, isDatabaseGuard, isUniqueViolation } from "./lib/errors";
 import { readBoundedBody } from "./lib/body";
 import { ulid } from "./lib/ids";
 import type { Actor } from "./modules/auth/actor";
-import { loadActor, requireTrustedOrigin } from "./modules/auth/middleware";
+import { loadActor, requireStaffMfa, requireTrustedOrigin } from "./modules/auth/middleware";
 import { authRoutes, meRoutes } from "./modules/auth/routes";
 import { adminRoutes } from "./modules/admin/routes";
 import { contentRoutes } from "./modules/content/routes";
@@ -107,7 +107,7 @@ export function createApp(makeDeps: DepsFactory) {
     }
     return next();
   });
-  api.use("*", requireTrustedOrigin, loadActor);
+  api.use("*", requireTrustedOrigin, loadActor, requireStaffMfa);
 
   api.get("/health", (c) => c.json({ status: "ok" }));
   api.get("/version", (c) => c.json({ version: c.get("deps").config.version }));

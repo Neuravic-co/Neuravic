@@ -13,7 +13,7 @@ import {
 } from "@/lib/portal";
 import { STATE_TONE } from "./request-list";
 import { useMe } from "./session";
-import { useAction, useQuery } from "./use-query";
+import { useAction, usePaged, useQuery } from "./use-query";
 import { Badge, ErrorNote, Field, Loading } from "./ui";
 
 const ALLOWED_FILE_TYPES =
@@ -218,9 +218,8 @@ function Files({
       <ul className="portal-files">
         {request.files.map((file) => (
           <li key={file.id}>
-            <a href={`${API_BASE}/files/${file.id}/content`} download={file.name}>
-              {file.name}
-            </a>
+            {file.scanState === "clean" ? <a href={`${API_BASE}/files/${file.id}/content`} download={file.name}>{file.name}</a> :
+              <span>{file.name} — {file.scanState === "infected" ? "Blocked by security scan" : "Awaiting security scan"}</span>}
             <span>{formatBytes(file.size)}</span>
             {file.uploadedBy === me.user.id || canManage ? (
               <button type="button" className="portal-link" onClick={() => void remove(file.id)} disabled={busy}>
@@ -257,6 +256,7 @@ function Comments({
   const id = useId();
   const { busy, error, run } = useAction();
   const [body, setBody] = useState("");
+  const comments = usePaged<RequestDetailData["comments"][number]>(`/requests/${request.id}/comments`, {});
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -264,6 +264,7 @@ function Comments({
     const ok = await run(() => api(`/requests/${request.id}/comments`, { method: "POST", body: { body: body.trim() } }));
     if (ok) {
       setBody("");
+      comments.reload();
       onChanged();
     }
   }
@@ -271,9 +272,11 @@ function Comments({
   return (
     <>
       <h3 className="portal-subhead">Comments</h3>
-      {request.comments.length === 0 ? <p className="portal-hint">No comments yet.</p> : null}
+      {comments.loading ? <Loading label="Loading comments" /> : null}
+      {comments.error ? <ErrorNote error={comments.error} onRetry={comments.reload} /> : null}
+      {!comments.loading && comments.items.length === 0 ? <p className="portal-hint">No comments yet.</p> : null}
       <ul className="portal-thread">
-        {request.comments.map((comment) => (
+        {[...comments.items].reverse().map((comment) => (
           <li key={comment.id}>
             <div>
               <strong>{displayName(comment.authorName, comment.authorEmail)}</strong>
@@ -283,6 +286,7 @@ function Comments({
           </li>
         ))}
       </ul>
+      {comments.hasMore ? <button type="button" className="portal-button" onClick={() => void comments.loadMore()} disabled={comments.loadingMore}>Load older comments</button> : null}
       {canComment ? (
         <form className="portal-form" onSubmit={submit}>
           <Field label="Add a comment" htmlFor={`${id}-comment`}>

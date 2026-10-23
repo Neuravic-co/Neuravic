@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { CookieNotice } from "@/components/cookie-notice";
+import { headers } from "next/headers";
 
 export const metadata: Metadata = {
   applicationName: "Neuravic",
@@ -33,11 +34,12 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -45,6 +47,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://p.typekit.net" crossOrigin="anonymous" />
         <link rel="stylesheet" href="https://use.typekit.net/okn5dwf.css" />
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: "document.documentElement.classList.add('js')",
           }}

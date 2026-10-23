@@ -102,6 +102,7 @@ export interface Comment {
 }
 
 export interface FileItem {
+  scanState: "pending" | "clean" | "infected";
   id: string;
   name: string;
   size: number;

@@ -11,4 +11,6 @@ export interface Actor {
   memberships: Map<string, OrgRole>;
   sessionId: string;
   sessionRenewalSeconds?: number;
+  sessionCreatedAt?: number;
+  mfaRequired?: boolean;
 }

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MemoryBlobStore } from "../../NBE/src/modules/files/blob-store";
+import { schema } from "../../NBE/src/db";
+import { scanPendingFiles } from "../../NBE/src/modules/files/scanner";
 import { as, asJson, body, makeTestApp, seedOrg, signIn } from "./helpers";
 
 async function setup() {
@@ -19,6 +21,7 @@ const upload = (cookie: string, type: string, data: BodyInit) =>
 describe("files", () => {
   it("uploads, lists and downloads as an attachment", async () => {
     const { ctx, member, request } = await setup();
+    ctx.deps.scanner = { scan: async () => "clean" };
     const res = await ctx.request(`/api/v1/requests/${request.id}/files?name=${encodeURIComponent("plan.pdf")}`, upload(member, "application/pdf", "%PDF-1.4 hello"));
     expect(res.status).toBe(201);
     const file = await body(res);
@@ -70,5 +73,51 @@ describe("files", () => {
     expect((await ctx.request(`/api/v1/requests/${request.id}/files?name=a.txt`, upload(member, "text/plain", "hi"))).status).toBe(503);
     ctx.deps.blobs = store;
     expect(store.objects.size).toBe(0);
+  });
+
+  it("quarantines pending and infected bytes for every role, then releases only a clean digest-bound scan", async () => {
+    const { ctx, member, owner, request } = await setup();
+    const file = await body(await ctx.request(`/api/v1/requests/${request.id}/files?name=a.txt`, upload(member, "text/plain", "hello")));
+    for (const cookie of [owner, member]) {
+      const pending = await ctx.request(`/api/v1/files/${file.id}/content`, as(cookie));
+      expect(pending.status).toBe(423); expect(pending.headers.get("cache-control")).toBe("no-store");
+    }
+    ctx.deps.scanner = { scan: async () => "infected" };
+    expect(await scanPendingFiles(ctx.deps)).toBe(1);
+    expect((await ctx.request(`/api/v1/files/${file.id}/content`, as(owner))).status).toBe(423);
+    ctx.deps.scanner = { scan: async () => "clean" };
+    const safe = await body(await ctx.request(`/api/v1/requests/${request.id}/files?name=b.txt`, upload(member, "text/plain", "good")));
+    const download = await ctx.request(`/api/v1/files/${safe.id}/content`, as(owner));
+    expect(download.status).toBe(200);
+    expect(download.headers.get("content-security-policy")).toContain("sandbox");
+    expect(await download.text()).toBe("good");
+  });
+
+  it("keeps failures and changed storage content quarantined and backs off retries", async () => {
+    const { ctx, member, request } = await setup();
+    const file = await body(await ctx.request(`/api/v1/requests/${request.id}/files?name=a.txt`, upload(member, "text/plain", "hello")));
+    let calls = 0;
+    ctx.deps.scanner = { scan: async () => { calls++; throw new Error("private-provider-diagnostics"); } };
+    await scanPendingFiles(ctx.deps);
+    await scanPendingFiles(ctx.deps);
+    expect(calls).toBe(1);
+    const [stored] = await ctx.deps.db.select().from(schema.files);
+    expect(stored!.scanState).toBe("pending"); expect(stored!.scanAttempts).toBe(1);
+    const store = ctx.deps.blobs as MemoryBlobStore;
+    store.objects.get(stored!.storageKey)!.data = new TextEncoder().encode("altered").buffer as ArrayBuffer;
+    ctx.deps.now = () => stored!.nextScanAt + 1;
+    ctx.deps.scanner = { scan: async () => { calls++; return "clean"; } };
+    await scanPendingFiles(ctx.deps);
+    expect(calls).toBe(1);
+    expect((await ctx.request(`/api/v1/files/${file.id}/content`, as(member))).status).toBe(423);
+  });
+
+  it("rejects spoofed binary types and malformed UTF-8 before storing content", async () => {
+    const { ctx, member, request } = await setup();
+    for (const mime of ["application/pdf", "image/png", "image/jpeg", "image/webp", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]) {
+      expect((await ctx.request(`/api/v1/requests/${request.id}/files`, upload(member, mime, "<script>fake</script>"))).status).toBe(415);
+    }
+    expect((await ctx.request(`/api/v1/requests/${request.id}/files`, upload(member, "text/plain", new Uint8Array([0xff])))).status).toBe(415);
+    expect((ctx.deps.blobs as MemoryBlobStore).objects.size).toBe(0);
   });
 });
