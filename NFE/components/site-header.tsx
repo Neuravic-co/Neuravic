@@ -111,9 +111,15 @@ export function SiteHeader() {
                 </a>
               ))}
             </nav>
-            <a className="mobile-nav__portal" href={portalHref}>
+            <a className="mobile-nav__portal" href="/login" onClick={closeMenu}>
               <UserRound aria-hidden="true" size={18} strokeWidth={1.5} />
-              Sign in / Portal
+              Log in
+            </a>
+            <a className="mobile-nav__portal" href="/signup" onClick={closeMenu}>
+              Sign up
+            </a>
+            <a className="mobile-nav__portal" href={portalHref} onClick={closeMenu}>
+              Portal
             </a>
           </div>
           <p>Dubai / Cairo</p>

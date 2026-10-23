@@ -49,7 +49,7 @@ export function VerifyLogin() {
                 ? "Check your connection and open the link again."
                 : "Sign-in links work once and expire after 15 minutes. Request a new one to continue."}
             </p>
-            <Link className="button button--primary" href="/portal">
+            <Link className="button button--primary" href="/login">
               <span>Back to sign in</span>
             </Link>
           </>

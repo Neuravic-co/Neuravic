@@ -4,6 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { ApiError, api } from "@/lib/api";
 import { validateContact } from "@/lib/validation";
+import { useTurnstile } from "./use-turnstile";
 
 const SERVICES = [
   { value: "ai", label: "AI systems" },
@@ -17,17 +18,6 @@ type ServiceValue = (typeof SERVICES)[number]["value"];
 type FieldName = "firstName" | "lastName" | "email" | "company" | "message" | "consent" | "form";
 type Errors = Partial<Record<FieldName, string>>;
 
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
-
-declare global {
-  interface Window {
-    turnstile?: {
-      render: (el: HTMLElement, options: Record<string, unknown>) => string;
-      reset: (id?: string) => void;
-    };
-  }
-}
-
 export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
   const uid = useId();
   const [services, setServices] = useState<ServiceValue[]>([]);
@@ -37,32 +27,8 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
   const [emailInstead, setEmailInstead] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [sentTo, setSentTo] = useState("");
-  const [token, setToken] = useState("");
-  const widget = useRef<HTMLDivElement>(null);
-  const widgetId = useRef<string | undefined>(undefined);
+  const { container: widget, token, reset: resetCheck, enabled: checkEnabled } = useTurnstile();
   const confirmation = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!TURNSTILE_SITE_KEY || !widget.current) return;
-    const render = () => {
-      if (!window.turnstile || !widget.current || widgetId.current) return;
-      widgetId.current = window.turnstile.render(widget.current, {
-        sitekey: TURNSTILE_SITE_KEY,
-        theme: "dark",
-        callback: (value: string) => setToken(value),
-        "expired-callback": () => setToken(""),
-      });
-    };
-    if (window.turnstile) {
-      render();
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-    script.async = true;
-    script.onload = render;
-    document.head.appendChild(script);
-  }, []);
 
   // The form collapses on success: bring the confirmation into view and announce it.
   useEffect(() => {
@@ -103,7 +69,7 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
       document.getElementById(`${uid}-${Object.keys(parsed.errors)[0]}`)?.focus();
       return;
     }
-    if (TURNSTILE_SITE_KEY && !token) {
+    if (checkEnabled && !token) {
       setErrors({ form: "Please complete the verification check first." });
       return;
     }
@@ -128,8 +94,7 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
       setStatus("sent");
     } catch (error) {
       setStatus("idle");
-      if (window.turnstile && widgetId.current) window.turnstile.reset(widgetId.current);
-      setToken("");
+      resetCheck();
       if (error instanceof ApiError && error.status === 400 && error.fieldErrors.length) {
         const next: Errors = {};
         for (const item of error.fieldErrors) {
@@ -259,7 +224,7 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
         </span>
       ) : null}
 
-      {TURNSTILE_SITE_KEY ? <div ref={widget} className="contact-form__turnstile" /> : null}
+      {checkEnabled ? <div ref={widget} className="contact-form__turnstile" /> : null}
 
       <div aria-live="polite">
         {errors.form ? <p className="contact-form__error contact-form__error--form">{errors.form}</p> : null}

@@ -1,11 +1,10 @@
 "use client";
 
-import { LogIn, LogOut, UserRound } from "lucide-react";
+import { LogIn, LogOut, UserPlus, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import type { Me } from "@/lib/portal";
-import { PORTAL_OPEN } from "@/lib/portal-gate";
 
 type Account = { status: "unknown" } | { status: "anonymous" } | { status: "signed-in"; me: Me };
 
@@ -17,7 +16,7 @@ export function ProfileMenu() {
 
   // Check for a session the first time the menu opens, so the public site makes no request until it is needed.
   useEffect(() => {
-    if (!open || !PORTAL_OPEN || account.status !== "unknown") return;
+    if (!open || account.status !== "unknown") return;
     let cancelled = false;
     api<Me>("/me")
       .then((me) => !cancelled && setAccount({ status: "signed-in", me }))
@@ -63,7 +62,7 @@ export function ProfileMenu() {
       <button
         type="button"
         className="site-header__profile"
-        aria-label={me ? "Your account" : "Sign in or log in"}
+        aria-label={me ? "Your account" : "Log in or sign up"}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls="profile-menu-panel"
@@ -87,26 +86,16 @@ export function ProfileMenu() {
                 Sign out
               </button>
             </>
-          ) : PORTAL_OPEN ? (
-            <>
-              <p className="profile-menu__title">Sign in or log in</p>
-              <p className="profile-menu__text">
-                Use your email. We send you a one-time link, so there is no password to remember.
-              </p>
-              <Link className="profile-menu__action" href="/portal" onClick={() => setOpen(false)}>
-                <LogIn aria-hidden="true" size={16} strokeWidth={1.5} />
-                Continue to sign in
-              </Link>
-            </>
           ) : (
             <>
-              <p className="profile-menu__title">Sign-in opens soon</p>
-              <p className="profile-menu__text">
-                The portal is being set up, so accounts are not open yet. You can look around a preview in the meantime.
-              </p>
-              <Link className="profile-menu__action" href="/portal" onClick={() => setOpen(false)}>
-                <UserRound aria-hidden="true" size={16} strokeWidth={1.5} />
-                See the preview
+              <p className="profile-menu__title">Welcome</p>
+              <Link className="profile-menu__action" href="/login" onClick={() => setOpen(false)}>
+                <LogIn aria-hidden="true" size={16} strokeWidth={1.5} />
+                Log in
+              </Link>
+              <Link className="profile-menu__quiet" href="/signup" onClick={() => setOpen(false)}>
+                <UserPlus aria-hidden="true" size={16} strokeWidth={1.5} />
+                Sign up
               </Link>
             </>
           )}
