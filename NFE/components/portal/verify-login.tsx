@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ApiError, api } from "@/lib/api";
+import { AuthShell } from "./auth-shell";
 
 async function exchangeToken(token: string | null): Promise<"ok" | "failed" | "network"> {
   if (!token) return "failed";
@@ -33,9 +34,9 @@ export function VerifyLogin() {
   }, []);
 
   return (
-    <main className="portal-auth">
-      <div className="portal-auth__card" role="status">
-        <p className="portal-eyebrow">Portal / Sign in</p>
+    <AuthShell>
+      <div className="auth-card" role="status">
+        <p className="auth-eyebrow">Portal / Sign in</p>
         {state === "working" ? (
           <>
             <h1>Signing you in…</h1>
@@ -49,12 +50,12 @@ export function VerifyLogin() {
                 ? "Check your connection and open the link again."
                 : "Sign-in links work once and expire after 15 minutes. Request a new one to continue."}
             </p>
-            <Link className="button button--primary" href="/login">
+            <Link className="auth-submit auth-submit--link" href="/login">
               <span>Back to sign in</span>
             </Link>
           </>
         )}
       </div>
-    </main>
+    </AuthShell>
   );
 }

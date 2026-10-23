@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PortalProviders } from "@/components/portal/portal-providers";
 import "./portal.css";
+import "./auth.css";
 
 export const metadata: Metadata = {
   title: "Portal — Neuravic",
