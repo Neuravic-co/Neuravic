@@ -11,11 +11,17 @@ export async function readBoundedBody(request: Request, maxBytes: number): Promi
   if (!request.body) return new ArrayBuffer(0);
 
   const reader = request.body.getReader();
+  const signal = request.signal;
+  const abort = () => { void reader.cancel().catch(() => {}); };
+  signal.addEventListener("abort", abort, { once: true });
+  if (signal.aborted) abort();
   const chunks: Uint8Array[] = [];
   let size = 0;
   try {
     while (true) {
+      signal.throwIfAborted();
       const { value, done } = await reader.read();
+      signal.throwIfAborted();
       if (done) break;
       size += value.byteLength;
       if (size > maxBytes) {
@@ -26,6 +32,7 @@ export async function readBoundedBody(request: Request, maxBytes: number): Promi
       chunks.push(value);
     }
   } finally {
+    signal.removeEventListener("abort", abort);
     reader.releaseLock();
   }
   const result = new Uint8Array(size);

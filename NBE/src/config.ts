@@ -4,6 +4,7 @@ import type { Env } from "./env";
 export interface Config {
   environment: "development" | "staging" | "production";
   version: string;
+  maintenanceMode: boolean;
   appUrl: string;
   allowedOrigins: string[];
   emailFrom: string;
@@ -15,6 +16,7 @@ export interface Config {
   ssoAudiences: string[];
   ssoKeyId: string;
   ssoPrivateJwk: string | null;
+  ssoPublicJwks: string | null;
   proxySecret: string | null;
   privacyHashSecret: string;
   mfaEncryptionKey: string | null;
@@ -39,6 +41,7 @@ const envSchema = z.object({
   PRIVACY_HASH_SECRET: z.string().min(32).optional(),
   MFA_ENCRYPTION_KEY: z.string().regex(/^[a-fA-F0-9]{64}$/).optional(),
   STAFF_MFA_REQUIRED: z.enum(["true", "false"]).optional(),
+  MAINTENANCE_MODE: z.enum(["true", "false"]).optional(),
 });
 
 /** Validates the Worker environment once and returns typed configuration. */
@@ -81,6 +84,7 @@ export function loadConfig(env: Env): Config {
   return {
     environment,
     version: env.APP_VERSION ?? "dev",
+    maintenanceMode: env.MAINTENANCE_MODE === "true",
     appUrl,
     allowedOrigins: [...new Set(origins)],
     emailFrom: env.EMAIL_FROM,
@@ -92,6 +96,7 @@ export function loadConfig(env: Env): Config {
     ssoAudiences: list(env.SSO_AUDIENCES),
     ssoKeyId: env.SSO_KEY_ID ?? "neuravic-1",
     ssoPrivateJwk: env.SSO_PRIVATE_JWK || null,
+    ssoPublicJwks: env.SSO_PUBLIC_JWKS || null,
     proxySecret: env.PROXY_SECRET || null,
     // Development only: deployed environments must provide their own independent random key.
     privacyHashSecret: env.PRIVACY_HASH_SECRET ?? "neuravic-development-identifiers-only",

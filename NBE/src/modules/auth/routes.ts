@@ -27,10 +27,10 @@ authRoutes.get("/mfa", async (c) => {
 // Bound attempts by account as well as IP so rotating networks cannot bypass the guessing budget.
 const mfaLimit = () => rateLimit({ name: "mfa-user", limit: 10, windowSeconds: 600, key: (c) => requireActor(c).user.id });
 authRoutes.post("/mfa/setup", mfaLimit(), async (c) => c.json(await setupMfa(c.get("deps"), requireActor(c))));
-for (const action of ["confirm", "verify"] as const) {
+for (const action of ["confirm", "verify", "recovery-codes"] as const) {
   authRoutes.post(`/mfa/${action}`, mfaLimit(), async (c) => {
     const { code } = await parseJson(c, z.object({ code: z.string().trim().min(6).max(32) }));
-    return c.json(await verifyMfa(c.get("deps"), requireActor(c), code, action === "confirm"));
+    return c.json(await verifyMfa(c.get("deps"), requireActor(c), code, action === "confirm", action === "recovery-codes"));
   });
 }
 

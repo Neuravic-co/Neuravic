@@ -27,6 +27,10 @@ export interface MaintenanceReport {
 
 /** Runs on the cron trigger (every 5 minutes): retries, housekeeping and retention. */
 export async function runMaintenance(deps: Deps): Promise<MaintenanceReport> {
+  if (deps.config.maintenanceMode) {
+    deps.log.info("maintenance_paused");
+    return { emailsSent: 0, sessionsRemoved: 0, tokensRemoved: 0, leadsRemoved: 0, outboxRemoved: 0, rateLimitsRemoved: 0 };
+  }
   const { db } = deps;
   const now = deps.now();
 

@@ -2,6 +2,18 @@ import { describe, expect, it } from "vitest";
 import { body, makeTestApp } from "./helpers";
 
 describe("health", () => {
+  it("contains the API during an approved maintenance cutover without trusting caller flags", async () => {
+    const ctx = await makeTestApp();
+    ctx.deps.config.maintenanceMode = true;
+    for (const path of ["/me", "/auth/magic-link", "/auth/mfa/verify", "/me/privacy/export", "/admin/privacy-requests"]) {
+      const response = await ctx.request(`/api/v1${path}`, { headers: { "x-maintenance-mode": "false" } });
+      expect(response.status).toBe(503); expect(response.headers.get("cache-control")).toBe("no-store");
+      expect(response.headers.get("retry-after")).toBe("300");
+    }
+    expect(await body(await ctx.request("/api/v1/health"))).toEqual({ status: "maintenance" });
+    ctx.deps.config.maintenanceMode = false;
+    expect((await ctx.request("/api/v1/me")).status).toBe(401);
+  });
   it("reports ok with a request id and security headers", async () => {
     const { request } = await makeTestApp();
     const res = await request("/api/v1/health");

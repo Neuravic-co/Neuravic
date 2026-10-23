@@ -8,6 +8,22 @@ import { makeTestApp } from "./helpers";
 const DAY = 24 * 3_600_000;
 
 describe("maintenance", () => {
+  it("pauses scheduled delivery, scanning and retention during recovery containment", async () => {
+    const { deps, mailer } = await makeTestApp();
+    await emailJob(deps.db, deps.now() - 10, { to: "fixture@test.dev", subject: "Isolated recovery", text: "fixture" });
+    deps.config.maintenanceMode = true;
+    const remove = vi.spyOn(deps.db, "delete");
+    deps.scanner = { scan: vi.fn() };
+    expect(await runMaintenance(deps)).toEqual({ emailsSent: 0, sessionsRemoved: 0, tokensRemoved: 0, leadsRemoved: 0, outboxRemoved: 0, rateLimitsRemoved: 0 });
+    expect(mailer.sent).toHaveLength(0);
+    expect(remove).not.toHaveBeenCalled();
+    expect(deps.scanner.scan).not.toHaveBeenCalled();
+    expect((await deps.db.select().from(schema.outbox))[0]!.state).toBe("pending");
+    remove.mockRestore();
+    deps.config.maintenanceMode = false;
+    expect((await runMaintenance(deps)).emailsSent).toBe(1);
+  });
+
   it("bounds cleanup work per run and catches up on the next scheduled run", async () => {
     const { deps } = await makeTestApp();
     const now = 1000;

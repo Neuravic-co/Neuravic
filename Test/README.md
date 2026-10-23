@@ -2,6 +2,10 @@
 
 Backend and security tests use Vitest with the real migrations applied to a fresh in-memory libSQL database. Browser tests use Playwright and axe-core against the real frontend and an isolated API.
 
+Phase 3 evidence: **179 backend tests**, privacy workflow and recovery-code replacement browser checks, overlapping-JWKS tests, populated migration upgrade and an isolated local D1 backup/restore script. See `Security/phase-3-readiness.md`; the dependency gate remains intentionally failing for eight unpatched NFE high entries.
+
+For strict challenge-provider CSP fixture coverage, build each frontend with public `NEXT_PUBLIC_TURNSTILE_SITE_KEY=local-csp-fixture` set only for that build process, then run browser tests with `CSP_EXPECT_TURNSTILE=true`. Keep the dev-server process free of that build-only value; functional contact tests use the isolated API without a real provider. CI already scopes these values per step. Requests to the challenge provider are intercepted in the production CSP test; real provider verification remains a staging requirement. `node NBE/scripts/verify-local-recovery.mjs` from the repository root creates only new local fixture databases and retains ignored evidence under `tmp/`; never point it at production.
+
 ## Backend and security regression suite
 
 ```bash

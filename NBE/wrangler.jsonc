@@ -27,7 +27,9 @@
   // "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "neuravic-files" }]
   //
   // Secrets (wrangler secret put <NAME>):
-  // PRIVACY_HASH_SECRET (required outside development), BOOTSTRAP_ADMIN_EMAIL,
+  // PRIVACY_HASH_SECRET (required outside development), MFA_ENCRYPTION_KEY, BOOTSTRAP_ADMIN_EMAIL,
   // TURNSTILE_SECRET, RESEND_API_KEY, PROXY_SECRET,
   // SLACK_WEBHOOK_URL, SSO_PRIVATE_JWK
+  // Optional public-only SSO_PUBLIC_JWKS supports overlapping rotation. See Security/production-configuration.md.
+  // MAINTENANCE_MODE=true contains API traffic; changing a deployed value requires owner approval.
 }

@@ -1,5 +1,7 @@
 # Hardening checklist
 
+> Current release decision: **NO-GO**. Use [Phase 3 go-live checklist](go-live-checklist.md) for mandatory blockers, exact branch rules and owner actions. This original checklist is retained as a broader ongoing maintenance inventory.
+
 Tick items off as they are done. "Code" means it is already built and tested; "Deploy" means you must do it
 when you set up the real environment; "Gap" means it is not built yet.
 
@@ -33,11 +35,13 @@ when you set up the real environment; "Gap" means it is not built yet.
 - [x] **Code** New audit IP/UA and rate-limit identities use domain-separated HMAC with a dedicated key. Older rows remain subject to existing retention; this is pseudonymization, not anonymization.
 - [x] **Code** Actual streamed request/upload limits, atomic login and security-event revocation, race-safe enquiries/approvals/file quotas, bounded retention and safe outbox retries have automated regressions (see the audit).
 - [x] **Code** Enforced nonce-based script CSP, source restrictions and private/no-store HTML on both frontend runtimes. Verify configured providers in staging before release.
-- [ ] **Gap (P2)** Endpoints and a runbook for data-subject requests (export and delete a person's data).
+- [x] **Code** Limited recent-auth account copy, reviewed privacy intake/history and separate staff-admin review/audit; portal integration and regressions.
+- [ ] **Owner / staging** Approve and exercise complete privacy export/erasure fulfillment, tenant confidentiality, legal holds, deadlines and retention. Intake/status changes do not perform erasure.
 - [ ] **Gap (P2)** Alerts: spike in failed sign-ins, outbox jobs marked `dead`, sudden rise in 5xx, first sign-in of a staff account from a new country.
 - [ ] **Gap (P2)** Nightly export of the database to a separate bucket, and a restore drill every quarter.
 - [ ] **Gap (P3)** Make the audit log tamper-evident at the database level (write-only role, or hash chain).
-- [ ] **Gap (P3)** Exercise the SSO key rotation: publish two keys in the JWKS, switch `SSO_KEY_ID`, retire the old key.
+- [x] **Code** Public-only overlapping JWKS, switch/cached-overlap/expiry/retirement tests and configuration validation.
+- [ ] **Owner / staging** Exercise actual consumer SSO key rotation before changing production keys; see `production-configuration.md`.
 
 ## D. Every month
 

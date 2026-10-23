@@ -10,6 +10,10 @@ Everything about the security of the Neuravic website, portal and API lives here
 | [`scripts/security-check.sh`](scripts/security-check.sh) | Automated check: secrets in the repo and known-vulnerable dependencies. Runs in CI every week and on every change |
 | [`audit-2026-10-22.md`](audit-2026-10-22.md) | Confirmed findings, remediation evidence, validation results and remaining risks |
 | [`phase-2-verification.md`](phase-2-verification.md) | PR #55 diff verification, MFA/quarantine/CSP fixes, dependency blocker and production prerequisites |
+| [`phase-3-readiness.md`](phase-3-readiness.md) | Current combined PR verification, dependency exposure and evidence-based NO-GO assessment |
+| [`integration-verification.md`](integration-verification.md) | Latest implementation fixes, regression evidence and active ruleset context corrections |
+| [`production-configuration.md`](production-configuration.md) | Secret custody/rotation, scanner, MFA, privacy, SSO, monitoring and recovery procedures |
+| [`go-live-checklist.md`](go-live-checklist.md) | Completed checks, mandatory blockers, exact main protection settings and owner sign-offs |
 | [`api-inventory.md`](api-inventory.md) | Endpoint, authorization, data-operation and frontend integration map |
 | [`operations-runbook.md`](operations-runbook.md) | Staging, rollout order, monitoring, incident response, backup validation and rollback |
 
@@ -24,7 +28,7 @@ This folder explains it and checks it.
 node Security/scripts/security-check.mjs --history
 ```
 
-It fails if a secret-looking file or value is found, or if NBE, NFE or Test has a moderate-or-worse advisory, including development dependencies. The current unpatched NFE build-tool advisory deliberately keeps this gate red; see the Phase 2 report. `--secrets-only` runs the offline source/history checks separately; it does not establish dependency safety.
+It fails if a secret-looking file or value is found, or if NBE, NFE or Test has a moderate-or-worse advisory, including development dependencies. The current unpatched NFE build-tool advisory deliberately keeps this gate red; see the Phase 3 report. `--secrets-only` runs the offline source/history checks separately; it does not establish dependency safety.
 
 ## Status at a glance
 
@@ -35,8 +39,9 @@ and security headers on both the API and the website.
 
 **Phase 2 code:** staff authenticator MFA, fail-closed upload quarantine with a private scanner adapter, enforced nonce CSP, bounded member/comment collections and private operational status.
 
-**Still requires production work:** MFA key/enrollment, an actual malware engine, private alerts/backups and data-subject access/deletion workflows. Details and priorities are in
-[`hardening-checklist.md`](hardening-checklist.md).
+**Phase 3 code:** factor reset revocation/recovery-code replacement, bounded scanner verdicts and changed-object denial, reviewed privacy request tracking, overlapping public SSO keys, recovery containment and isolated D1 restore verification.
+
+**Current decision: NO-GO.** The dependency gate remains red. Independent keys/enrollment, a real scanner, actual provider/CSP/SSO checks, alerts/backups/restore and full reviewed privacy fulfillment need owner/staging evidence. See the current [`go-live-checklist.md`](go-live-checklist.md); no residual risk has been accepted.
 
 ## Dependency status (22 October 2026)
 

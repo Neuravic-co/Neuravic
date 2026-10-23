@@ -64,5 +64,5 @@ jwksRoutes.get("/", async (c) => {
   const sso = c.get("deps").sso;
   if (!sso) throw new AppError(503, "sso_unavailable", "Single sign-on is not configured");
   c.header("cache-control", "public, max-age=300");
-  return c.json({ keys: [await sso.publicJwk()] });
+  return c.json(await sso.publicJwks());
 });
