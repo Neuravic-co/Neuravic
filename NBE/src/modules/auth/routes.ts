@@ -8,13 +8,21 @@ import { rateLimit } from "../../lib/rate-limit";
 import { clientIp } from "../../lib/request";
 import { parseJson } from "../../lib/validate";
 import { requireActor, sessionCookieName } from "./middleware";
-import { endSession, requestMagicLink, verifyMagicLink } from "./service";
+import { verifyTurnstile } from "../leads/turnstile";
+import { unprocessable } from "../../lib/errors";
+import { endSession, requestMagicLink, requestSignup, verifyMagicLink } from "./service";
 import { mfaRecord, requireMfaStaff, setupMfa, verifyMfa } from "./mfa";
 
 export const authRoutes = new Hono<AppEnv>();
 export const meRoutes = new Hono<AppEnv>();
 
 const emailSchema = z.object({ email: z.string().trim().toLowerCase().email().max(254) });
+const signupSchema = z.object({
+  name: z.string().trim().min(2).max(100),
+  email: z.string().trim().toLowerCase().email().max(254),
+  consent: z.literal(true),
+  turnstileToken: z.string().max(2048).optional(),
+});
 const verifySchema = z.object({ token: z.string().min(20).max(200) });
 
 authRoutes.get("/mfa", async (c) => {
@@ -38,6 +46,15 @@ authRoutes.post("/magic-link", rateLimit({ name: "magic-ip", limit: 20, windowSe
   const { email } = await parseJson(c, emailSchema);
   await requestMagicLink(c.get("deps"), email, clientIp(c));
   return c.json({ status: "sent_if_account_exists" }, 202);
+});
+
+authRoutes.post("/signup", rateLimit({ name: "signup-ip", limit: 10, windowSeconds: 3600 }), async (c) => {
+  const deps = c.get("deps");
+  const input = await parseJson(c, signupSchema);
+  const ip = clientIp(c);
+  if (!(await verifyTurnstile(deps, input.turnstileToken, ip))) throw unprocessable("Bot check failed");
+  await requestSignup(deps, input, ip);
+  return c.json({ status: "link_sent" }, 202);
 });
 
 authRoutes.post("/verify", rateLimit({ name: "verify-ip", limit: 30, windowSeconds: 3600 }), async (c) => {

@@ -76,12 +76,38 @@ export async function requestMagicLink(deps: Deps, email: string, ip: string): P
     user = await findUserByEmail(deps, email);
   }
   if (!user || user.status === "disabled") return;
+  await sendLoginLink(deps, user, ip, now, "auth.magic_link_requested");
+}
 
+async function sendLoginLink(deps: Deps, user: User, ip: string, now: number, action: string): Promise<void> {
   await runBatch(deps.db, [
     ...(await loginLinkWrites(deps, user, now)),
-    auditInsert(deps.db, { actorId: user.id, action: "auth.magic_link_requested" }, now, await hashIdentifier(ip, deps.config.privacyHashSecret)),
+    auditInsert(deps.db, { actorId: user.id, action }, now, await hashIdentifier(ip, deps.config.privacyHashSecret)),
   ]);
   await deps.runInBackground(() => drainOutbox(deps));
+}
+
+/**
+ * Self-service sign-up. Creates a client account with no organisation and no staff role, then emails a sign-in link,
+ * which is also what proves the person owns the address. An address that already has an account just gets a sign-in
+ * link, and the caller sees the same result either way, so the form cannot be used to find out who has an account.
+ */
+export async function requestSignup(deps: Deps, input: { name: string; email: string }, ip: string): Promise<void> {
+  const now = deps.now();
+  const identifier = await hashIdentifier(input.email, deps.config.privacyHashSecret, "rate:signup-email");
+  if (!(await deps.rateLimiter.hit(`signup-email:${identifier}`, 5, 3600, now))) return;
+
+  let user = await findUserByEmail(deps, input.email);
+  if (!user) {
+    // A concurrent request may create the same user first; the insert then does nothing.
+    await deps.db
+      .insert(schema.users)
+      .values({ id: ulid(now), email: input.email, name: input.name, status: "invited", staffRole: null, createdAt: now })
+      .onConflictDoNothing();
+    user = await findUserByEmail(deps, input.email);
+  }
+  if (!user || user.status === "disabled") return;
+  await sendLoginLink(deps, user, ip, now, "auth.signup_requested");
 }
 
 export interface VerifiedLogin {

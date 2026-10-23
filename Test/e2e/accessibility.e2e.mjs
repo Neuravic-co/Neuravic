@@ -40,9 +40,18 @@ await run("Accessibility", async (browser, errors) => {
   await scan(mobile, "mobile menu");
 
   await page.goto(BASE_URL, { waitUntil: "networkidle" });
-  await page.getByRole("button", { name: "Sign in or log in" }).click();
+  await page.getByRole("button", { name: "Log in or sign up" }).click();
   await page.getByRole("dialog", { name: "Account" }).waitFor();
   await scan(page, "profile menu (signed out)");
+
+  await page.goto(`${BASE_URL}/login`, { waitUntil: "networkidle" });
+  await scan(page, "login page");
+  await page.goto(`${BASE_URL}/signup`, { waitUntil: "networkidle" });
+  await scan(page, "sign-up page");
+  await page.getByRole("button", { name: "Create account" }).click();
+  await page.locator(".portal-field__error").first().waitFor();
+  await page.waitForTimeout(600);
+  await scan(page, "sign-up page with errors");
 
   await page.goto(`${BASE_URL}/portal`, { waitUntil: "networkidle" });
   await scan(page, "portal sign-in");

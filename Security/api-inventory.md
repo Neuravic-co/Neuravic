@@ -14,6 +14,7 @@ Global boundary: bounded request body → origin check on cookie-authenticated w
 | GET `/content` | Public; server `site-content.ts` → home page | Published site copy in one query, grouped sections; one-time default seeding; public cache |
 | GET `/content/:segment` | Public; optional section clients | Published records for services/projects/process/team/company, `{items}` |
 | POST `/auth/magic-link` | Public; portal sign-in | Per-IP and per-email limits; known enabled accounts only; token + email outbox + audit; constant 202 response shape |
+| POST `/auth/signup` | Public; self-service sign-up | Per-IP and per-email limits; Turnstile required outside development; creates a client account with no staff role and no organisation; an existing address only gets a sign-in link; constant 202 response shape; audit |
 | POST `/auth/verify` | Public; `verify-login.tsx` | Single-use, unexpired link → active user and fresh hashed session; HttpOnly first-party cookie and minimal user response |
 | POST `/auth/logout` | Session if present; `session.tsx` | Delete current server session and cookie; idempotent 204 |
 | GET `/me` | Session; portal boot | Minimal user identity plus joined organisation memberships |

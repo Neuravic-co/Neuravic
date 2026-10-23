@@ -22,12 +22,18 @@ await run("Client portal", async (browser, errors) => {
   const admin = await (await browser.newContext({ viewport: { width: 1280, height: 860 } })).newPage();
   watchErrors(admin, "admin", errors);
 
-  // The profile icon asks visitors to sign in, then leads to the portal
+  // The profile icon offers log in and sign up, each a full page
   await admin.goto(BASE_URL, { waitUntil: "networkidle" });
-  await admin.getByRole("button", { name: "Sign in or log in" }).click();
-  await admin.getByRole("link", { name: "Continue to sign in" }).click();
-  await admin.waitForURL(/\/portal$/);
-  check("the profile icon leads signed-out visitors to sign in", true);
+  await admin.getByRole("button", { name: "Log in or sign up" }).click();
+  const options = await admin.getByRole("dialog", { name: "Account" }).getByRole("link").allTextContents();
+  check("the profile icon offers only log in and sign up", options.join(",") === "Log in,Sign up", options.join(", "));
+  await admin.getByRole("link", { name: "Sign up" }).click();
+  await admin.waitForURL(/\/signup$/);
+  await admin.getByRole("heading", { name: /Create your account/ }).waitFor();
+  await admin.getByRole("link", { name: "Log in" }).click();
+  await admin.waitForURL(/\/login$/);
+  await admin.getByRole("heading", { name: /Sign in to your portal/ }).waitFor();
+  check("login and sign-up are full pages that link to each other", true);
 
   // Signed out
   await admin.goto(`${BASE_URL}/portal`, { waitUntil: "networkidle" });
@@ -38,6 +44,28 @@ await run("Client portal", async (browser, errors) => {
   await admin.goto(`${BASE_URL}/portal/verify?token=bogus-token-bogus-token-bogus`);
   await admin.getByRole("heading", { name: /no longer works/ }).waitFor();
   check("an invalid sign-in link is explained", true);
+
+  // A new person signs up from the page, opens the emailed link and lands in the portal with no organisation
+  const newcomer = await (await browser.newContext({ viewport: { width: 1280, height: 860 } })).newPage();
+  watchErrors(newcomer, "newcomer", errors);
+  const newEmail = `newcomer-${stamp}@e2e.dev`;
+  await newcomer.goto(`${BASE_URL}/signup`, { waitUntil: "networkidle" });
+  await newcomer.getByRole("button", { name: "Create account" }).click();
+  check("sign-up asks for a name, an email and agreement", (await newcomer.locator(".portal-field__error").count()) >= 3);
+  const beforeSignup = logSize();
+  await newcomer.getByLabel("Name").fill("New Comer");
+  await newcomer.getByLabel("Email").fill(newEmail);
+  await newcomer.getByRole("checkbox").check();
+  await newcomer.getByRole("button", { name: "Create account" }).click();
+  await newcomer.getByRole("heading", { name: /Check your inbox/ }).waitFor();
+  const signupToken = await waitForLoginToken(newEmail, beforeSignup);
+  await newcomer.goto(`${BASE_URL}/portal/verify#token=${encodeURIComponent(signupToken)}`);
+  await newcomer.getByRole("button", { name: "Sign out" }).waitFor({ timeout: 15000 });
+  await newcomer.getByText(/not part of an organisation yet/).waitFor();
+  check("a new account signs up, signs in and has no organisation or staff access", true);
+  await newcomer.goto(`${BASE_URL}/signup`, { waitUntil: "networkidle" });
+  await newcomer.waitForURL(/\/portal$/);
+  check("a signed-in person is sent from the sign-up page to the portal", true);
 
   // Staff admin signs in
   await signInThroughUi(admin, ADMIN_EMAIL);
