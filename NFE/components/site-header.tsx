@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { UserRound } from "lucide-react";
+import { ProfileMenu } from "./profile-menu";
 
 const navItems = [
   { label: "Home", href: "#home", section: "home" },
@@ -80,9 +81,7 @@ export function SiteHeader() {
             <a className="site-header__portal" href={portalHref}>
               Portal
             </a>
-            <a className="site-header__profile" href={portalHref} aria-label="Your profile: sign in to the client portal">
-              <UserRound aria-hidden="true" size={18} strokeWidth={1.5} />
-            </a>
+            <ProfileMenu />
           </div>
 
           <button
@@ -114,7 +113,7 @@ export function SiteHeader() {
             </nav>
             <a className="mobile-nav__portal" href={portalHref}>
               <UserRound aria-hidden="true" size={18} strokeWidth={1.5} />
-              Portal
+              Sign in / Portal
             </a>
           </div>
           <p>Dubai / Cairo</p>
