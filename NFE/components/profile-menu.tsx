@@ -87,7 +87,7 @@ export function ProfileMenu() {
                 Sign out
               </button>
             </>
-          ) : (
+          ) : PORTAL_OPEN ? (
             <>
               <p className="profile-menu__title">Sign in or log in</p>
               <p className="profile-menu__text">
@@ -96,6 +96,17 @@ export function ProfileMenu() {
               <Link className="profile-menu__action" href="/portal" onClick={() => setOpen(false)}>
                 <LogIn aria-hidden="true" size={16} strokeWidth={1.5} />
                 Continue to sign in
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="profile-menu__title">Sign-in opens soon</p>
+              <p className="profile-menu__text">
+                The portal is being set up, so accounts are not open yet. You can look around a preview in the meantime.
+              </p>
+              <Link className="profile-menu__action" href="/portal" onClick={() => setOpen(false)}>
+                <UserRound aria-hidden="true" size={16} strokeWidth={1.5} />
+                See the preview
               </Link>
             </>
           )}

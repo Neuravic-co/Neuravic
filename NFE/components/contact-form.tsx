@@ -33,6 +33,8 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
   const [services, setServices] = useState<ServiceValue[]>([]);
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
+  /** A ready-to-send email with what the person typed, offered when the form cannot reach the server. */
+  const [emailInstead, setEmailInstead] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [sentTo, setSentTo] = useState("");
   const [token, setToken] = useState("");
@@ -107,6 +109,7 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
     }
 
     setErrors({});
+    setEmailInstead(null);
     setStatus("sending");
     try {
       const { firstName, lastName, ...details } = parsed.data;
@@ -141,6 +144,8 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
         setErrors({ form: "The verification check failed. Please try again." });
       } else {
         setErrors({ form: `We could not send your message. You can also email us at ${fallbackEmail}.` });
+        const body = `${parsed.data.message}\n\n${parsed.data.firstName} ${parsed.data.lastName}${parsed.data.company ? `, ${parsed.data.company}` : ""}\n${parsed.data.email}`;
+        setEmailInstead(`mailto:${fallbackEmail}?subject=${encodeURIComponent("Start a project with Neuravic")}&body=${encodeURIComponent(body)}`);
       }
     }
   }
@@ -258,6 +263,11 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
 
       <div aria-live="polite">
         {errors.form ? <p className="contact-form__error contact-form__error--form">{errors.form}</p> : null}
+        {emailInstead ? (
+          <a className="contact-form__fallback" href={emailInstead}>
+            Send it by email instead
+          </a>
+        ) : null}
       </div>
 
       <div className="contact-form__actions">
