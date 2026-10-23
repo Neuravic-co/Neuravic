@@ -1,0 +1,31 @@
+{
+  "name": "neuravic-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Neuravic API on Node.js with MySQL (same API as NBE, which runs on Cloudflare Workers and D1).",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env src/server.ts",
+    "start": "tsx --env-file-if-exists=.env src/server.ts",
+    "migrate": "tsx --env-file-if-exists=.env scripts/migrate.ts",
+    "mysql:local": "node scripts/mysql-local.mjs",
+    "typecheck": "tsc --noEmit",
+    "smoke": "tsx --env-file-if-exists=.env scripts/smoke.ts",
+    "local": "node scripts/mysql-local.mjs && npm run migrate && npm start"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.0",
+    "drizzle-orm": "0.45.4",
+    "hono": "^4.13.13",
+    "mysql2": "^3.14.0",
+    "tsx": "^4.20.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}

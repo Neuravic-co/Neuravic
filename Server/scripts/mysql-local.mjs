@@ -1,0 +1,90 @@
+// Starts a private MySQL for local development (port 3307, data in Server/.mysql) and prepares it:
+//   - creates the "neuravic" database and a "neuravic" user with a random password
+//   - writes Server/.env (only if it does not exist yet)
+// It never touches any other MySQL on the machine. Use your own server instead by putting its URL in DATABASE_URL.
+import { spawn } from "node:child_process";
+import { randomBytes } from "node:crypto";
+import { existsSync, mkdirSync, writeFileSync, readFileSync } from "node:fs";
+import net from "node:net";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { createConnection } from "mysql2/promise";
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const mysqlHome = process.env.MYSQL_HOME ?? "C:/Program Files/MySQL/MySQL Server 9.1";
+const mysqld = join(mysqlHome, "bin", process.platform === "win32" ? "mysqld.exe" : "mysqld");
+const dataDir = join(root, ".mysql", "data");
+const envFile = join(root, ".env");
+const PORT = 3307;
+
+const listening = () =>
+  new Promise((done) => {
+    const socket = net.connect(PORT, "127.0.0.1");
+    socket.once("connect", () => { socket.destroy(); done(true); });
+    socket.once("error", () => done(false));
+  });
+const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
+
+async function run(command, args) {
+  await new Promise((done, fail) => {
+    const child = spawn(command, args, { stdio: "inherit" });
+    child.once("exit", (code) => (code === 0 ? done() : fail(new Error(`${command} exited with ${code}`))));
+  });
+}
+
+mkdirSync(join(root, ".mysql"), { recursive: true });
+if (!existsSync(join(dataDir, "mysql.ibd"))) {
+  console.log("Creating the local MySQL data directory...");
+  await run(mysqld, ["--no-defaults", "--initialize-insecure", `--basedir=${mysqlHome}`, `--datadir=${dataDir}`]);
+}
+
+if (!(await listening())) {
+  console.log(`Starting MySQL on 127.0.0.1:${PORT}...`);
+  const child = spawn(
+    mysqld,
+    [
+      "--no-defaults", `--basedir=${mysqlHome}`, `--datadir=${dataDir}`, `--port=${PORT}`, "--bind-address=127.0.0.1",
+      "--mysqlx=OFF", "--character-set-server=utf8mb4", "--collation-server=utf8mb4_bin", "--skip-log-bin",
+    ],
+    { detached: true, stdio: "ignore" },
+  );
+  child.unref();
+  for (let i = 0; i < 60 && !(await listening()); i += 1) await sleep(500);
+  if (!(await listening())) throw new Error("MySQL did not start in 30 seconds");
+}
+
+let password;
+if (existsSync(envFile)) {
+  password = /DATABASE_URL=mysql:\/\/neuravic:([^@]+)@/.exec(readFileSync(envFile, "utf8"))?.[1];
+}
+const fresh = !password;
+password ??= randomBytes(18).toString("hex");
+
+const admin = await createConnection({ host: "127.0.0.1", port: PORT, user: "root" });
+await admin.query("CREATE DATABASE IF NOT EXISTS neuravic CHARACTER SET utf8mb4 COLLATE utf8mb4_bin");
+await admin.query("CREATE USER IF NOT EXISTS 'neuravic'@'127.0.0.1' IDENTIFIED BY ?", [password]);
+await admin.query("CREATE USER IF NOT EXISTS 'neuravic'@'localhost' IDENTIFIED BY ?", [password]);
+await admin.query("GRANT ALL PRIVILEGES ON neuravic.* TO 'neuravic'@'127.0.0.1'");
+await admin.query("GRANT ALL PRIVILEGES ON neuravic.* TO 'neuravic'@'localhost'");
+await admin.end();
+
+if (!existsSync(envFile)) {
+  writeFileSync(
+    envFile,
+    [
+      "# Local development settings (never commit this file).",
+      "APP_ENV=development",
+      "PORT=8787",
+      "APP_URL=http://localhost:5173",
+      "ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000",
+      "EMAIL_FROM=Neuravic <no-reply@neuravic.com>",
+      "NOTIFY_TO=team@neuravic.com",
+      "# The first sign-in with this email creates the staff admin account.",
+      "BOOTSTRAP_ADMIN_EMAIL=admin@neuravic.local",
+      `DATABASE_URL=mysql://neuravic:${password}@127.0.0.1:${PORT}/neuravic`,
+      "",
+    ].join("\n"),
+  );
+  console.log("Wrote Server/.env");
+}
+console.log(fresh ? "Local MySQL is ready." : "Local MySQL is running.");
