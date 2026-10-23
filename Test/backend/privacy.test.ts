@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { schema } from "../../NBE/src/db";
 import { as, asJson, body, makeTestApp, seedOrg, seedUser, signIn } from "./helpers";
 
@@ -11,6 +11,22 @@ async function setup() {
   return { ctx, cookie };
 }
 describe("privacy workflows", () => {
+  it("does not invent a receipt when a conflicting request completes before the final lookup", async () => {
+    const { ctx, cookie } = await setup();
+    const db = ctx.deps.db as typeof ctx.deps.db & { batch: (queries: unknown[]) => Promise<unknown[]> };
+    const original = db.batch.bind(db);
+    vi.spyOn(db, "batch").mockImplementationOnce(async (queries) => {
+      await db.insert(schema.privacyRequests).values({ id: "winning-request", userId: "user-owner@acme.dev", kind: "export", createdAt: 1, updatedAt: 1 });
+      const result = await original(queries);
+      await db.update(schema.privacyRequests).set({ state: "fulfilled" }).where(eq(schema.privacyRequests.id, "winning-request"));
+      return result;
+    });
+    const response = await ctx.request("/api/v1/me/privacy/requests", asJson(cookie, "POST", { kind: "export" }));
+    expect(response.status).toBe(409);
+    expect(await db.select().from(schema.privacyRequests)).toHaveLength(1);
+    expect(await db.select().from(schema.auditLog).where(eq(schema.auditLog.action, "privacy.requested"))).toHaveLength(0);
+  });
+
   it("exports only the caller's account metadata, without credentials, other people or internal records", async () => {
     const { ctx, cookie } = await setup();
     const response = await ctx.request("/api/v1/me/privacy/export", as(cookie));

@@ -5,6 +5,7 @@ import { readBoundedBody } from "../../lib/body";
 import { sha256Hex } from "../../lib/crypto";
 import { AppError } from "../../lib/errors";
 import { auditInsert } from "../audit/audit";
+import type { BlobStore } from "./blob-store";
 
 export interface MalwareScanner {
   scan(data: ArrayBuffer, sha256: string): Promise<"clean" | "infected">;
@@ -20,6 +21,15 @@ export async function withScanDeadline<T>(task: (signal: AbortSignal) => Promise
       new Promise<never>((_, reject) => { timer = setTimeout(() => { controller.abort(); reject(new Error("scan_timeout")); }, ms); }),
     ]);
   } finally { clearTimeout(timer); }
+}
+
+/** Bound storage lookup and the complete body, before scanning or releasing a download. */
+export async function readStoredFile(blobs: BlobStore, key: string, maxBytes: number): Promise<ArrayBuffer | null> {
+  return withScanDeadline(async (signal) => {
+    const blob = await blobs.get(key);
+    if (!blob) return null;
+    return readBoundedBody(new Request("https://storage.internal/file", { method: "POST", body: blob.body, signal, duplex: "half" } as RequestInit), maxBytes);
+  });
 }
 
 /** Private binding only. No client-chosen URL, public callback, filename or tenant data. */
@@ -73,9 +83,8 @@ export async function scanPendingFiles(deps: Deps, fileId?: string) {
     if (!claimed) continue;
     const ownsLease = and(eq(schema.files.id, file.id), eq(schema.files.scanState, "pending"), eq(schema.files.nextScanAt, lease));
     try {
-      const blob = await deps.blobs.get(file.storageKey);
-      if (!blob) throw new Error("scan_blob_missing");
-      const bytes = await readBoundedBody(new Request("https://storage.internal/file", { method: "POST", body: blob.body, duplex: "half" } as RequestInit), deps.config.maxUploadBytes);
+      const bytes = await readStoredFile(deps.blobs, file.storageKey, deps.config.maxUploadBytes);
+      if (!bytes) throw new Error("scan_blob_missing");
       if (bytes.byteLength !== file.size || await sha256Hex(bytes) !== file.sha256) throw new Error("scan_blob_changed");
       const state = await withScanDeadline(() => deps.scanner!.scan(bytes, file.sha256));
       if (state !== "clean" && state !== "infected") throw new Error("invalid_scan_verdict");

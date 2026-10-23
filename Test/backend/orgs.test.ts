@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { and, eq } from "drizzle-orm";
+import { describe, expect, it, vi } from "vitest";
+import { schema } from "../../NBE/src/db";
 import { as, asJson, body, makeTestApp, seedOrg, seedUser, signIn } from "./helpers";
 
 async function setup() {
@@ -15,6 +17,61 @@ async function setup() {
 }
 
 describe("organisations", () => {
+  it("preserves implicit staff-admin authority without an explicit membership", async () => {
+    const { ctx, orgId } = await setup();
+    const boss = await signIn(ctx, "boss@test.dev");
+    const path = `/api/v1/orgs/${orgId}/members/user-member@acme.dev`;
+    expect((await ctx.request(path, asJson(boss, "PATCH", { role: "owner" }))).status).toBe(200);
+    expect((await ctx.request(path, as(boss, { method: "DELETE" }))).status).toBe(204);
+  });
+
+  it.each(["PATCH", "DELETE"])("rejects %s if the initiating session is revoked before the write", async (method) => {
+    const { ctx, orgId } = await setup();
+    const admin = await signIn(ctx, "admin@acme.dev");
+    const db = ctx.deps.db as typeof ctx.deps.db & { batch: (queries: unknown[]) => Promise<unknown[]> };
+    const original = db.batch.bind(db);
+    vi.spyOn(db, "batch").mockImplementationOnce(async (queries) => {
+      await db.delete(schema.sessions).where(eq(schema.sessions.userId, "user-admin@acme.dev"));
+      return original(queries);
+    });
+    const userId = "user-member@acme.dev";
+    const response = await ctx.request(`/api/v1/orgs/${orgId}/members/${userId}`, method === "PATCH" ? asJson(admin, method, { role: "admin" }) : as(admin, { method }));
+    expect(response.status).toBe(409);
+    expect((await db.select().from(schema.memberships).where(and(eq(schema.memberships.orgId, orgId), eq(schema.memberships.userId, userId))))[0]!.role).toBe("member");
+  });
+
+  it.each(["PATCH", "DELETE"])("rejects %s when a target is promoted after authorization", async (method) => {
+    const { ctx, orgId } = await setup();
+    const admin = await signIn(ctx, "admin@acme.dev");
+    const userId = "user-member@acme.dev";
+    const db = ctx.deps.db as typeof ctx.deps.db & { batch: (queries: unknown[]) => Promise<unknown[]> };
+    const original = db.batch.bind(db);
+    vi.spyOn(db, "batch").mockImplementationOnce(async (queries) => {
+      await db.update(schema.memberships).set({ role: "owner" }).where(and(eq(schema.memberships.orgId, orgId), eq(schema.memberships.userId, userId)));
+      return original(queries);
+    });
+    const response = await ctx.request(`/api/v1/orgs/${orgId}/members/${userId}`, method === "PATCH" ? asJson(admin, method, { role: "viewer" }) : as(admin, { method }));
+    expect(response.status).toBe(409);
+    expect((await db.select().from(schema.memberships).where(and(eq(schema.memberships.orgId, orgId), eq(schema.memberships.userId, userId))))[0]!.role).toBe("owner");
+    expect(await db.select().from(schema.auditLog).where(eq(schema.auditLog.targetId, userId))).toHaveLength(0);
+  });
+
+  it.each(["PATCH", "DELETE"])("rejects %s when the caller loses admin authority before the write", async (method) => {
+    const { ctx, orgId } = await setup();
+    const admin = await signIn(ctx, "admin@acme.dev");
+    const db = ctx.deps.db as typeof ctx.deps.db & { batch: (queries: unknown[]) => Promise<unknown[]> };
+    const original = db.batch.bind(db);
+    vi.spyOn(db, "batch").mockImplementationOnce(async (queries) => {
+      await db.update(schema.memberships).set({ role: "viewer" }).where(and(eq(schema.memberships.orgId, orgId), eq(schema.memberships.userId, "user-admin@acme.dev")));
+      return original(queries);
+    });
+    const userId = "user-member@acme.dev";
+    const response = await ctx.request(`/api/v1/orgs/${orgId}/members/${userId}`, method === "PATCH" ? asJson(admin, method, { role: "admin" }) : as(admin, { method }));
+    expect(response.status).toBe(409);
+    expect((await db.select().from(schema.memberships).where(and(eq(schema.memberships.orgId, orgId), eq(schema.memberships.userId, userId))))[0]!.role).toBe("member");
+    expect(await db.select().from(schema.auditLog).where(eq(schema.auditLog.targetId, userId))).toHaveLength(0);
+  });
+
   it("staff admin creates an org and invites its owner by email", async () => {
     const { ctx } = await setup();
     const boss = await signIn(ctx, "boss@test.dev");

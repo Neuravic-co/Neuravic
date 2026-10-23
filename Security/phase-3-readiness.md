@@ -1,5 +1,7 @@
 # Phase 3 security readiness — 23 October 2026
 
+> This records the Phase 3 starting implementation. See [combined integration verification](integration-verification.md) for later confirmed fixes and current ruleset observations. Main protection was activated after this report; its remaining context/review configuration is documented in that supplement.
+
 **Recommendation: NO-GO.** Safe code improvements and local verification are complete, but the dependency gate remains red and mandatory production controls lack staging/operational evidence. No residual risk has been accepted by the owner. This report is not a production-readiness certification.
 
 No production credentials, production data, repository administration settings, merges or production deployments were changed. Tests use local fixture databases, generated ephemeral keys, a private loopback mailbox, simulated scanner responses and local browser builds. The malware engine and external SSO consumers were not exercised live.

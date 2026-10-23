@@ -11,6 +11,7 @@ Everything about the security of the Neuravic website, portal and API lives here
 | [`audit-2026-10-22.md`](audit-2026-10-22.md) | Confirmed findings, remediation evidence, validation results and remaining risks |
 | [`phase-2-verification.md`](phase-2-verification.md) | PR #55 diff verification, MFA/quarantine/CSP fixes, dependency blocker and production prerequisites |
 | [`phase-3-readiness.md`](phase-3-readiness.md) | Current combined PR verification, dependency exposure and evidence-based NO-GO assessment |
+| [`integration-verification.md`](integration-verification.md) | Latest implementation fixes, regression evidence and active ruleset context corrections |
 | [`production-configuration.md`](production-configuration.md) | Secret custody/rotation, scanner, MFA, privacy, SSO, monitoring and recovery procedures |
 | [`go-live-checklist.md`](go-live-checklist.md) | Completed checks, mandatory blockers, exact main protection settings and owner sign-offs |
 | [`api-inventory.md`](api-inventory.md) | Endpoint, authorization, data-operation and frontend integration map |

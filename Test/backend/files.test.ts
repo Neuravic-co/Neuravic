@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MemoryBlobStore } from "../../NBE/src/modules/files/blob-store";
 import { schema } from "../../NBE/src/db";
 import { scanPendingFiles } from "../../NBE/src/modules/files/scanner";
@@ -19,6 +19,35 @@ const upload = (cookie: string, type: string, data: BodyInit) =>
   as(cookie, { method: "PUT", body: data, headers: { "content-type": type } });
 
 describe("files", () => {
+  it.each(["scan", "download"].flatMap((operation) => ["lookup", "stream"].map((stage) => ({ operation, stage }))))("bounds a stalled storage $stage during $operation and keeps it quarantined", async ({ operation, stage }) => {
+    const { ctx, member, request } = await setup();
+    if (operation === "download") ctx.deps.scanner = { scan: async () => "clean" };
+    const file = await body(await ctx.request(`/api/v1/requests/${request.id}/files?name=slow.txt`, upload(member, "text/plain", "hello")));
+    let cancelled = false;
+    let started!: () => void;
+    const entered = new Promise<void>((resolve) => { started = resolve; });
+    ctx.deps.blobs!.get = async () => { started(); if (stage === "lookup") return new Promise(() => {}); return { contentType: "text/plain", body: new ReadableStream({ cancel() { cancelled = true; } }) }; };
+    ctx.deps.scanner = { scan: vi.fn(async () => "clean" as const) };
+    const realSetTimeout = globalThis.setTimeout;
+    const realClearTimeout = globalThis.clearTimeout;
+    let watchdog: ReturnType<typeof setTimeout> | undefined;
+    vi.useFakeTimers();
+    try {
+      const pending = operation === "scan" ? scanPendingFiles(ctx.deps) : ctx.request(`/api/v1/files/${file.id}/content`, as(member));
+      await entered;
+      await vi.advanceTimersByTimeAsync(10001);
+      // Avoid a hanging regression on the broken implementation.
+      const result = await Promise.race([pending, new Promise((resolve) => { watchdog = realSetTimeout(() => resolve("still_pending"), 1000); })]);
+      expect(result).not.toBe("still_pending");
+      if (operation === "scan") expect(result).toBe(0);
+      else expect((result as Response).status).toBe(423);
+      expect(cancelled).toBe(stage === "stream");
+      expect(ctx.deps.scanner.scan).not.toHaveBeenCalled();
+      const [stored] = await ctx.deps.db.select().from(schema.files);
+      expect(stored!.scanState).toBe("pending");
+    } finally { realClearTimeout(watchdog); vi.useRealTimers(); }
+  });
+
   it("uploads, lists and downloads as an attachment", async () => {
     const { ctx, member, request } = await setup();
     ctx.deps.scanner = { scan: async () => "clean" };

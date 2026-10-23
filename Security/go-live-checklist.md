@@ -32,7 +32,7 @@
 
 ## Exact proposed settings for `main` (owner must apply)
 
-Read-only GitHub branch response on 23 October: `protected:false`, protection disabled, required-check contexts empty. No administrative setting was changed.
+Initially main was unprotected. A later read-only inspection confirms the owner activated **Protect Main Branch**, with no bypass actors. It currently requires mismatched `backend` / `frontend` / `codeql` contexts, uses the Actions source for the separate CodeQL findings result, and has zero required approving reviews. See [exact observed settings and proposed corrections](integration-verification.md#github-ruleset-integration--owner-action-required). The settings below remain the target, not a claim they are all configured. No administrative setting was changed by the agent.
 
 Create one active protection rule matching **`main`** (or an equivalent enforced ruleset with no bypass actors):
 

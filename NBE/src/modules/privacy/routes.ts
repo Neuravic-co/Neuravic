@@ -50,12 +50,14 @@ privacyRoutes.post("/requests", accountLimit(), async (c) => {
   const [existing] = await deps.db.select({ id: schema.privacyRequests.id }).from(schema.privacyRequests).where(and(eq(schema.privacyRequests.userId, actor.user.id), eq(schema.privacyRequests.kind, kind), inArray(schema.privacyRequests.state, ["pending", "in_review"]))).limit(1);
   if (existing) return c.json({ id: existing.id, status: "pending_review" }, 202);
   const id = ulid(now);
-  await runBatch(deps.db, [
-    deps.db.insert(schema.privacyRequests).values({ id, userId: actor.user.id, kind, createdAt: now, updatedAt: now }).onConflictDoNothing(),
+  const [created] = await runBatch(deps.db, [
+    deps.db.insert(schema.privacyRequests).values({ id, userId: actor.user.id, kind, createdAt: now, updatedAt: now }).onConflictDoNothing().returning({ id: schema.privacyRequests.id }),
     auditInsert(deps.db, { actorId: actor.user.id, action: "privacy.requested", targetType: "privacy_request", targetId: id, meta: { kind } }, now, null, sql`changes() > 0`),
   ]);
+  if (Array.isArray(created) && created.length === 1) return c.json({ id, status: "pending_review" }, 202);
   const [pending] = await deps.db.select({ id: schema.privacyRequests.id }).from(schema.privacyRequests).where(and(eq(schema.privacyRequests.userId, actor.user.id), eq(schema.privacyRequests.kind, kind), inArray(schema.privacyRequests.state, ["pending", "in_review"]))).limit(1);
-  return c.json({ id: pending?.id ?? id, status: "pending_review" }, 202);
+  if (!pending) throw conflict("The privacy request changed. Reload your requests before trying again");
+  return c.json({ id: pending.id, status: "pending_review" }, 202);
 });
 
 privacyAdminRoutes.get("/", async (c) => {

@@ -1,7 +1,23 @@
 import { describe, expect, it, vi } from "vitest";
-import { ServiceMalwareScanner, withScanDeadline } from "../../NBE/src/modules/files/scanner";
+import { readStoredFile, ServiceMalwareScanner, withScanDeadline } from "../../NBE/src/modules/files/scanner";
+import { MemoryBlobStore, type StoredBlob } from "../../NBE/src/modules/files/blob-store";
 
 describe("private malware scanner protocol", () => {
+  it("cancels bytes returned by a storage lookup after its deadline", async () => {
+    vi.useFakeTimers();
+    try {
+      const store = new MemoryBlobStore();
+      let resolve!: (blob: StoredBlob) => void;
+      store.get = () => new Promise((done) => { resolve = done; });
+      const result = expect(readStoredFile(store, "fixture", 1024)).rejects.toThrow("scan_timeout");
+      await vi.advanceTimersByTimeAsync(10001); await result;
+      let cancelled = false;
+      resolve({ contentType: "text/plain", body: new ReadableStream({ cancel() { cancelled = true; } }) });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(cancelled).toBe(true);
+    } finally { vi.useRealTimers(); }
+  });
+
   it("sends bytes only to its binding and accepts only a digest-bound verdict", async () => {
     const fetch = vi.fn(async (_url: string, _init: RequestInit) => Response.json({ status: "clean", sha256: "digest" }));
     const scanner = new ServiceMalwareScanner({ fetch } as never);

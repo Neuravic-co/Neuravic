@@ -10,7 +10,7 @@ import { auditInsert } from "../audit/audit";
 import { requireActor } from "../auth/middleware";
 import { requireOrgRole } from "../orgs/policy";
 import { loadRequest } from "../portal/loaders";
-import { scanPendingFiles, validateFileSignature } from "./scanner";
+import { readStoredFile, scanPendingFiles, validateFileSignature } from "./scanner";
 
 /** Attachments on requests. Bytes live in R2; metadata and access control live here. */
 export const filesRoutes = new Hono<AppEnv>();
@@ -119,17 +119,16 @@ filesRoutes.get("/files/:id/content", async (c) => {
   const file = await loadFile(deps, c.req.param("id"));
   requireOrgRole(actor, file.orgId, "viewer");
   if (file.scanState !== "clean") throw new AppError(423, "file_quarantined", "This file is unavailable until a security scan confirms it is clean");
-  const blob = await blobs.get(file.storageKey);
-  if (!blob) throw notFound("File content not found");
-  let bytes: ArrayBuffer;
+  let bytes: ArrayBuffer | null;
   try {
-    bytes = await readBoundedBody(new Request("https://storage.internal/download", { method: "POST", body: blob.body, duplex: "half" } as RequestInit), deps.config.maxUploadBytes);
-    if (bytes.byteLength !== file.size || await sha256Hex(bytes) !== file.sha256) throw new Error("file_integrity_mismatch");
+    bytes = await readStoredFile(blobs, file.storageKey, deps.config.maxUploadBytes);
+    if (bytes && (bytes.byteLength !== file.size || await sha256Hex(bytes) !== file.sha256)) throw new Error("file_integrity_mismatch");
   } catch {
     await deps.db.update(schema.files).set({ scanState: "pending", nextScanAt: deps.now() }).where(and(eq(schema.files.id, file.id), eq(schema.files.scanState, "clean")));
     deps.log.warn("file_integrity_failed", { fileId: file.id });
     throw new AppError(423, "file_quarantined", "This file failed integrity verification and remains unavailable");
   }
+  if (!bytes) throw notFound("File content not found");
   return new Response(bytes, {
     headers: {
       "content-type": file.mime,

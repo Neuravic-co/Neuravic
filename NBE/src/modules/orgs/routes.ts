@@ -8,6 +8,7 @@ import { olderThan, pageQuery, toPage } from "../../lib/pagination";
 import { parseJson, parseQuery } from "../../lib/validate";
 import { auditInsert } from "../audit/audit";
 import { requireActor, requireStaff } from "../auth/middleware";
+import type { Actor, OrgRole } from "../auth/actor";
 import { loginLinkWrites } from "../auth/service";
 import { drainOutbox } from "../notifications/outbox";
 import { ROLE_RANK, requireOrgRole } from "./policy";
@@ -27,7 +28,16 @@ function keepsAnOwner(orgId: string, staysOwner: boolean): SQL {
 const memberOf = (orgId: string, userId: string) =>
   and(eq(schema.memberships.orgId, orgId), eq(schema.memberships.userId, userId));
 
-const LAST_OWNER_MESSAGE = "An organisation must keep at least one owner";
+const MEMBER_CONFLICT = "Membership or access changed, or this would remove the last owner. Reload before trying again";
+
+/** Recheck the live session/effective role inside the same statement as the membership mutation. */
+function unchangedAuthority(actor: Actor, orgId: string, role: OrgRole, now: number): SQL {
+  return sql`exists (select 1 from users u join sessions s on s.user_id = u.id
+    where u.id = ${actor.user.id} and u.status = 'active' and s.id = ${actor.sessionId}
+    and s.expires_at > ${now} and s.absolute_expires_at > ${now}
+    and (case when u.staff_role = 'admin' then 'owner' when u.staff_role = 'delivery' then 'admin'
+      else (select m.role from memberships m where m.user_id = u.id and m.org_id = ${orgId}) end) = ${role})`;
+}
 
 /** Staff admin creates a client organisation, optionally inviting its first owner. */
 orgsRoutes.post("/", async (c) => {
@@ -167,11 +177,11 @@ orgsRoutes.patch("/:orgId/members/:userId", async (c) => {
   const [changed] = await runBatch(deps.db, [deps.db
     .update(schema.memberships)
     .set({ role })
-    .where(and(memberOf(orgId, userId), keepsAnOwner(orgId, role === "owner")))
+    .where(and(memberOf(orgId, userId), eq(schema.memberships.role, target.role), keepsAnOwner(orgId, role === "owner"), unchangedAuthority(actor, orgId, callerRole, now)))
     .returning({ userId: schema.memberships.userId }),
     auditInsert(deps.db, { actorId: actor.user.id, orgId, action: "org.member_role_changed", targetType: "user", targetId: userId, meta: { from: target.role, to: role } }, now, null, sql`changes() > 0`),
   ]);
-  if (!Array.isArray(changed) || changed.length === 0) throw conflict(LAST_OWNER_MESSAGE);
+  if (!Array.isArray(changed) || changed.length === 0) throw conflict(MEMBER_CONFLICT);
   return c.json({ userId, role });
 });
 
@@ -192,10 +202,10 @@ orgsRoutes.delete("/:orgId/members/:userId", async (c) => {
   const now = deps.now();
   const [removed] = await runBatch(deps.db, [deps.db
     .delete(schema.memberships)
-    .where(and(memberOf(orgId, userId), keepsAnOwner(orgId, false)))
+    .where(and(memberOf(orgId, userId), eq(schema.memberships.role, target.role), keepsAnOwner(orgId, false), unchangedAuthority(actor, orgId, callerRole, now)))
     .returning({ userId: schema.memberships.userId }),
     auditInsert(deps.db, { actorId: actor.user.id, orgId, action: "org.member_removed", targetType: "user", targetId: userId }, now, null, sql`changes() > 0`),
   ]);
-  if (!Array.isArray(removed) || removed.length === 0) throw conflict(LAST_OWNER_MESSAGE);
+  if (!Array.isArray(removed) || removed.length === 0) throw conflict(MEMBER_CONFLICT);
   return c.body(null, 204);
 });

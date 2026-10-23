@@ -14,6 +14,7 @@ export async function readBoundedBody(request: Request, maxBytes: number): Promi
   const signal = request.signal;
   const abort = () => { void reader.cancel().catch(() => {}); };
   signal.addEventListener("abort", abort, { once: true });
+  if (signal.aborted) abort();
   const chunks: Uint8Array[] = [];
   let size = 0;
   try {

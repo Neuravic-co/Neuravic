@@ -313,20 +313,6 @@ portalRoutes.post("/requests/:id/approvals", async (c) => {
 
 // ---- Comments ----------------------------------------------------------
 
-portalRoutes.get("/requests/:id/comments", async (c) => {
-  const actor = requireActor(c);
-  const deps = c.get("deps");
-  const request = await loadRequest(deps.db, c.req.param("id"));
-  requireOrgRole(actor, request.orgId, "viewer");
-  const rows = await deps.db
-    .select({ ...getTableColumns(schema.comments), authorName: schema.users.name, authorEmail: schema.users.email })
-    .from(schema.comments)
-    .innerJoin(schema.users, eq(schema.users.id, schema.comments.authorId))
-    .where(eq(schema.comments.requestId, request.id))
-    .orderBy(asc(schema.comments.createdAt));
-  return c.json({ items: rows });
-});
-
 portalRoutes.post("/requests/:id/comments", async (c) => {
   const actor = requireActor(c);
   const deps = c.get("deps");
