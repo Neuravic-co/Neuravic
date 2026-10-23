@@ -34,7 +34,7 @@ for normal local sign-in, or use `npm run test:browser` for an isolated API and 
 (see `../Test/README.md`). Missing email configuration leaves jobs queued for retry; it never marks them delivered.
 
 ```bash
-npm test            # 143 tests (they live in ../Test/backend), in-memory SQLite, no network
+npm test            # 161 tests (they live in ../Test/backend), in-memory SQLite, no network
 npm run typecheck
 ```
 
@@ -84,6 +84,8 @@ These are in the architecture PDF but intentionally not in this first version:
 
 - Passkeys (WebAuthn) and TOTP for staff. Staff are protected by short sessions and email links only.
 - OpenAPI generation. The API is described by hand in `../Docs/API.md`.
-- Virus scanning for uploads. Files are stored with `scan_state = pending`; the download endpoint already blocks `infected`.
+- Provision a real antivirus engine through the private `MALWARE_SCANNER` binding. Pending and infected files are quarantined; scanner failures cannot enable downloads.
 - Cloudflare Queues. The outbox is drained after each request and by the cron trigger instead, which is enough at this scale.
 - A Turnstile widget on the site. The API verifies tokens as soon as `TURNSTILE_SECRET` is set.
+
+Phase 2 adds encrypted staff authenticator MFA and recovery codes, fail-closed attachment quarantine, a private scanner service adapter, paged member/comment collections and admin-only `/api/v1/admin/security-status`. See `../Security/phase-2-verification.md` and the operations runbook before release. The strict dependency gate currently blocks merge on an unpatched NFE development-tool advisory.

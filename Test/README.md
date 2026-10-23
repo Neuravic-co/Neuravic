@@ -11,7 +11,7 @@ npm run typecheck
 npm test
 ```
 
-143 tests cover authentication, token expiry/reuse and atomic rollback, role changes and credential revocation, tenant isolation, authorization, contact validation/spam/deduplication, injection-like inputs, CSV safety, body/upload limits, quotas under concurrency, CSRF/CORS, private caching, proxy trust, SSO validation, outbox leases/idempotency/expiry, secret-scanner redaction, retention and database query plans. The suite needs no external API or production credentials. Two workers bound native SQLite startup contention.
+161 tests cover authentication, token expiry/reuse and atomic rollback, role changes and credential revocation, tenant isolation, authorization, contact validation/spam/deduplication, injection-like inputs, CSV safety, body/upload limits, quotas under concurrency, CSRF/CORS, private caching, proxy trust, SSO validation, outbox leases/idempotency/expiry, secret-scanner redaction, retention and database query plans. The suite needs no external API or production credentials. Two workers bound native SQLite startup contention.
 
 ## Browser integration and accessibility
 
@@ -23,6 +23,9 @@ npm ci --prefix NFE
 npm ci --prefix Test
 cd Test
 npx playwright install chromium
+cd ../NFE
+npm run build
+npx next build
 cd ../NBE
 npm run test:browser
 ```
@@ -43,6 +46,11 @@ cd ..
 node Security/scripts/security-check.mjs --history
 ```
 
-The security scan prints locations and categories only, fails closed when dependency advisory data is unavailable, and gates production dependencies on high/critical findings. `--secrets-only` supports offline source/history checks. The shell wrapper remains supported. CI pins actions, runs both build paths, the browser fixture, type checks, backend tests, migration consistency, dependency/secret checks and CodeQL.
+The security scan prints locations and categories only, fails closed when dependency advisory data is unavailable, and gates all NBE/NFE/Test dependencies, including development tooling, on moderate-or-worse findings. `--secrets-only` supports offline source/history checks. The shell wrapper remains supported. CI pins actions, runs both build paths, the browser fixture, type checks, backend tests, migration consistency, dependency/secret checks and CodeQL.
 
-These tests demonstrate specific behaviors in the tested environments. libSQL, a local Next server and Wrangler dry runs do not prove production configuration, load capacity, malware scanning, staff MFA or complete security. See `Security/audit-2026-10-22.md` for actual results and remaining actions.
+These tests demonstrate specific behaviors in the tested environments. libSQL, a local Next server and Wrangler dry runs do not prove production configuration, load capacity, real antivirus engine efficacy, production MFA enrollment or complete security. See `Security/audit-2026-10-22.md` for actual results and remaining actions.
+
+
+Phase 2 adds RFC 6238 vectors, encrypted-factor isolation, concurrent TOTP/recovery consumption, account guessing limits, global staff step-up, fail-closed quarantine/scanner protocol, file signature checks and bounded collection/tenant tests. The isolated browser fixture runs contact, portal, accessibility and staff MFA flows. It then verifies CSP independently against both prebuilt production runtimes (`npm run build` and `npx next build` must be run in NFE first): unique nonces, no-store HTML, framework hydration and actual HTML-response script/event-handler injection blocked by the browser. Browser tests use only local owned servers; they never enable a production portal or send real email.
+
+`node Security/scripts/security-check.mjs --history` includes all development/test dependencies and deliberately fails on the currently unpatched NFE `braces` advisory. Use `--history --secrets-only` for an independent offline secret-pattern result. Neither command suppresses dependency findings. See the Phase 2 report for the expected blocker and the production-only audit distinction.

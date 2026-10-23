@@ -21,7 +21,7 @@ Global boundary: bounded request body → origin check on cookie-authenticated w
 | GET `/orgs` | Staff admin/delivery; staff organisation picker | Cursor-paginated organisation directory |
 | POST `/orgs` | Staff admin; staff organisation creation | Atomic org + optional owner invitation + audit; 201 identity |
 | GET `/orgs/:orgId` | Viewer+ in target org | Organisation and effective role; non-members receive 404 |
-| GET `/orgs/:orgId/members` | Viewer+; members view | Join membership/user display fields; `{items}` |
+| GET `/orgs/:orgId/members` | Viewer+; members view | Cursor-paginated membership/user display fields; `{items,nextCursor}` |
 | POST `/orgs/:orgId/members` | Admin+; members view | Cannot grant above caller; create invited user if absent, membership, login email and audit in batch |
 | PATCH `/orgs/:orgId/members/:userId` | Admin+; members view | Cannot change a higher role or demote last owner; role update and audit |
 | DELETE `/orgs/:orgId/members/:userId` | Admin+, or self leaving | Cannot remove a higher role or last owner; delete membership and audit; 204 |
@@ -32,7 +32,7 @@ Global boundary: bounded request body → origin check on cookie-authenticated w
 | GET `/projects/:id/requests` | Viewer+; project requests | Cursor/state-filtered list plus requester display identity |
 | POST `/projects/:id/requests` | Member+; request forms | Active projects only; type/title/body/approval count; derive org/requester; request + bounded approver emails + audit; 201 |
 | GET `/orgs/:orgId/requests` | Viewer+; requests/approver queue | Cursor/state-filtered requests within one org |
-| GET `/requests/:id` | Viewer+ in owning org; request detail | Requester, approvals, comments and attachment metadata; storage keys excluded |
+| GET `/requests/:id` | Viewer+ in owning org; request detail | Requester, approvals, at most 100 recent comments plus `commentsNextCursor`, and bounded attachment metadata/scan state; storage keys excluded |
 | PATCH `/requests/:id` | Requester or admin cancels; admin completes | Allowed state transitions only; compare-and-set prevents overwriting concurrent decision |
 | POST `/requests/:id/approvals` | Admin+ excluding requester | One decision per approver; decision + SQL-calculated outcome + audit; terminal-outcome notification |
 | GET `/requests/:id/comments` | Viewer+; request detail | Joined author identity and comments, `{items}` |
@@ -65,3 +65,19 @@ The marketing page uses a bounded server-side content fetch with built-in fallba
 ## Test evidence and limits
 
 Existing suites cover authentication, role/tenant access, portal decisions, files, enquiry validation/spam/duplicates, CSV safety, SSO, shared rate counters, outbox leases, migrations/atomic batches, retention and query plans. New security regressions exercise confirmed weaknesses; see `audit-2026-10-22.md` for actual run results. libSQL is useful but does not prove Cloudflare runtime compatibility; local Wrangler migrations/build and CI add that evidence. Production credentials/settings are intentionally not read or modified.
+
+
+## Phase 2 additions
+
+All application/SSO routes deny staff sessions awaiting MFA (`403 mfa_required`). Only the exact MFA setup/verification, magic-link exchange and logout routes remain available; incomplete verification expires after ten minutes. Clients retain existing authorization.
+
+| Endpoint | Authorization | Behavior |
+|---|---|---|
+| GET `/auth/mfa` | Signed-in staff, including restricted first-factor session | Enrollment/required booleans only, no seeds/codes |
+| POST `/auth/mfa/setup` | Fresh staff session; trusted origin; account limit | Returns the same pending authenticator seed on retry; active factors cannot be overwritten |
+| POST `/auth/mfa/confirm` | Staff; trusted origin; account limit | Proves pending TOTP, stores encrypted factor/hashed recovery codes, upgrades session and audits atomically; shows recovery codes once |
+| POST `/auth/mfa/verify` | Staff; trusted origin; account limit | Consumes a TOTP step or recovery code once and upgrades only the live session |
+| GET `/requests/:id/comments` | Viewer+ in the owning org | Cursor-paginated comments/display identities, limit 1–100; tenant checks precede queries |
+| GET `/admin/security-status` | Staff admin with completed MFA when required | DB/control presence, enrolled staff and quarantine/outbox aggregate evidence; no secrets or client content |
+
+Downloads require an exact `clean` scan state for every role. Scan verdicts enter only through the private service adapter/cron, not a public API or client-writable field. Uploads stay bounded to 10 MiB/20 attachments and add basic byte-signature/UTF-8 checks. See the operations runbook for scanner provisioning.

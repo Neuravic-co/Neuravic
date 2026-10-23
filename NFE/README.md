@@ -102,3 +102,5 @@ Small text on dark surfaces uses mixes of the approved palette (see the comment 
 - `public/assets/` — production image and brand files
 
 © Neuravic. All rights reserved.
+
+Phase 2 adds staff authenticator verification, quarantine download states and paging for comments/members. `proxy.ts` generates a fresh script nonce; `app/layout.tsx` opts into request rendering and carries it to the root script. HTML is private/no-store on both Next and Vinext. Update only approved CSP sources in `lib/csp.ts`; scripts have no inline/eval exception in production. See `../Security/phase-2-verification.md` for validation and the unresolved development dependency blocker.

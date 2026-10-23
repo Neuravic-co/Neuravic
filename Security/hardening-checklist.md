@@ -21,8 +21,10 @@ when you set up the real environment; "Gap" means it is not built yet.
 
 ## B. Before real clients log in
 
-- [ ] **Gap (P1)** Second factor for staff: passkeys or an authenticator app. Today a stolen mailbox is enough to become a staff admin.
-- [ ] **Gap (P1)** Virus scanning for uploaded files (the `scan_state` column and the download block for `infected` files already exist; connect a scanner and set the state).
+- [x] **Code** Staff authenticator MFA, encrypted seeds, single-use recovery and server-side step-up enforcement.
+- [ ] **Deploy** Provision the independent MFA key and supervise enrollment/recovery; enforcement defaults on outside development. See the Phase 2 runbook.
+- [x] **Code** Pending/infected files are quarantined for every role; a private scanner adapter, digest checks and bounded cron retries are implemented.
+- [ ] **Deploy** Provision and validate a real antivirus engine through the private binding. Until then downloads remain unavailable.
 - [ ] Independent penetration test of the portal and API.
 - [ ] Review the privacy notice against what is stored (see the retention windows in `NBE/src/modules/maintenance/service.ts`) with counsel, including UAE and Egypt data-protection rules.
 
@@ -30,7 +32,7 @@ when you set up the real environment; "Gap" means it is not built yet.
 
 - [x] **Code** New audit IP/UA and rate-limit identities use domain-separated HMAC with a dedicated key. Older rows remain subject to existing retention; this is pseudonymization, not anonymization.
 - [x] **Code** Actual streamed request/upload limits, atomic login and security-event revocation, race-safe enquiries/approvals/file quotas, bounded retention and safe outbox retries have automated regressions (see the audit).
-- [ ] **Gap (P2)** A full Content-Security-Policy with `script-src` on the website (needs nonces for the framework's inline scripts and an allow-list for the font provider and Turnstile).
+- [x] **Code** Enforced nonce-based script CSP, source restrictions and private/no-store HTML on both frontend runtimes. Verify configured providers in staging before release.
 - [ ] **Gap (P2)** Endpoints and a runbook for data-subject requests (export and delete a person's data).
 - [ ] **Gap (P2)** Alerts: spike in failed sign-ins, outbox jobs marked `dead`, sudden rise in 5xx, first sign-in of a staff account from a new country.
 - [ ] **Gap (P2)** Nightly export of the database to a separate bucket, and a restore drill every quarter.
@@ -44,3 +46,5 @@ when you set up the real environment; "Gap" means it is not built yet.
 - [ ] Renew `NFE/public/.well-known/security.txt` (the `Expires` date) at least every six months.
 - [ ] Review staff accounts (`GET /api/v1/admin/users?staff=true`) and remove people who left.
 - [ ] Review the audit log for unexpected exports, role changes and token issuing.
+
+- [ ] **Merge blocker** Resolve the unpatched NFE development `braces` advisory without an unsafe framework downgrade. The expanded dependency gate reports eight high transitive entries and deliberately fails; see `phase-2-verification.md`.
