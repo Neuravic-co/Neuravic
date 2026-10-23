@@ -1347,13 +1347,27 @@ button.site-header__profile {
   }
 
   .site-header__inner {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr auto auto;
+    gap: 0.9rem;
   }
 
   .desktop-nav,
   .portal-button,
-  .site-header__aside {
+  .site-header__portal {
     display: none;
+  }
+
+  /* The panel spans the screen under the header: anchored to the small button it would run off the edge. */
+  .profile-menu {
+    position: static;
+  }
+
+  .profile-menu__panel {
+    position: fixed;
+    top: calc(var(--header-height) + 0.5rem);
+    right: 1rem;
+    left: 1rem;
+    width: auto;
   }
 
   .menu-toggle,
@@ -3675,4 +3689,18 @@ button.site-header__profile {
   .site-footer__brand {
     grid-column: 1 / -1;
   }
+}
+
+.contact-form__fallback {
+  display: inline-block;
+  margin-top: 0.75rem;
+  color: var(--paper);
+  text-decoration: underline;
+  text-decoration-color: var(--blue);
+  text-underline-offset: 0.3em;
+}
+
+.contact-form__fallback:focus-visible {
+  outline: 2px solid var(--blue-text, var(--blue));
+  outline-offset: 3px;
 }
