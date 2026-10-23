@@ -76,8 +76,8 @@ export function AuthForm({ mode, notice }: { mode: AuthMode; notice?: string }) 
   const edit = (field: keyof Errors) => setErrors((current) => ({ ...current, [field]: undefined, form: undefined }));
 
   return (
-    <div className="portal-auth__card">
-      <p className="portal-eyebrow">{signup ? "Account / Sign up" : "Portal / Sign in"}</p>
+    <div className="auth-card">
+      <p className="auth-eyebrow">{signup ? "Account / Sign up" : "Portal / Sign in"}</p>
       {status === "sent" ? (
         <div role="status">
           <h1>Check your inbox.</h1>
@@ -107,7 +107,7 @@ export function AuthForm({ mode, notice }: { mode: AuthMode; notice?: string }) 
               : "Enter your email and we will send you a one-time link. No password needed."}
           </p>
           {notice ? (
-            <p className="portal-auth__notice" role="status">
+            <p className="auth-notice" role="status">
               {notice}
             </p>
           ) : null}
@@ -170,17 +170,17 @@ export function AuthForm({ mode, notice }: { mode: AuthMode; notice?: string }) 
               ) : null}
             </div>
           ) : null}
-          {signup && checkEnabled ? <div ref={widget} className="portal-auth__check" /> : null}
+          {signup && checkEnabled ? <div ref={widget} className="auth-check" /> : null}
           <div aria-live="polite">
-            {errors.form ? <p className="portal-field__error portal-auth__form-error">{errors.form}</p> : null}
+            {errors.form ? <p className="portal-field__error auth-form-error" role="alert">{errors.form}</p> : null}
           </div>
-          <button className="button button--primary button--large" type="submit" disabled={status === "sending"}>
+          <button className="auth-submit" type="submit" disabled={status === "sending"}>
             <span>{status === "sending" ? "Sending…" : signup ? "Create account" : "Email me a link"}</span>
             <ArrowUpRight aria-hidden="true" size={18} strokeWidth={1.5} />
           </button>
         </form>
       )}
-      <p className="portal-auth__switch">
+      <p className="auth-switch">
         {signup ? (
           <>
             Already have an account? <Link href="/login">Log in</Link>
@@ -191,7 +191,7 @@ export function AuthForm({ mode, notice }: { mode: AuthMode; notice?: string }) 
           </>
         )}
       </p>
-      <Link className="portal-auth__back" href="/">
+      <Link className="auth-back" href="/">
         ← Back to neuravic.com
       </Link>
     </div>
