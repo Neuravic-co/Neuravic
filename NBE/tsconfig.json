@@ -33,6 +33,7 @@
     }
   },
   "include": [
+    "api",
     "src",
     "../Test/backend",
     "../Test/browser",

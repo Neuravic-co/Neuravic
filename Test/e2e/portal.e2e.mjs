@@ -22,6 +22,13 @@ await run("Client portal", async (browser, errors) => {
   const admin = await (await browser.newContext({ viewport: { width: 1280, height: 860 } })).newPage();
   watchErrors(admin, "admin", errors);
 
+  // The profile icon asks visitors to sign in, then leads to the portal
+  await admin.goto(BASE_URL, { waitUntil: "networkidle" });
+  await admin.getByRole("button", { name: "Sign in or log in" }).click();
+  await admin.getByRole("link", { name: "Continue to sign in" }).click();
+  await admin.waitForURL(/\/portal$/);
+  check("the profile icon leads signed-out visitors to sign in", true);
+
   // Signed out
   await admin.goto(`${BASE_URL}/portal`, { waitUntil: "networkidle" });
   await admin.screenshot({ path: `${SCREENSHOTS}/portal-signin.png` });

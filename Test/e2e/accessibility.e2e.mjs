@@ -39,6 +39,11 @@ await run("Accessibility", async (browser, errors) => {
   await mobile.waitForTimeout(600);
   await scan(mobile, "mobile menu");
 
+  await page.goto(BASE_URL, { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Sign in or log in" }).click();
+  await page.getByRole("dialog", { name: "Account" }).waitFor();
+  await scan(page, "profile menu (signed out)");
+
   await page.goto(`${BASE_URL}/portal`, { waitUntil: "networkidle" });
   await scan(page, "portal sign-in");
 
