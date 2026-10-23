@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import type { AppEnv } from "../../app";
 import { runBatch, schema } from "../../db";
@@ -15,7 +15,7 @@ export const contentRoutes = new Hono<AppEnv>();
 const CACHE = "public, max-age=60, s-maxage=300, stale-while-revalidate=600";
 
 function segmentOf(value: string): Segment {
-  if (!(value in KIND_BY_SEGMENT)) throw notFound("Unknown content type");
+  if (!Object.hasOwn(KIND_BY_SEGMENT, value)) throw notFound("Unknown content type");
   return value as Segment;
 }
 
@@ -74,11 +74,12 @@ contentAdminRoutes.delete("/:segment/:slug", async (c) => {
   const kind = KIND_BY_SEGMENT[segmentOf(c.req.param("segment"))];
   const slug = slugParam.parse(c.req.param("slug"));
   await ensureSeeded(deps.db, deps.now());
-  const removed = await deps.db
+  const [removed] = await runBatch(deps.db, [deps.db
     .delete(schema.contentItems)
     .where(and(eq(schema.contentItems.kind, kind), eq(schema.contentItems.slug, slug)))
-    .returning({ id: schema.contentItems.id });
-  if (removed.length === 0) throw notFound("Content item not found");
-  await auditInsert(deps.db, { actorId: actor.user.id, action: "content.deleted", targetType: kind, targetId: slug }, deps.now());
+    .returning({ id: schema.contentItems.id }),
+    auditInsert(deps.db, { actorId: actor.user.id, action: "content.deleted", targetType: kind, targetId: slug }, deps.now(), null, sql`changes() > 0`),
+  ]);
+  if (!Array.isArray(removed) || removed.length === 0) throw notFound("Content item not found");
   return c.body(null, 204);
 });

@@ -22,5 +22,7 @@ export function clientIp(c: Context<AppEnv>): string {
   if (secret && forwarded && IP_PATTERN.test(forwarded) && sameSecret(c.req.header("x-proxy-secret") ?? "", secret)) {
     return forwarded;
   }
-  return c.req.header("cf-connecting-ip") ?? c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  // Workers overwrite CF-Connecting-IP at the edge. Arbitrary X-Forwarded-For is not trusted.
+  const edge = c.req.header("cf-connecting-ip");
+  return edge && IP_PATTERN.test(edge) ? edge : "unknown";
 }

@@ -29,11 +29,12 @@ npm run dev                         # http://localhost:8787/api/v1/health
 ```
 
 The defaults in `wrangler.jsonc` match the frontend dev server (`http://localhost:5173`), so
-[NFE](../NFE) connects with no extra setup. In development, emails are printed to the console (including sign-in links), so no mail
-provider is needed. Sign in once with your bootstrap email and you are a staff admin.
+[NFE](../NFE) connects with no extra setup. Sign-in links are never printed. Configure a development Resend account
+for normal local sign-in, or use `npm run test:browser` for an isolated API and in-memory mailbox
+(see `../Test/README.md`). Missing email configuration leaves jobs queued for retry; it never marks them delivered.
 
 ```bash
-npm test            # 108 tests (they live in ../Test/backend), in-memory SQLite, no network
+npm test            # 143 tests (they live in ../Test/backend), in-memory SQLite, no network
 npm run typecheck
 ```
 
@@ -41,7 +42,7 @@ npm run typecheck
 
 1. `wrangler d1 create neuravic-db`, then put the id into `wrangler.jsonc` (`database_id`).
 2. Set production values in `wrangler.jsonc` `vars`: `APP_ENV=production`, `APP_URL`, `ALLOWED_ORIGINS`, `EMAIL_FROM`, `NOTIFY_TO`.
-3. Secrets: `wrangler secret put` for `BOOTSTRAP_ADMIN_EMAIL`, `RESEND_API_KEY`, `TURNSTILE_SECRET`, `PROXY_SECRET` (when the website runs on Vercel), `SSO_PRIVATE_JWK` (generate with `npm run sso:keygen`), and `SLACK_WEBHOOK_URL` if wanted.
+3. Secrets: `wrangler secret put` for `PRIVACY_HASH_SECRET` (dedicated random key, 32+ characters, required outside development), `BOOTSTRAP_ADMIN_EMAIL`, `RESEND_API_KEY`, `TURNSTILE_SECRET`, `PROXY_SECRET` (32+ characters, when the website runs on Vercel), `SSO_PRIVATE_JWK` (generate with `npm run sso:keygen`), and `SLACK_WEBHOOK_URL` if wanted.
 4. Optional binding: R2 bucket `BUCKET` (enables file attachments). Uncomment it in `wrangler.jsonc`.
 5. `npm run db:migrate:remote`, then `npm run deploy`.
 
@@ -51,7 +52,7 @@ Route the API on the same domain as the site (for example `neuravic.com/api/*` t
 
 - **Indexes match the queries.** Each list (leads, requests, projects, activity, audit log, files) has an index in the exact order it is shown, and the cleanup job that runs every 5 minutes has indexes on expiry times. Cloudflare D1 bills and slows by rows read, so `Test/backend/query-plans.test.ts` fails if a change makes any of these queries scan a whole table or sort.
 - **Site content is one query.** `GET /content` reads everything the home page needs in a single query; the frontend caches the result for a minute.
-- **Small bundle.** The Worker is about 465 KiB (93 KiB gzipped).
+- **Bundle measurement.** The local 22 October dry-run build measured about 1,120 KiB (196 KiB gzipped); this is not a latency or throughput benchmark.
 
 ## Schema changes
 
@@ -69,6 +70,13 @@ outbox  -> sent after the response, retried by the 5-minute cron (backoff, then 
 - **Auth:** passwordless email links (single use, 15 minutes, stored hashed) and server-side sessions in an HttpOnly cookie. Staff sessions last 12 hours; client sessions slide for 30 days (90 maximum). Only invited users can sign in; the bootstrap email creates the first admin.
 - **Access control:** deny by default. Non-members get 404 for an organisation, members with too little privilege get 403. Roles: viewer, member, admin, owner. Staff admins act as owners everywhere, delivery staff as admins, sales staff only see leads.
 - **Privacy:** IPs and user agents are stored only as hashes. Retention runs in the cron job: spam leads 90 days, lost leads 365 days, expired sessions and tokens daily.
+
+Audit and rate identifiers use domain-separated HMAC with `PRIVACY_HASH_SECRET`; rate keys no longer store raw IPs or emails.
+Cleanup is capped at 500 records per category per run and rechecks recovered leads atomically. Email deliveries use timeouts,
+bounded jittered retries, stable Resend idempotency keys, and payload scrubbing after success or terminal failure.
+
+Read `../Security/operations-runbook.md` before release: deploy the dual-format frontend first, apply migrations, then deploy the backend.
+Production deployment and credential rotation require separate approval.
 
 ## Not built yet
 

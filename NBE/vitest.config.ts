@@ -22,5 +22,7 @@ export default defineConfig({
     dir: "../Test/backend",
     include: ["**/*.test.ts"],
     environment: "node",
+    // Each worker loads native SQLite. Bound startup contention on developer machines and CI.
+    maxWorkers: 2,
   },
 });

@@ -26,7 +26,7 @@ describe("database", () => {
 
   it("writes audit entries with hashed ip", async () => {
     const db = await createTestDb();
-    await writeAudit(db, { action: "test.event", ip: "203.0.113.7" }, 10);
+    await writeAudit(db, { action: "test.event", ip: "203.0.113.7" }, 10, "test-only-privacy-key-for-audit-entries");
     const [entry] = await recentAudit(db);
     expect(entry?.action).toBe("test.event");
     expect(entry?.ipHash).toHaveLength(32);

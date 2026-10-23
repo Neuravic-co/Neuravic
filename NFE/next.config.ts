@@ -23,6 +23,11 @@ const nextConfig: NextConfig = {
     return [
       { source: "/", headers: securityHeaders },
       { source: "/:path*", headers: securityHeaders },
+      { source: "/portal/:path*", headers: [{ key: "Cache-Control", value: "no-store" }] },
+      { source: "/portal/verify", headers: [
+        { key: "Referrer-Policy", value: "no-referrer" },
+        { key: "Cache-Control", value: "no-store" },
+      ] },
       // Brand images keep their file names, so they cannot be cached forever; a day, then refresh quietly.
       { source: "/assets/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }] },
     ];

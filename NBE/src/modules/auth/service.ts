@@ -1,4 +1,4 @@
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt, isNull, ne, sql } from "drizzle-orm";
 import { runBatch, schema } from "../../db";
 import type { Deps } from "../../deps";
 import { randomToken, sha256Hex } from "../../lib/crypto";
@@ -25,7 +25,8 @@ export async function findUserByEmail(deps: Deps, email: string): Promise<User |
 }
 
 export function loginLink(deps: Deps, token: string): string {
-  return `${deps.config.appUrl}/portal/verify?token=${encodeURIComponent(token)}`;
+  // URL fragments are not sent to the web server or included in HTTP Referer headers.
+  return `${deps.config.appUrl}/portal/verify#token=${encodeURIComponent(token)}`;
 }
 
 /**
@@ -50,7 +51,7 @@ export async function loginLinkWrites(deps: Deps, user: User, now: number, invit
       to: user.email,
       subject: invitedTo ? `You are invited to ${invitedTo}` : "Your Neuravic sign-in link",
       text,
-    }),
+    }, now + LOGIN_TOKEN_TTL_MS),
   ];
 }
 
@@ -60,7 +61,8 @@ export async function loginLinkWrites(deps: Deps, user: User, now: number, invit
  */
 export async function requestMagicLink(deps: Deps, email: string, ip: string): Promise<void> {
   const now = deps.now();
-  const withinLimit = await deps.rateLimiter.hit(`magic-email:${email}`, 5, 3600, now);
+  const identifier = await hashIdentifier(email, deps.config.privacyHashSecret, "rate:magic-email");
+  const withinLimit = await deps.rateLimiter.hit(`magic-email:${identifier}`, 5, 3600, now);
   if (!withinLimit) return;
 
   let user = await findUserByEmail(deps, email);
@@ -76,7 +78,7 @@ export async function requestMagicLink(deps: Deps, email: string, ip: string): P
 
   await runBatch(deps.db, [
     ...(await loginLinkWrites(deps, user, now)),
-    auditInsert(deps.db, { actorId: user.id, action: "auth.magic_link_requested" }, now, await hashIdentifier(ip)),
+    auditInsert(deps.db, { actorId: user.id, action: "auth.magic_link_requested" }, now, await hashIdentifier(ip, deps.config.privacyHashSecret)),
   ]);
   await deps.runInBackground(() => drainOutbox(deps));
 }
@@ -93,13 +95,14 @@ export async function verifyMagicLink(
   token: string,
   ip: string,
   userAgent: string | undefined,
+  previousSessionId?: string,
 ): Promise<VerifiedLogin> {
   const now = deps.now();
   const tokenHash = await sha256Hex(token);
 
-  const claimed = await deps.db
-    .update(schema.authTokens)
-    .set({ usedAt: now })
+  const [available] = await deps.db
+    .select({ email: schema.authTokens.email })
+    .from(schema.authTokens)
     .where(
       and(
         eq(schema.authTokens.id, tokenHash),
@@ -107,8 +110,8 @@ export async function verifyMagicLink(
         gt(schema.authTokens.expiresAt, now),
       ),
     )
-    .returning({ email: schema.authTokens.email });
-  const email = claimed[0]?.email;
+    .limit(1);
+  const email = available?.email;
   if (!email) throw unauthorized("This sign-in link is invalid or has expired");
 
   const user = await findUserByEmail(deps, email);
@@ -116,20 +119,27 @@ export async function verifyMagicLink(
 
   const { idleMs, absoluteMs } = sessionLifetimes(user);
   const sessionToken = randomToken();
-  const ipHash = await hashIdentifier(ip);
+  const sessionId = await sha256Hex(sessionToken);
+  const ipHash = await hashIdentifier(ip, deps.config.privacyHashSecret);
+  const userAgentHash = await hashIdentifier(userAgent, deps.config.privacyHashSecret, "audit-user-agent");
+  const claimBelongsToUs = sql`exists (select 1 from auth_tokens where id = ${tokenHash}
+    and claimed_session_id = ${sessionId} and used_at = ${now})`;
   await runBatch(deps.db, [
-    deps.db.insert(schema.sessions).values({
-      id: await sha256Hex(sessionToken),
-      userId: user.id,
-      expiresAt: now + idleMs,
-      absoluteExpiresAt: now + absoluteMs,
-      ipHash,
-      userAgentHash: await hashIdentifier(userAgent),
-      createdAt: now,
-    }),
-    deps.db.update(schema.users).set({ status: "active", lastLoginAt: now }).where(eq(schema.users.id, user.id)),
-    auditInsert(deps.db, { actorId: user.id, action: "auth.login" }, now, ipHash),
+    deps.db.update(schema.authTokens).set({ usedAt: now, claimedSessionId: sessionId }).where(and(
+      eq(schema.authTokens.id, tokenHash), isNull(schema.authTokens.usedAt), gt(schema.authTokens.expiresAt, now),
+      sql`exists (select 1 from users where id = ${user.id} and status <> 'disabled' and staff_role is ${user.staffRole})`,
+    )),
+    deps.db.update(schema.users).set({ status: "active", lastLoginAt: now }).where(and(
+      eq(schema.users.id, user.id), ne(schema.users.status, "disabled"), claimBelongsToUs,
+    )),
+    // The per-claim session hash distinguishes even simultaneous verifications at the same timestamp.
+    deps.db.insert(schema.sessions).select(sql`select ${sessionId}, ${user.id}, ${now + idleMs},
+      ${now + absoluteMs}, ${ipHash}, ${userAgentHash}, ${now} where ${claimBelongsToUs}`),
+    ...(previousSessionId ? [deps.db.delete(schema.sessions).where(and(eq(schema.sessions.id, previousSessionId), claimBelongsToUs))] : []),
+    auditInsert(deps.db, { actorId: user.id, action: "auth.login" }, now, ipHash, claimBelongsToUs),
   ]);
+  const [session] = await deps.db.select({ id: schema.sessions.id }).from(schema.sessions).where(eq(schema.sessions.id, sessionId)).limit(1);
+  if (!session) throw unauthorized("This sign-in link is invalid or has expired");
   return { user: { ...user, status: "active" }, sessionToken, maxAgeSeconds: Math.floor(Math.min(idleMs, absoluteMs) / 1000) };
 }
 
@@ -148,11 +158,14 @@ export async function actorFromSession(deps: Deps, sessionToken: string): Promis
   if (user.status !== "active" || session.expiresAt <= now || session.absoluteExpiresAt <= now) return null;
 
   const { idleMs } = sessionLifetimes(user);
-  if (session.expiresAt - now < idleMs - HOUR) {
+  let sessionRenewalSeconds: number | undefined;
+  const nextExpiry = Math.min(now + idleMs, session.absoluteExpiresAt);
+  if (session.expiresAt - now < idleMs - HOUR && nextExpiry > session.expiresAt) {
     await deps.db
       .update(schema.sessions)
-      .set({ expiresAt: Math.min(now + idleMs, session.absoluteExpiresAt) })
+      .set({ expiresAt: nextExpiry })
       .where(eq(schema.sessions.id, sessionId));
+    sessionRenewalSeconds = Math.floor((nextExpiry - now) / 1000);
   }
 
   const memberRows = await deps.db
@@ -160,7 +173,7 @@ export async function actorFromSession(deps: Deps, sessionToken: string): Promis
     .from(schema.memberships)
     .where(eq(schema.memberships.userId, user.id));
   const memberships = new Map<string, OrgRole>(memberRows.map((m) => [m.orgId, m.role]));
-  return { user, memberships, sessionId };
+  return { user, memberships, sessionId, sessionRenewalSeconds };
 }
 
 export async function endSession(deps: Deps, actor: Actor): Promise<void> {

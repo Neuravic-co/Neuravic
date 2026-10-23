@@ -1,12 +1,41 @@
-import { describe, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
+import { describe, expect, it, vi } from "vitest";
 import { schema } from "../../NBE/src/db";
 import { emailJob } from "../../NBE/src/modules/notifications/outbox";
-import { RETENTION, runMaintenance } from "../../NBE/src/modules/maintenance/service";
+import { CLEANUP_BATCH_LIMIT, RETENTION, runMaintenance } from "../../NBE/src/modules/maintenance/service";
 import { makeTestApp } from "./helpers";
 
 const DAY = 24 * 3_600_000;
 
 describe("maintenance", () => {
+  it("bounds cleanup work per run and catches up on the next scheduled run", async () => {
+    const { deps } = await makeTestApp();
+    const now = 1000;
+    deps.now = () => now;
+    await deps.db.insert(schema.rateLimits).values(Array.from({ length: CLEANUP_BATCH_LIMIT + 10 }, (_, n) => ({ key: `old-${n}`, count: 1, expiresAt: 0 })));
+    expect((await runMaintenance(deps)).rateLimitsRemoved).toBe(CLEANUP_BATCH_LIMIT);
+    expect((await runMaintenance(deps)).rateLimitsRemoved).toBe(10);
+  });
+
+  it("keeps a lead and its notes when staff recover it before the retention batch", async () => {
+    const { deps } = await makeTestApp();
+    deps.now = () => 1000 * DAY;
+    await deps.db.insert(schema.users).values({ id: "author", email: "a@test.dev", status: "active", createdAt: 0 });
+    await deps.db.insert(schema.leads).values({ id: "recover", name: "A", email: "a@test.dev", message: "An enquiry", messageHash: "hash", serviceInterest: [], consentAt: 0, status: "spam", createdAt: 0, updatedAt: 0 });
+    await deps.db.insert(schema.leadNotes).values({ id: "note", leadId: "recover", authorId: "author", body: "Keep this", createdAt: 0 });
+    const db = deps.db as typeof deps.db & { batch: (queries: unknown[]) => Promise<unknown[]> };
+    const original = db.batch.bind(db);
+    const hook = vi.spyOn(db, "batch").mockImplementationOnce(async (queries) => {
+      await db.update(schema.leads).set({ status: "won" }).where(eq(schema.leads.id, "recover"));
+      return original(queries);
+    });
+    const report = await runMaintenance(deps);
+    hook.mockRestore();
+    expect(report.leadsRemoved).toBe(0);
+    expect(await db.select().from(schema.leadNotes)).toHaveLength(1);
+    expect((await db.select().from(schema.leads))[0]?.status).toBe("won");
+  });
+
   it("retries due emails and removes expired sessions and tokens", async () => {
     const { deps, mailer } = await makeTestApp();
     const now = 1_000 * DAY;
@@ -35,10 +64,10 @@ describe("maintenance", () => {
     const base = { email: "a@x.dev", message: "m", messageHash: "h", serviceInterest: [], consentAt: 1, updatedAt: 1 };
     await deps.db.insert(schema.users).values({ id: "u", email: "u@x.dev", status: "active", createdAt: 1 });
     await deps.db.insert(schema.leads).values([
-      { ...base, id: "old-spam", name: "a", status: "spam", createdAt: now - RETENTION.spamLeadsMs - 1 },
-      { ...base, id: "new-spam", name: "b", status: "spam", createdAt: now - DAY },
-      { ...base, id: "old-lost", name: "c", status: "lost", createdAt: 1, updatedAt: now - RETENTION.lostLeadsMs - 1 },
-      { ...base, id: "old-won", name: "d", status: "won", createdAt: 1, updatedAt: 1 },
+      { ...base, messageHash: "a", id: "old-spam", name: "a", status: "spam", createdAt: now - RETENTION.spamLeadsMs - 1 },
+      { ...base, messageHash: "b", id: "new-spam", name: "b", status: "spam", createdAt: now - DAY },
+      { ...base, messageHash: "c", id: "old-lost", name: "c", status: "lost", createdAt: 1, updatedAt: now - RETENTION.lostLeadsMs - 1 },
+      { ...base, messageHash: "d", id: "old-won", name: "d", status: "won", createdAt: 1, updatedAt: 1 },
     ]);
     await deps.db.insert(schema.leadNotes).values({ id: "n", leadId: "old-spam", authorId: "u", body: "x", createdAt: 1 });
 

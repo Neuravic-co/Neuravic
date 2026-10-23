@@ -10,4 +10,5 @@ export interface Actor {
   /** Org id to role for client memberships. */
   memberships: Map<string, OrgRole>;
   sessionId: string;
+  sessionRenewalSeconds?: number;
 }

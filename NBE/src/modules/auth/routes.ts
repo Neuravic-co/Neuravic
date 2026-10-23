@@ -25,7 +25,7 @@ authRoutes.post("/magic-link", rateLimit({ name: "magic-ip", limit: 20, windowSe
 authRoutes.post("/verify", rateLimit({ name: "verify-ip", limit: 30, windowSeconds: 3600 }), async (c) => {
   const deps = c.get("deps");
   const { token } = await parseJson(c, verifySchema);
-  const login = await verifyMagicLink(deps, token, clientIp(c), c.req.header("user-agent"));
+  const login = await verifyMagicLink(deps, token, clientIp(c), c.req.header("user-agent"), c.get("actor")?.sessionId);
   setCookie(c, sessionCookieName(deps.config.cookieSecure), login.sessionToken, {
     httpOnly: true,
     secure: deps.config.cookieSecure,

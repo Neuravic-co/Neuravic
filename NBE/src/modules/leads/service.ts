@@ -2,6 +2,7 @@ import { and, eq, gte } from "drizzle-orm";
 import { runBatch, schema } from "../../db";
 import type { Deps } from "../../deps";
 import { sha256Hex } from "../../lib/crypto";
+import { isDatabaseGuard } from "../../lib/errors";
 import { ulid } from "../../lib/ids";
 import { auditInsert, hashIdentifier } from "../audit/audit";
 import { drainOutbox, emailJob, slackJob } from "../notifications/outbox";
@@ -28,7 +29,7 @@ export async function createLead(deps: Deps, input: CreateLeadInput, ip: string)
   if (input.website) return { id: ulid(now), status: "received" };
 
   const messageHash = await sha256Hex(input.message.toLowerCase());
-  const [duplicate] = await db
+  const duplicates = () => db
     .select({ id: schema.leads.id })
     .from(schema.leads)
     .where(
@@ -39,9 +40,10 @@ export async function createLead(deps: Deps, input: CreateLeadInput, ip: string)
       ),
     )
     .limit(1);
+  const [duplicate] = await duplicates();
   if (duplicate) return { id: duplicate.id, status: "received" };
 
-  const ipHash = await hashIdentifier(ip);
+  const ipHash = await hashIdentifier(ip, config.privacyHashSecret);
   const score = spamScore(input);
   const isSpam = score >= SPAM_THRESHOLD;
   const id = ulid(now);
@@ -92,7 +94,17 @@ export async function createLead(deps: Deps, input: CreateLeadInput, ip: string)
     );
   }
 
-  await runBatch(db, writes);
+  try {
+    await runBatch(db, writes);
+  } catch (error) {
+    // A concurrent insert won after the initial check. Its ID is the idempotent response;
+    // the database guard rolled back our audit and notification jobs with the duplicate lead.
+    if (isDatabaseGuard(error, "duplicate_lead")) {
+      const [winner] = await duplicates();
+      if (winner) return { id: winner.id, status: "received" };
+    }
+    throw error;
+  }
   if (!isSpam) await deps.runInBackground(() => drainOutbox(deps));
   return { id, status: "received" };
 }

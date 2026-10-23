@@ -3,7 +3,7 @@
 ```
 NFE/        Frontend: marketing site and client portal (Next.js on Cloudflare Workers)
 NBE/        Backend: TypeScript API (Hono, Cloudflare D1) that serves both
-Test/       All tests: 108 backend tests and browser end-to-end and accessibility tests
+Test/       All tests: 143 backend tests and browser end-to-end and accessibility tests
 Security/   Security policy, threat model, go-live checklist and the automated security check
 Docs/       Company profile (Word), backend architecture design (PDF) and the API reference
 README.md   This file
@@ -36,18 +36,19 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open http://localhost:5173. Submit the contact form, then open `/portal` and sign in with your
-bootstrap email. In development the sign-in link is printed in the backend terminal.
+Open http://localhost:5173. Normal local sign-in requires a configured email provider; login links are never printed.
+For a complete isolated contact/portal test with an in-memory mailbox, install NFE and Test dependencies, install
+Playwright Chromium in Test, then run `npm run test:browser` in NBE. See `Test/README.md`.
 
 ## Checks
 
 ```bash
-cd NBE && npm run typecheck && npm test                  # backend: types and 108 tests
+cd NBE && npm run typecheck && npm test                  # backend: types and 143 tests
 cd NFE && npm run lint && npm run typecheck && npm run build
 ./Security/scripts/security-check.sh                     # secrets and vulnerable dependencies
-cd Test && npm install && npm run e2e                    # browser tests (both apps running; see Test/README.md)
+cd NBE && npm run test:browser                            # isolated browser and accessibility suites
 ```
 
-The first three run in CI (`.github/workflows`), and the security check also runs every week.
+These checks run in CI (`.github/workflows`), alongside both frontend builds and CodeQL. The security check also runs weekly.
 
 hello world 1-1

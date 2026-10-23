@@ -18,12 +18,14 @@ export async function verifyTurnstile(deps: Deps, token: string | undefined, ip:
     const res = await deps.http("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
       body: form,
+      signal: AbortSignal.timeout(5000),
+      redirect: "error",
     });
     if (!res.ok) return false;
     const result = (await res.json()) as { success?: boolean };
     return result.success === true;
-  } catch (error) {
-    deps.log.error("turnstile_unreachable", { error: String(error) });
+  } catch {
+    deps.log.error("turnstile_unreachable");
     return false;
   }
 }

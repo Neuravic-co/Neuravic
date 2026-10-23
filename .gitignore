@@ -21,6 +21,7 @@ out/
 .wrangler/
 .turbo/
 .cache/
+.npm-cache/
 .parcel-cache/
 *.tsbuildinfo
 next-env.d.ts

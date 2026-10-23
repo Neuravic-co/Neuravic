@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import type { AppEnv } from "../../app";
 import { runBatch, schema } from "../../db";
 import { sha256Hex } from "../../lib/crypto";
+import { readBoundedBody } from "../../lib/body";
 import { AppError, badRequest, forbidden, notFound } from "../../lib/errors";
 import { ulid } from "../../lib/ids";
 import { auditInsert } from "../audit/audit";
@@ -49,11 +50,8 @@ filesRoutes.put("/requests/:id/files", async (c) => {
   const mime = (c.req.header("content-type") ?? "").split(";")[0]!.trim().toLowerCase();
   if (!ALLOWED_MIME_TYPES.has(mime)) throw new AppError(415, "unsupported_media_type", "This file type is not allowed");
 
-  const declared = Number(c.req.header("content-length") ?? 0);
-  if (declared > deps.config.maxUploadBytes) throw new AppError(413, "payload_too_large", "File is too large");
-  const data = await c.req.arrayBuffer();
+  const data = await readBoundedBody(c.req.raw, deps.config.maxUploadBytes);
   if (data.byteLength === 0) throw badRequest("File is empty");
-  if (data.byteLength > deps.config.maxUploadBytes) throw new AppError(413, "payload_too_large", "File is too large");
 
   const [{ total: attached } = { total: 0 }] = await deps.db
     .select({ total: count() })
@@ -84,7 +82,7 @@ filesRoutes.put("/requests/:id/files", async (c) => {
       auditInsert(deps.db, { actorId: actor.user.id, orgId: request.orgId, action: "file.uploaded", targetType: "file", targetId: id, meta: { size: file.size } }, now),
     ]);
   } catch (error) {
-    await blobs.delete(file.storageKey); // do not leave orphaned objects
+    await blobs.delete(file.storageKey).catch(() => deps.log.warn("blob_cleanup_failed", { fileId: id }));
     throw error;
   }
   const { storageKey: _key, ...publicFile } = file;
@@ -145,6 +143,6 @@ filesRoutes.delete("/files/:id", async (c) => {
     auditInsert(deps.db, { actorId: actor.user.id, orgId: file.orgId, action: "file.deleted", targetType: "file", targetId: file.id }, now),
   ]);
   // The record is already gone, so a failed object delete must not turn into an error for the caller.
-  await blobs.delete(file.storageKey).catch((error) => deps.log.warn("blob_delete_failed", { fileId: file.id, error: String(error) }));
+  await blobs.delete(file.storageKey).catch(() => deps.log.warn("blob_delete_failed", { fileId: file.id }));
   return c.body(null, 204);
 });

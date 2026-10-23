@@ -5,13 +5,11 @@
  *   E2E_BASE_URL     frontend address            default http://localhost:5173
  *   E2E_API_URL      backend API address         default http://localhost:8787/api/v1
  *   E2E_ADMIN_EMAIL  bootstrap staff admin email default founder@test.dev
- *                    (must equal BOOTSTRAP_ADMIN_EMAIL in NBE/.dev.vars)
- *   NBE_LOG          file the backend's output is written to, default /tmp/nbe.log
- *                    Start the backend with:  npm run dev 2>&1 | tee /tmp/nbe.log
- *                    In development the backend prints sign-in links there instead of emailing them.
+ *   E2E_MAILBOX_URL  loopback mailbox created by Test/browser/integration.test.ts
+ *   E2E_MAILBOX_SECRET  random per-run mailbox credential (never logged)
  *   CHROMIUM_PATH    optional browser executable
  */
-import { mkdirSync, readFileSync, statSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
@@ -21,7 +19,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 export const BASE_URL = (process.env.E2E_BASE_URL ?? "http://localhost:5173").replace(/\/$/, "");
 export const API_URL = (process.env.E2E_API_URL ?? "http://localhost:8787/api/v1").replace(/\/$/, "");
 export const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? "founder@test.dev";
-export const NBE_LOG = process.env.NBE_LOG ?? "/tmp/nbe.log";
+const MAILBOX_URL = process.env.E2E_MAILBOX_URL;
+const MAILBOX_SECRET = process.env.E2E_MAILBOX_SECRET;
 export const SCREENSHOTS = join(here, "screenshots");
 mkdirSync(SCREENSHOTS, { recursive: true });
 
@@ -41,28 +40,23 @@ export function watchErrors(page, label, sink) {
 }
 
 export function logSize() {
-  try {
-    return statSync(NBE_LOG).size;
-  } catch {
-    throw new Error(`Cannot read ${NBE_LOG}. Start the backend with: npm run dev 2>&1 | tee ${NBE_LOG}`);
-  }
+  if (!MAILBOX_URL || !MAILBOX_SECRET) throw new Error("Run npm run test:browser from NBE to start the isolated test mailbox");
+  return 0;
 }
 
-/** Waits for the sign-in link the backend printed for `email` after `fromByte`. */
-export async function waitForLoginToken(email, fromByte) {
+/** Reads the isolated fixture mailbox. Login links never pass through application logs. */
+export async function waitForLoginToken(email, _fromByte) {
   for (let attempt = 0; attempt < 60; attempt += 1) {
-    const text = readFileSync(NBE_LOG, "utf8").slice(fromByte);
-    const line = text
-      .split("\n")
-      .reverse()
-      .find((entry) => entry.includes(`"to":"${email}"`) && entry.includes("token="));
-    const token = line && /token=([A-Za-z0-9_%-]+)/.exec(line)?.[1];
+    const response = await fetch(MAILBOX_URL, { headers: { authorization: `Bearer ${MAILBOX_SECRET}` } });
+    if (!response.ok) throw new Error("Test mailbox is unavailable");
+    const { messages } = await response.json();
+    const mail = messages.filter((message) => message.to === email && message.text.includes("token=")).at(-1);
+    const token = mail && /token=([A-Za-z0-9_%-]+)/.exec(mail.text)?.[1];
     if (token) return decodeURIComponent(token);
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
   throw new Error(
-    `No sign-in link for ${email} appeared in ${NBE_LOG}. If you ran the tests several times in the last hour, ` +
-      "the backend's limit of 5 sign-in emails per hour per address was reached: restart the backend (npm run dev) to reset it.",
+    "No sign-in link appeared in the isolated test mailbox; check test limits and fixture setup.",
   );
 }
 
@@ -96,8 +90,9 @@ export async function signInThroughUi(page, email) {
   await page.getByRole("button", { name: /Email me a link/ }).click();
   await page.getByRole("heading", { name: /Check your inbox/ }).waitFor();
   const token = await waitForLoginToken(email, from);
-  await page.goto(`${BASE_URL}/portal/verify?token=${encodeURIComponent(token)}`);
+  await page.goto(`${BASE_URL}/portal/verify#token=${encodeURIComponent(token)}`);
   await page.getByRole("button", { name: "Sign out" }).waitFor({ timeout: 15000 });
+  check("sign-in credentials are removed from the URL", !/[?#].*token=/.test(page.url()));
 }
 
 /** Tiny assertion helper with readable output. */

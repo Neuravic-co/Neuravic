@@ -1,12 +1,13 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { bodyLimit } from "hono/body-limit";
+import { routePath } from "hono/route";
 import { secureHeaders } from "hono/secure-headers";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { ZodError } from "zod";
 import type { Deps } from "./deps";
 import type { Env } from "./env";
-import { AppError, isUniqueViolation } from "./lib/errors";
+import { AppError, isDatabaseGuard, isUniqueViolation } from "./lib/errors";
+import { readBoundedBody } from "./lib/body";
 import { ulid } from "./lib/ids";
 import type { Actor } from "./modules/auth/actor";
 import { loadActor, requireTrustedOrigin } from "./modules/auth/middleware";
@@ -47,7 +48,7 @@ function problem(
   return c.json(
     { type: "about:blank", title, status, code, requestId: c.get("requestId"), ...extra },
     status as ContentfulStatusCode,
-    { "content-type": PROBLEM_TYPE },
+    { "content-type": PROBLEM_TYPE, "cache-control": "no-store" },
   );
 }
 
@@ -59,6 +60,9 @@ export function createApp(makeDeps: DepsFactory) {
     // Only accept a well-formed caller-supplied id; anything else could pollute logs.
     const supplied = c.req.header("x-request-id");
     const requestId = supplied && /^[A-Za-z0-9._-]{8,64}$/.test(supplied) ? supplied : ulid();
+    c.set("requestId", requestId);
+    c.header("cache-control", "no-store");
+    c.header("x-request-id", requestId);
     let ctx: BackgroundContext | undefined;
     try {
       ctx = c.executionCtx;
@@ -66,15 +70,15 @@ export function createApp(makeDeps: DepsFactory) {
       ctx = undefined;
     }
     const deps = makeDeps(c.env, ctx);
-    c.set("requestId", requestId);
     c.set("deps", deps);
     const started = deps.now();
     await next();
     c.header("x-request-id", requestId);
+    if (c.res.headers.has("set-cookie") || c.res.status >= 400) c.header("cache-control", "no-store");
     deps.log.info("request", {
       requestId,
       method: c.req.method,
-      path: new URL(c.req.url).pathname,
+      path: routePath(c, -1) || "unmatched",
       status: c.res.status,
       ms: deps.now() - started,
     });
@@ -97,17 +101,13 @@ export function createApp(makeDeps: DepsFactory) {
   const MAX_JSON_BYTES = 256 * 1024;
   api.use("*", async (c, next) => {
     if (c.req.method === "PUT" && /\/requests\/[^/]+\/files$/.test(c.req.path)) return next();
-    return bodyLimit({
-      maxSize: MAX_JSON_BYTES,
-      onError: (ctx) => problem(ctx, 413, "payload_too_large", "Request body is too large"),
-    })(c, next);
+    if (c.req.raw.body) {
+      const body = await readBoundedBody(c.req.raw, MAX_JSON_BYTES);
+      c.req.raw = new Request(c.req.raw, { body });
+    }
+    return next();
   });
   api.use("*", requireTrustedOrigin, loadActor);
-  // Responses can contain personal or tenant data: never cache them unless a route opts in (public content does).
-  api.use("*", async (c, next) => {
-    await next();
-    if (!c.res.headers.has("cache-control")) c.header("cache-control", "no-store");
-  });
 
   api.get("/health", (c) => c.json({ status: "ok" }));
   api.get("/version", (c) => c.json({ version: c.get("deps").config.version }));
@@ -138,9 +138,14 @@ export function createApp(makeDeps: DepsFactory) {
     }
     // Two requests raced past a "does it exist?" check and the unique index caught the loser.
     if (isUniqueViolation(error)) return problem(c, 409, "conflict", "This already exists");
+    if (isDatabaseGuard(error, "request_not_open")) return problem(c, 409, "conflict", "This request is no longer open");
+    if (isDatabaseGuard(error, "file_limit_reached")) return problem(c, 409, "conflict", "Too many files on this request");
+    if (isDatabaseGuard(error, "file_request_unavailable")) return problem(c, 409, "conflict", "This request no longer accepts files");
+    if (isDatabaseGuard(error, "last_staff_admin")) return problem(c, 409, "conflict", "At least one active staff admin is required");
+    if (isDatabaseGuard(error, "approver_not_authorized")) return problem(c, 403, "forbidden", "You cannot decide on this request");
     c.get("deps")?.log.error("unhandled_error", {
       requestId: c.get("requestId"),
-      error: error instanceof Error ? error.message : String(error),
+      error: "internal_error",
     });
     return problem(c, 500, "internal_error", "Internal server error");
   });

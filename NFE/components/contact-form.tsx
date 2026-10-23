@@ -150,7 +150,7 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
       <div className="contact-form contact-form--sent" role="status" tabIndex={-1} ref={confirmation}>
         <p className="contact-form__sent-title">Message received.</p>
         <p>
-          Thank you. We sent a confirmation to <strong>{sentTo}</strong> and will reply from there.
+          Thank you. We received your enquiry and will reply to <strong>{sentTo}</strong>.
         </p>
       </div>
     );

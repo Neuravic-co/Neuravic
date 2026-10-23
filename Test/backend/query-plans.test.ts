@@ -23,10 +23,10 @@ const QUERIES: Record<string, string> = {
   "files of a request": "select * from files where request_id = 'r' order by created_at",
   "session lookup": "select * from sessions where id = 'x'",
   "memberships of a user": "select * from memberships where user_id = 'u'",
-  "cleanup of expired sessions": "delete from sessions where expires_at < 1 or absolute_expires_at < 1",
-  "cleanup of expired login tokens": "delete from auth_tokens where expires_at < 1",
-  "cleanup of old leads": "select id from leads where (status = 'spam' and created_at < 1) or (status = 'lost' and updated_at < 1)",
-  "due outbox jobs": "select * from outbox where state = 'pending' and next_attempt_at <= 1 limit 20",
+  "cleanup of expired sessions": "delete from sessions where id in (select id from sessions where expires_at < 1 or absolute_expires_at < 1 limit 500)",
+  "cleanup of expired login tokens": "delete from auth_tokens where id in (select id from auth_tokens where expires_at < 1 limit 500)",
+  "cleanup of old leads": "select id from leads where (status = 'spam' and created_at < 1) or (status = 'lost' and updated_at < 1) limit 500",
+  "due outbox jobs": "select * from outbox where state = 'pending' and next_attempt_at <= 1 order by next_attempt_at limit 20",
 };
 
 describe("database query plans", () => {

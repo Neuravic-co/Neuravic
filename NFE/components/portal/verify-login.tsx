@@ -23,7 +23,10 @@ export function VerifyLogin() {
     // The token is single use, so guard against React running this effect twice in development.
     if (started.current) return;
     started.current = true;
-    void exchangeToken(new URLSearchParams(window.location.search).get("token")).then((result) => {
+    const token = new URLSearchParams(window.location.hash.slice(1)).get("token") ??
+      new URLSearchParams(window.location.search).get("token"); // accept links issued before this change
+    window.history.replaceState(window.history.state, "", window.location.pathname);
+    void exchangeToken(token).then((result) => {
       if (result === "ok") window.location.replace("/portal");
       else setState(result);
     });

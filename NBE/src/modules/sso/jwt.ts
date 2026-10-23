@@ -50,18 +50,25 @@ export async function verifyJwt(
   jwks: { keys: PublicJwk[] },
   expected: { issuer: string; audience: string; now: number },
 ): Promise<VerifiedJwt> {
-  const [h, p, s] = token.split(".");
-  if (!h || !p || !s) throw new Error("malformed token");
+  const parts = token.split(".");
+  const [h, p, s] = parts;
+  if (token.length > 8192 || parts.length !== 3 || !h || !p || !s || parts.some((part) => !/^[A-Za-z0-9_-]+$/.test(part))) throw new Error("malformed token");
   const header = JSON.parse(new TextDecoder().decode(fromBase64Url(h))) as VerifiedJwt["header"];
-  if (header.alg !== "EdDSA") throw new Error("unexpected algorithm");
+  if (!header || Array.isArray(header) || header.alg !== "EdDSA") throw new Error("unexpected algorithm");
+  if (typeof header.kid !== "string" || header.kid.length > 128) throw new Error("unknown key id");
   const jwk = jwks.keys.find((k) => k.kid === header.kid);
   if (!jwk) throw new Error("unknown key id");
   const publicKey = await crypto.subtle.importKey("jwk", jwk, { name: "Ed25519" }, false, ["verify"]);
   const valid = await crypto.subtle.verify({ name: "Ed25519" }, publicKey, fromBase64Url(s), encoder.encode(`${h}.${p}`));
   if (!valid) throw new Error("bad signature");
   const claims = JSON.parse(new TextDecoder().decode(fromBase64Url(p))) as Record<string, unknown>;
+  if (!claims || Array.isArray(claims) || typeof claims !== "object") throw new Error("malformed claims");
   if (claims.iss !== expected.issuer) throw new Error("wrong issuer");
   if (claims.aud !== expected.audience) throw new Error("wrong audience");
-  if (typeof claims.exp !== "number" || claims.exp * 1000 <= expected.now) throw new Error("token expired");
+  if (typeof claims.exp !== "number" || !Number.isSafeInteger(claims.exp) || claims.exp * 1000 <= expected.now) throw new Error("token expired");
+  if (typeof claims.iat !== "number" || !Number.isSafeInteger(claims.iat) || claims.iat < 0 ||
+    claims.iat * 1000 > expected.now + 30_000 || claims.exp <= claims.iat || claims.exp - claims.iat > 300) throw new Error("invalid token lifetime");
+  if (claims.nbf !== undefined && (typeof claims.nbf !== "number" || !Number.isSafeInteger(claims.nbf) || claims.nbf * 1000 > expected.now)) throw new Error("token not active");
+  if (typeof claims.sub !== "string" || !claims.sub || typeof claims.jti !== "string" || !claims.jti) throw new Error("missing token identity");
   return { header, claims };
 }

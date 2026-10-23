@@ -157,6 +157,23 @@ describe("people details for the UI", () => {
 });
 
 describe("requests under concurrent changes", () => {
+  it("accepts only one terminal decision when an approval races a rejection", async () => {
+    const { ctx, project } = await setup();
+    const member = await signIn(ctx, "member@acme.dev");
+    const owner = await signIn(ctx, "owner@acme.dev");
+    const admin = await signIn(ctx, "admin@acme.dev");
+    const request = await body(await ctx.request(`/api/v1/projects/${project.id}/requests`, asJson(member, "POST", newRequest)));
+    const responses = await Promise.all([
+      ctx.request(`/api/v1/requests/${request.id}/approvals`, asJson(owner, "POST", { decision: "approved" })),
+      ctx.request(`/api/v1/requests/${request.id}/approvals`, asJson(admin, "POST", { decision: "rejected" })),
+    ]);
+    expect(responses.map((r) => r.status).sort()).toEqual([201, 409]);
+    const detail = await body(await ctx.request(`/api/v1/requests/${request.id}`, as(member)));
+    expect(detail.approvals).toHaveLength(1);
+    expect(detail.state).toBe(detail.approvals[0].decision);
+    expect(ctx.mailer.sent.filter((mail) => mail.subject.startsWith("Your request was"))).toHaveLength(1);
+  });
+
   it("approves a request needing two approvals when both approvers decide at the same moment", async () => {
     const { ctx, project } = await setup();
     const member = await signIn(ctx, "member@acme.dev");

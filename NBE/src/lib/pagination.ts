@@ -21,7 +21,8 @@ export function encodeCursor(row: { createdAt: number; id: string }): string {
 function decodeCursor(cursor: string): Cursor {
   try {
     const parsed = JSON.parse(new TextDecoder().decode(fromBase64Url(cursor))) as Cursor;
-    if (typeof parsed.t !== "number" || typeof parsed.id !== "string") throw new Error("shape");
+    if (!parsed || !Number.isSafeInteger(parsed.t) || parsed.t < 0 ||
+      typeof parsed.id !== "string" || parsed.id.length === 0 || parsed.id.length > 100) throw new Error("shape");
     return parsed;
   } catch {
     throw badRequest("Invalid cursor");

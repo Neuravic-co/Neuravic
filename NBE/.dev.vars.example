@@ -3,8 +3,9 @@
 BOOTSTRAP_ADMIN_EMAIL=you@example.com
 
 # Optional in development
+# PRIVACY_HASH_SECRET=  (dedicated random value, 32+ characters; required in staging/production)
 # TURNSTILE_SECRET=
 # RESEND_API_KEY=
 # SLACK_WEBHOOK_URL=
-# PROXY_SECRET=     (only to test the website proxy locally; must equal API_PROXY_SECRET on NFE)
+# PROXY_SECRET=     (32+ characters; must equal API_PROXY_SECRET on NFE)
 # SSO_PRIVATE_JWK=   (generate with: npm run sso:keygen)

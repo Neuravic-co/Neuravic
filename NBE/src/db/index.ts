@@ -21,10 +21,10 @@ export function createD1Db(binding: D1Database): Db {
  * interactive transactions, so use this instead of `db.transaction`.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function runBatch(db: Db, queries: any[]): Promise<void> {
+export async function runBatch(db: Db, queries: any[]): Promise<unknown[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const batchable = db as any;
   // Never fall back to running the statements one by one: that would silently lose atomicity.
   if (typeof batchable.batch !== "function") throw new Error("This database driver cannot run atomic batches");
-  await batchable.batch(queries);
+  return await batchable.batch(queries);
 }
