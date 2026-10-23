@@ -1420,53 +1420,6 @@ button.ws-tool:focus-visible {
   text-transform: uppercase;
 }
 
-.ws-banner {
-  margin: 0 0 1.25rem;
-  padding: 0.75rem 1.1rem;
-  border: 1px solid color-mix(in srgb, var(--blue) 45%, transparent);
-  border-radius: 0.75rem;
-  background: color-mix(in srgb, var(--blue) 12%, var(--ink));
-  color: var(--portal-text-2);
-  font-size: 0.82rem;
-  line-height: 1.5;
-  text-align: center;
-}
-
-/* Section pages: tabs down the left */
-
-.ws-section__head {
-  margin: 0.75rem 0 1.75rem;
-}
-
-.ws .ws-section__head h1 {
-  margin: 0;
-  font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 300;
-  letter-spacing: -0.04em;
-}
-
-.ws-section__head p {
-  margin: 0.5rem 0 0;
-  color: var(--portal-text-2);
-  font-size: 0.95rem;
-}
-
-.ws-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--portal-text-2);
-  font-size: 0.8rem;
-  letter-spacing: 0.08em;
-  text-decoration: none;
-  text-transform: uppercase;
-}
-
-.ws-back:hover,
-.ws-back:focus-visible {
-  color: var(--paper);
-}
-
 .ws-section__body {
   display: grid;
   grid-template-columns: 13.5rem minmax(0, 1fr);

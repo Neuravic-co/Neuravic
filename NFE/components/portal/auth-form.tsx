@@ -2,8 +2,9 @@
 
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
-import { useId, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useId, useState, type FormEvent } from "react";
 import { ApiError, api } from "@/lib/api";
+import { SUPPORT_EMAIL } from "@/lib/portal";
 import { emailError } from "@/lib/validation";
 import { useTurnstile } from "../use-turnstile";
 import { Field } from "./ui";
@@ -30,6 +31,38 @@ export function AuthForm({ mode, notice }: { mode: AuthMode; notice?: string }) 
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
   const { container: widget, token, reset: resetCheck, enabled: checkEnabled } = useTurnstile();
+  /** False when the server cannot be reached, so the person is told before they type anything. */
+  const [available, setAvailable] = useState(true);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    api("/health").then(
+      () => undefined,
+      () => !cancelled && setAvailable(false),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // After a link is sent, resending is allowed once a short wait is over.
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = window.setTimeout(() => setCooldown((value) => value - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [cooldown]);
+
+  const send = useCallback(async () => {
+    if (signup) {
+      await api("/auth/signup", {
+        method: "POST",
+        body: { name: name.trim(), email: email.trim(), consent: true, turnstileToken: token || undefined },
+      });
+    } else {
+      await api("/auth/magic-link", { method: "POST", body: { email: email.trim() } });
+    }
+  }, [signup, name, email, token]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -49,14 +82,8 @@ export function AuthForm({ mode, notice }: { mode: AuthMode; notice?: string }) 
 
     setStatus("sending");
     try {
-      if (signup) {
-        await api("/auth/signup", {
-          method: "POST",
-          body: { name: name.trim(), email: email.trim(), consent: true, turnstileToken: token || undefined },
-        });
-      } else {
-        await api("/auth/magic-link", { method: "POST", body: { email: email.trim() } });
-      }
+      await send();
+      setCooldown(30);
       setStatus("sent");
     } catch (caught) {
       setStatus("idle");
@@ -94,9 +121,27 @@ export function AuthForm({ mode, notice }: { mode: AuthMode; notice?: string }) 
               </>
             )}
           </p>
-          <button type="button" className="portal-link" onClick={() => setStatus("idle")}>
-            Use a different email
-          </button>
+          <div className="auth-sent-actions">
+            <button
+              type="button"
+              className="portal-link"
+              disabled={cooldown > 0}
+              onClick={() =>
+                void send().then(
+                  () => setCooldown(30),
+                  (caught) => setErrors({ form: failureMessage(caught, signup ? "Sign-up" : "Sign-in") }),
+                )
+              }
+            >
+              {cooldown > 0 ? `Send the link again in ${cooldown}s` : "Send the link again"}
+            </button>
+            <button type="button" className="portal-link" onClick={() => setStatus("idle")}>
+              Use a different email
+            </button>
+          </div>
+          <div aria-live="polite">
+            {errors.form ? <p className="portal-field__error auth-form-error">{errors.form}</p> : null}
+          </div>
         </div>
       ) : (
         <form onSubmit={onSubmit} noValidate>
@@ -109,6 +154,12 @@ export function AuthForm({ mode, notice }: { mode: AuthMode; notice?: string }) 
           {notice ? (
             <p className="auth-notice" role="status">
               {notice}
+            </p>
+          ) : null}
+          {!available ? (
+            <p className="auth-notice auth-notice--warn" role="status">
+              {signup ? "Sign-up" : "Sign-in"} is being set up and is not available yet. Please check back soon, or email us at{" "}
+              <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
             </p>
           ) : null}
           {signup ? (

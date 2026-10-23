@@ -7,6 +7,7 @@ import { ContractView, HrView, PapersView, PersonalInfo, TeamView } from "./pims
 import { SectionShell, type SectionTab } from "./section-shell";
 import { HelpView, MyTicketsView, RequestsView, SecurityView, TicketForm } from "./support-view";
 import { ToolsCatalog } from "./tools-catalog";
+import { SECTION_ICONS } from "./section-icons";
 import { WorkspaceFrame } from "./workspace-frame";
 
 const LEAVE_TABS: { id: LeaveKind; label: string }[] = [
@@ -58,8 +59,8 @@ export function WorkspaceSection({
 }) {
   const { label, intro } = SECTION_META[section];
   return (
-    <WorkspaceFrame me={me} preview={preview}>
-      <SectionShell title={label} intro={intro} tabs={tabsFor(section, me, details, !preview)} single={section === "tools"} />
+    <WorkspaceFrame me={me} preview={preview} bleed>
+      <SectionShell title={label} intro={intro} icon={SECTION_ICONS[section]} preview={preview} tabs={tabsFor(section, me, details, !preview)} single={section === "tools"} />
     </WorkspaceFrame>
   );
 }

@@ -34,6 +34,31 @@ await run("Client portal", async (browser, errors) => {
   await admin.waitForURL(/\/login$/);
   await admin.getByRole("heading", { name: /Sign in to your portal/ }).waitFor();
   check("login and sign-up are full pages that link to each other", true);
+  await admin.getByRole("link", { name: /Back to neuravic.com/ }).click();
+  await admin.waitForURL(`${BASE_URL}/`);
+  check("the login page's back link returns to the site", true);
+  await admin.goto(`${BASE_URL}/signup`, { waitUntil: "networkidle" });
+  await admin.getByRole("link", { name: /Back to neuravic.com/ }).click();
+  await admin.waitForURL(`${BASE_URL}/`);
+  check("the sign-up page's back link returns to the site", true);
+
+  // Legal pages: back to where the visitor came from, or to the site when opened directly
+  await admin.evaluate(() => window.location.assign("/legal/privacy"));
+  await admin.waitForURL(/\/legal\/privacy$/);
+  await admin.getByRole("link", { name: /Back to site/ }).click();
+  await admin.waitForURL(`${BASE_URL}/`);
+  check("a legal page's back link returns to the page the visitor came from", true);
+  await admin.goto(`${BASE_URL}/legal/terms`, { waitUntil: "networkidle" });
+  await admin.getByRole("link", { name: /Back to site/ }).click();
+  await admin.waitForURL(`${BASE_URL}/`);
+  check("a legal page opened directly still has a working back link", true);
+
+  // An invalid sign-in link offers a way back to sign in
+  await admin.goto(`${BASE_URL}/portal/verify#token=bogus-token-bogus-token-bogus`);
+  await admin.getByRole("heading", { name: /no longer works/ }).waitFor();
+  await admin.getByRole("link", { name: /Back to sign in/ }).click();
+  await admin.waitForURL(/\/login$/);
+  check("an expired sign-in link leads back to the login page", true);
 
   // Signed out
   await admin.goto(`${BASE_URL}/portal`, { waitUntil: "networkidle" });
@@ -74,7 +99,7 @@ await run("Client portal", async (browser, errors) => {
   const cards = await admin.getByRole("navigation", { name: "Workspace sections" }).getByRole("link").allTextContents();
   check("staff land on the four workspace cards", cards.length === 4 && /PIMS/.test(cards[0]) && /Calendar/.test(cards[1]) && /Tools/.test(cards[2]) && /IT & Support/.test(cards[3]), cards.join(" | "));
 
-  await admin.getByRole("link", { name: /PIMS/ }).click();
+  await admin.getByRole("navigation", { name: "Workspace sections" }).getByRole("link", { name: /PIMS/ }).click();
   await admin.waitForURL(/\/portal\/pims$/);
   const pimsTabs = await admin.getByRole("tab").allTextContents();
   check("PIMS has five tabs on the left", pimsTabs.join(",") === "Personal info,Team,Papers,HR,Contract", pimsTabs.join(", "));
@@ -82,6 +107,28 @@ await run("Client portal", async (browser, errors) => {
   await admin.getByRole("tab", { name: "Papers" }).click();
   await admin.getByRole("heading", { name: "Papers" }).waitFor();
   check("PIMS papers tab opens", true);
+  check("the chosen tab is kept in the address", admin.url().endsWith("#papers"), admin.url());
+  await admin.goBack();
+  await admin.getByRole("tab", { name: "Personal info", selected: true }).waitFor();
+  check("the browser Back button returns to the previous tab", true);
+  await admin.goForward();
+  await admin.getByRole("tab", { name: "Papers", selected: true }).waitFor();
+  check("the browser Forward button returns to the next tab", true);
+  await admin.getByRole("link", { name: "Back to workspace" }).click();
+  await admin.waitForURL(/\/portal$/);
+  check("Back to workspace returns to the home page", true);
+  await admin.goto(`${BASE_URL}/portal/calendar#sick`, { waitUntil: "networkidle" });
+  await admin.getByRole("tab", { name: "Sick leave", selected: true }).waitFor();
+  check("a tab link opens that tab directly", true);
+  const crumbs = admin.getByRole("navigation", { name: "Breadcrumb" });
+  await crumbs.getByRole("link", { name: "Workspace" }).click();
+  await admin.waitForURL(/\/portal$/);
+  check("the breadcrumb returns to the home page", true);
+  await admin.goto(`${BASE_URL}/portal/calendar`, { waitUntil: "networkidle" });
+  const menu = admin.getByRole("navigation", { name: "Workspace menu" });
+  await menu.getByRole("link", { name: "Tools" }).click();
+  await admin.waitForURL(/\/portal\/tools$/);
+  check("the workspace menu jumps between sections and marks the current one", (await menu.locator('a[aria-current="page"]').textContent()) === "Tools");
 
   await admin.goto(`${BASE_URL}/portal/calendar`, { waitUntil: "networkidle" });
   const calendarTabs = await admin.getByRole("tab").allTextContents();
@@ -108,6 +155,13 @@ await run("Client portal", async (browser, errors) => {
   await admin.getByRole("link", { name: /^Client portal/ }).click();
   await admin.waitForURL(/\/portal\/clients/);
   await admin.getByRole("button", { name: "Organisations" }).waitFor();
+  await admin.getByRole("link", { name: /Tools/ }).click();
+  await admin.waitForURL(/\/portal\/tools$/);
+  check("the client portal's back link returns to Tools", true);
+  await admin.goBack();
+  await admin.waitForURL(/\/portal\/clients/);
+  await admin.getByRole("button", { name: "Organisations" }).waitFor();
+  check("the browser Back button returns to the client portal", true);
   const tabs = await admin.locator(".portal-tabs button").allTextContents();
   check("staff admin sees staff tabs", tabs.includes("Organisations") && tabs.includes("Enquiries"), tabs.join(", "));
 
