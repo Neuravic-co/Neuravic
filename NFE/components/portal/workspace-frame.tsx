@@ -7,7 +7,7 @@ import type { Me } from "@/lib/portal";
 import { useSession } from "./session";
 
 /** The staff workspace chrome: top bar, then the page inside <main>. With `preview` the account is sample data. */
-export function WorkspaceFrame({ me, preview, children }: { me: Me; preview: boolean; children: ReactNode }) {
+export function WorkspaceFrame({ me, preview, home = false, children }: { me: Me; preview: boolean; home?: boolean; children: ReactNode }) {
   return (
     <div className="portal-shell ws">
       <header className="portal-topbar">
@@ -24,8 +24,8 @@ export function WorkspaceFrame({ me, preview, children }: { me: Me; preview: boo
         {preview ? null : <Link className="portal-link" href="/portal/privacy">Privacy</Link>}
       </header>
 
-      <main className="ws-main" id="portal-content">
-        {preview ? <p className="ws-banner">This is a preview with sample details. Sign-in opens when the portal goes live.</p> : null}
+      <main className={home ? "ws-main ws-main--home" : "ws-main"} id="portal-content">
+        {preview && !home ? <p className="ws-banner">This is a preview with sample details. Sign-in opens when the portal goes live.</p> : null}
         {children}
       </main>
     </div>

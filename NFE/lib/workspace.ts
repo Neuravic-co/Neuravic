@@ -20,6 +20,14 @@ export const SECTION_META: Record<WorkspaceSectionId, { label: string; caption: 
   support: { label: "IT & Support", caption: "Help when you need it", intro: "Raise a ticket, request equipment or access, and get help." },
 };
 
+/** What each section holds, shown on its card on the workspace home. */
+export const SECTION_HIGHLIGHTS: Record<WorkspaceSectionId, string[]> = {
+  pims: ["Personal info", "Team", "Papers", "HR", "Contract"],
+  calendar: ["Public holidays", "Annual leave", "Sick leave", "Maternity", "Forced leave"],
+  tools: ["Search", "Open source", "Closed source"],
+  support: ["Tickets", "Requests", "Security", "Contacts"],
+};
+
 /* ---------- PIMS ---------- */
 
 export const SAMPLE_TEAM = [

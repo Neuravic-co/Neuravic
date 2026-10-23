@@ -61,48 +61,6 @@
   color: var(--blue-text);
 }
 
-/* Home: four cards with two cut corners. Pale outline, white face, blue when hovered. */
-.ws .ws-tab-wrap {
-  filter: drop-shadow(0 0.7rem 1.2rem rgb(54 91 255 / 0.14));
-}
-
-.ws .ws-tab {
-  background: #b7c4ee;
-  color: var(--paper);
-}
-
-.ws .ws-tab::before {
-  background: linear-gradient(160deg, #ffffff 30%, #e9eeff);
-}
-
-.ws .ws-tab:hover,
-.ws .ws-tab:focus-visible {
-  background: linear-gradient(135deg, var(--blue), #8ea4ff);
-}
-
-.ws .ws-tab:hover::before,
-.ws .ws-tab:focus-visible::before {
-  background: linear-gradient(160deg, #ffffff, #eaf0ff);
-}
-
-.ws .ws-tab-wrap:hover {
-  filter: drop-shadow(0 0.9rem 1.5rem rgb(54 91 255 / 0.3));
-}
-
-.ws .ws-tab__number,
-.ws .ws-tab__icon {
-  color: var(--blue-text);
-}
-
-.ws .ws-tab strong {
-  color: var(--paper);
-  font-weight: 400;
-}
-
-.ws .ws-tab__caption {
-  color: var(--portal-text-2);
-}
-
 /* Cards */
 .ws .ws-card,
 .ws .ws-tool,
@@ -229,4 +187,306 @@
 
 .ws .ws-notice {
   border-left-color: var(--blue);
+}
+
+/* ---- Home: a welcome band with four cards overlapping its edge ---- */
+
+.ws .ws-main--home {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 0 4rem;
+}
+
+.ws-hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(2.5rem, 6vw, 4.5rem) var(--page-gutter) clamp(6rem, 11vw, 8.5rem);
+  background:
+    radial-gradient(48% 90% at 82% 40%, rgb(54 91 255 / 0.42), transparent 70%),
+    radial-gradient(40% 70% at 5% 110%, rgb(54 91 255 / 0.2), transparent 70%),
+    var(--ws-ink);
+  color: #f5f7fa;
+}
+
+.ws-hero__art {
+  position: absolute;
+  top: 50%;
+  right: clamp(1rem, 9vw, 9rem);
+  width: clamp(11rem, 24vw, 20rem);
+  aspect-ratio: 1;
+  transform: translateY(-50%);
+  filter: drop-shadow(0 0 1.4rem rgb(54 91 255 / 0.6));
+  pointer-events: none;
+}
+
+.ws-hero__inner {
+  position: relative;
+  width: min(100%, 84rem);
+  margin-inline: auto;
+}
+
+.ws-hero__eyebrow {
+  margin: 0 0 1rem;
+  color: #9db1ff;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.ws .ws-hero h1 {
+  max-width: 34rem;
+  margin: 0 0 0.9rem;
+  color: #fff;
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  font-weight: 300;
+  letter-spacing: -0.045em;
+  line-height: 1.02;
+}
+
+.ws-hero__lede {
+  max-width: 30rem;
+  margin: 0 0 1.6rem;
+  color: rgb(245 247 250 / 0.78);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.ws-hero__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ws-hero__chips li {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid rgb(245 247 250 / 0.22);
+  border-radius: 999px;
+  background: rgb(245 247 250 / 0.06);
+  color: rgb(245 247 250 / 0.88);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+.ws-hero__chips li.is-preview {
+  border-color: #6f8bff;
+  background: rgb(54 91 255 / 0.3);
+  color: #fff;
+}
+
+.ws-home__body {
+  position: relative;
+  width: min(100% - 2 * var(--page-gutter), 84rem);
+  margin: calc(-1 * clamp(3.5rem, 7vw, 5.5rem)) auto 0;
+}
+
+.ws-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ws-card-link {
+  position: relative;
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1.4rem 1.4rem 1.25rem;
+  overflow: hidden;
+  border: 1px solid var(--portal-line);
+  border-radius: 1.1rem;
+  background: #fff;
+  box-shadow: var(--ws-shadow);
+  color: var(--paper);
+  text-decoration: none;
+  transition:
+    transform 300ms var(--ease-out),
+    border-color 300ms var(--ease-out),
+    box-shadow 300ms var(--ease-out);
+}
+
+/* A cut corner, like the triangles in the Neuravic mark. */
+.ws-card-link::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 2.6rem;
+  height: 2.6rem;
+  background: linear-gradient(135deg, transparent 50%, rgb(54 91 255 / 0.16) 50%);
+  content: "";
+}
+
+.ws-card-link:hover,
+.ws-card-link:focus-visible {
+  border-color: var(--blue);
+  box-shadow: 0 1.4rem 2.6rem -1.4rem rgb(54 91 255 / 0.55);
+  transform: translateY(-0.3rem);
+}
+
+.ws-card-link:focus-visible {
+  outline: 3px solid rgb(54 91 255 / 0.4);
+  outline-offset: 3px;
+}
+
+.ws-card-link__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.ws-card-link__icon {
+  display: grid;
+  width: 2.9rem;
+  height: 2.9rem;
+  place-items: center;
+  border-radius: 0.8rem;
+  background: linear-gradient(135deg, var(--blue), #8ea4ff);
+  color: #fff;
+  box-shadow: 0 0.6rem 1.2rem -0.5rem rgb(54 91 255 / 0.7);
+}
+
+.ws-card-link__number {
+  margin-right: 1.4rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+}
+
+.ws-card-link strong {
+  font-size: 1.5rem;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+}
+
+.ws-card-link__caption {
+  color: var(--portal-text-2);
+  font-size: 0.88rem;
+}
+
+.ws-card-link__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.6rem 0 0.4rem;
+}
+
+.ws-card-link__tags em {
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #2b3a78;
+  font-size: 0.72rem;
+  font-style: normal;
+}
+
+.ws-card-link__open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  color: var(--blue-text);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.ws-card-link__open svg {
+  transition: transform 300ms var(--ease-out);
+}
+
+.ws-card-link:hover .ws-card-link__open svg {
+  transform: translate(0.15rem, -0.15rem);
+}
+
+.ws-quick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-top: 2rem;
+  padding: 1.1rem 1.4rem;
+  border: 1px solid var(--portal-line);
+  border-radius: 1rem;
+  background: #fff;
+}
+
+.ws .ws-quick h2 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.ws-quick ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ws-quick a {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--portal-line-strong);
+  border-radius: 999px;
+  color: var(--paper);
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition:
+    border-color 200ms var(--ease-out),
+    background-color 200ms var(--ease-out),
+    color 200ms var(--ease-out);
+}
+
+.ws-quick a:hover,
+.ws-quick a:focus-visible {
+  border-color: var(--blue);
+  background: rgb(54 91 255 / 0.08);
+  color: var(--blue-text);
+}
+
+@media (max-width: 64rem) {
+  .ws-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ws-hero__art {
+    right: -2rem;
+    opacity: 0.55;
+  }
+}
+
+@media (max-width: 36rem) {
+  .ws-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ws-hero__art {
+    right: -5rem;
+    opacity: 0.28;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ws-card-link,
+  .ws-card-link__open svg {
+    transition: none;
+  }
+
+  .ws-card-link:hover,
+  .ws-card-link:focus-visible {
+    transform: none;
+  }
 }
