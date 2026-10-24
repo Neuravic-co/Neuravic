@@ -1,21 +1,12 @@
 {
-  "name": "neuravic-tests",
+  "name": "@neuravic/tests",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "End-to-end and accessibility tests for the Neuravic frontend and backend. Backend unit and integration tests live in backend/ and run through NBE.",
-  "engines": {
-    "node": ">=22.13.0"
-  },
+  "description": "Unit tests (no database, no network) and integration tests (the running gateway, services and database).",
   "scripts": {
-    "backend": "npm --prefix ../NBE test",
-    "e2e": "node e2e/run-all.mjs",
-    "e2e:contact": "node e2e/contact.e2e.mjs",
-    "e2e:portal": "node e2e/portal.e2e.mjs",
-    "e2e:a11y": "node e2e/accessibility.e2e.mjs"
-  },
-  "devDependencies": {
-    "axe-core": "^4.10.0",
-    "playwright": "1.64.1"
+    "unit": "node --import tsx --test \"unit/**/*.test.ts\"",
+    "integration": "node --import tsx --env-file-if-exists=../.env --test --test-concurrency=1 \"integration/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
   }
 }
