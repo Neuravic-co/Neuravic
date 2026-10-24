@@ -31,7 +31,7 @@ export function scanFiles(directory) {
   for (const filename of new Set(files)) {
     if (/(^|\/)(\.env(?:\..+)?|\.dev\.vars(?:\..+)?|.*\.(?:pem|key|p12|pfx)|id_rsa|id_ed25519)$/.test(filename) && !/\.(example|sample)$/.test(filename)) findings.push({ file: filename, line: 0, kind: "secret-like file" });
     const absolute = path.join(directory, filename);
-    if (!existsSync(absolute) || filename === "Security/scripts/security-check.mjs") continue;
+    if (!existsSync(absolute) || filename === "security/scripts/security-check.mjs") continue;
     const content = readFileSync(absolute);
     if (!content.includes(0)) findings.push(...scanText(content.toString("utf8"), filename));
   }
@@ -52,7 +52,7 @@ function dependencyAudit(folder) {
     console.error(`FAIL ${folder}: dependency audit unavailable; check registry connectivity and rerun`);
     return false;
   }
-  console.log(`${folder}: all dependency advisories: critical=${counts.critical}, high=${counts.high}, moderate=${counts.moderate}, low=${counts.low}`);
+  console.log(`${folder === "." ? "backend" : folder}: all dependency advisories: critical=${counts.critical}, high=${counts.high}, moderate=${counts.moderate}, low=${counts.low}`);
   return counts.moderate === 0 && counts.high === 0 && counts.critical === 0;
 }
 
@@ -71,7 +71,7 @@ export function main(args = process.argv.slice(2)) {
       passed = false;
     }
   }
-  if (!args.includes("--secrets-only")) for (const folder of ["Server", "NFE"]) if (!dependencyAudit(folder)) passed = false;
+  if (!args.includes("--secrets-only")) for (const folder of [".", "nfe"]) if (!dependencyAudit(folder)) passed = false;
   console.log(passed ? "Security check passed" : "Security check failed");
   return passed ? 0 : 1;
 }
