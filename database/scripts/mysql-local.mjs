@@ -64,7 +64,7 @@ const admin = await createConnection({ host: "127.0.0.1", port: PORT, user: "roo
 await createAccess({ connection: admin, hosts: ["127.0.0.1", "localhost"], appPassword, migratorPassword });
 await admin.end();
 
-if (!existsSync(envFile)) {
+if (!existing) {
   writeFileSync(
     envFile,
     [
@@ -91,6 +91,7 @@ if (!existsSync(envFile)) {
       "UPLOAD_DIR=.data/files",
       "",
     ].join("\n"),
+    { flag: "wx" },
   );
   console.log("Wrote .env at the repository root");
 }

@@ -68,7 +68,7 @@ describe("content security policy", () => {
   });
 
   it("lets the browser reach a public API origin, and refuses plain HTTP for it in production", () => {
-    assert.ok(policy(false, "https://api.example.com/api/v1").includes("https://api.example.com"));
+    assert.ok(policy(false, "https://api.example.com/api/v1").split(/[\s;]+/).includes("https://api.example.com"));
     assert.throws(() => policy(false, "http://api.example.com/api/v1"), /HTTPS/);
     assert.doesNotThrow(() => policy(true, "http://localhost:8787/api/v1"));
   });
