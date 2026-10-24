@@ -4,7 +4,7 @@
 version: 2
 updates:
   - package-ecosystem: npm
-    directory: /NBE
+    directory: /
     schedule: { interval: weekly, day: monday }
     groups:
       minor-and-patch: { update-types: [minor, patch] }
@@ -12,23 +12,20 @@ updates:
     assignees: [MrZoZ]
     reviewers: [MrZoZ]
   - package-ecosystem: npm
-    directory: /NFE
+    directory: /nfe
     schedule: { interval: weekly, day: monday }
     groups:
       minor-and-patch: { update-types: [minor, patch] }
     open-pull-requests-limit: 5
-    assignees: [MrZoZ]
-    reviewers: [MrZoZ]
-  - package-ecosystem: npm
-    directory: /Test
-    schedule: { interval: weekly, day: monday }
-    groups:
-      minor-and-patch: { update-types: [minor, patch] }
-    open-pull-requests-limit: 3
     assignees: [MrZoZ]
     reviewers: [MrZoZ]
   - package-ecosystem: github-actions
     directory: /
+    schedule: { interval: weekly, day: monday }
+    assignees: [MrZoZ]
+    reviewers: [MrZoZ]
+  - package-ecosystem: docker
+    directory: /deployment/docker
     schedule: { interval: weekly, day: monday }
     assignees: [MrZoZ]
     reviewers: [MrZoZ]

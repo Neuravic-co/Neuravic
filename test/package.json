@@ -1,0 +1,12 @@
+{
+  "name": "@neuravic/tests",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Unit tests (no database, no network) and integration tests (the running gateway, services and database).",
+  "scripts": {
+    "unit": "node --import tsx --test \"unit/**/*.test.ts\"",
+    "integration": "node --import tsx --env-file-if-exists=../.env --test --test-concurrency=1 \"integration/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
+  }
+}

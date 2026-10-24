@@ -1,9 +1,74 @@
 # ---------------------------------------------------------------------------
-# Neuravic repository. Folder-level .gitignore files (NFE, NBE, Test) add
-# rules for their own tools; this file covers the whole repository.
+# Neuravic. One file protects the whole repository: secrets, local data, uploads, keys and build output.
+# Only the *.example templates are committed. If a secret is ever committed by mistake, rotate it:
+# deleting the file later does not remove it from history.
 # ---------------------------------------------------------------------------
 
-# Dependencies
+# --- Secrets and credentials ------------------------------------------------
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+.dev.vars
+.dev.vars.*
+.envrc
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.jks
+*.keystore
+*.kdbx
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+*.gpg
+secrets/
+**/secrets/
+*.secret
+*.secrets
+*.secret.yaml
+*.secrets.yaml
+# Kubernetes and Helm: real values and secrets stay out, the example files stay in
+deployment/**/secrets.yaml
+deployment/**/*-secrets.yaml
+deployment/**/values.*.yaml
+deployment/**/values-*.yaml
+!deployment/helm/neuravic/values.yaml
+kubeconfig
+*.kubeconfig
+# Cloud and tool credentials
+.aws/
+.azure/
+.gcloud/
+.npmrc.local
+.vercel
+.netrc
+service-account*.json
+credentials.json
+# Generated secret output
+secrets-output.txt
+
+# --- Local data (never share) -----------------------------------------------
+# The private MySQL server used for local development
+database/.mysql/
+.mysql/
+*.sql.gz
+*.dump
+*.bak
+# Files people uploaded
+.data/
+uploads/
+# Exports and evidence that may hold personal data
+exports/
+tmp/
+
+# --- Dependencies -----------------------------------------------------------
 node_modules/
 .pnp
 .pnp.*
@@ -13,35 +78,21 @@ node_modules/
 !.yarn/releases
 !.yarn/versions
 
-# Build output and caches
+# --- Build output and caches ------------------------------------------------
 dist/
+build/
 out/
 .next/
-.vinext/
-.wrangler/
 .turbo/
 .cache/
 .npm-cache/
 .parcel-cache/
 *.tsbuildinfo
 next-env.d.ts
+coverage/
+.nyc_output/
 
-# Environment files and secrets. Only the *.example templates are committed.
-.env
-.env.*
-!.env.example
-.dev.vars
-.dev.vars.*
-!.dev.vars.example
-*.pem
-*.key
-*.p12
-*.pfx
-*.crt
-id_rsa
-id_ed25519
-
-# Logs and debug output
+# --- Logs -------------------------------------------------------------------
 *.log
 logs/
 npm-debug.log*
@@ -49,35 +100,23 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Test output (Test/e2e writes screenshots here)
-coverage/
-.nyc_output/
+# --- Tests and tools --------------------------------------------------------
 playwright-report/
 test-results/
-Test/e2e/screenshots/
-Test/e2e/.tmp/
+.helm-cache/
+charts/*.tgz
 
-# Operating system files
-.DS_Store
-Thumbs.db
-desktop.ini
-ehthumbs.db
-
-# Editors and tools (share .editorconfig only)
-.idea/
+# --- Editors, assistants and the operating system ---------------------------
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+.idea/
 *.swp
-*.swo
-*~
+.DS_Store
+Thumbs.db
+desktop.ini
 .claude/settings.local.json
-
-# Scratch space
-tmp/
-temp/
-*.tmp
-*.bak
-
-# Vercel build output
-.vercel/
+.sites-runtime/
+.agents/
+.codex/
+.openai/

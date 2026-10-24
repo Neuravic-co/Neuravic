@@ -1,0 +1,16 @@
+{
+  "name": "@neuravic/file-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Hosts uploaded files: storage, access checks, the malware-scan loop and downloads.",
+  "scripts": {
+    "start": "tsx --env-file-if-exists=../.env src/index.ts",
+    "dev": "tsx watch --env-file-if-exists=../.env src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@neuravic/core": "*",
+    "hono": "^4.13.13"
+  }
+}

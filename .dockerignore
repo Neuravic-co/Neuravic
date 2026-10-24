@@ -1,0 +1,19 @@
+# Keep secrets, local data and build output out of every image.
+.git
+.github
+.claude
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+**/node_modules
+**/.next
+**/dist
+**/*.log
+database/.mysql
+.data
+nfe/.next
+docs
+test
+deployment

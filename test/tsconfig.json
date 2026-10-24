@@ -1,0 +1,7 @@
+{
+  "extends": "../nbe/tsconfig.base.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true
+  },
+  "include": ["unit", "integration", "../nfe/lib/csp.ts", "../nfe/lib/validation.ts"]
+}

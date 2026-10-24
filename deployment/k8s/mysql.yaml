@@ -1,0 +1,99 @@
+# A single MySQL for testing and staging clusters. For production use a managed MySQL with backups and point-in-time
+# recovery, and put its address in the DATABASE_URL secret instead of deploying this.
+# Needs a Secret named neuravic-mysql with: root-password, app-password, migrate-password.
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: neuravic
+spec:
+  clusterIP: None
+  selector: { app.kubernetes.io/name: neuravic-mysql }
+  ports:
+    - { name: mysql, port: 3306 }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neuravic-mysql-init
+  namespace: neuravic
+data:
+  01-access.sh: |
+    #!/bin/sh
+    set -eu
+    mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" <<SQL
+    CREATE USER IF NOT EXISTS 'neuravic_app'@'%' IDENTIFIED BY '${APP_DB_PASSWORD}';
+    CREATE USER IF NOT EXISTS 'neuravic_migrator'@'%' IDENTIFIED BY '${MIGRATE_DB_PASSWORD}';
+    GRANT SELECT, INSERT, UPDATE, DELETE ON \`${MYSQL_DATABASE}\`.* TO 'neuravic_app'@'%';
+    GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, INDEX, REFERENCES, TRIGGER ON \`${MYSQL_DATABASE}\`.* TO 'neuravic_migrator'@'%';
+    FLUSH PRIVILEGES;
+    SQL
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  namespace: neuravic
+spec:
+  serviceName: mysql
+  replicas: 1
+  selector:
+    matchLabels: { app.kubernetes.io/name: neuravic-mysql }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: neuravic-mysql }
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: mysql
+          image: mysql:8.4
+          args: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_bin", "--skip-log-bin"]
+          ports: [{ name: mysql, containerPort: 3306 }]
+          env:
+            - { name: MYSQL_DATABASE, value: neuravic }
+            - { name: MYSQL_ROOT_PASSWORD, valueFrom: { secretKeyRef: { name: neuravic-mysql, key: root-password } } }
+            - { name: APP_DB_PASSWORD, valueFrom: { secretKeyRef: { name: neuravic-mysql, key: app-password } } }
+            - { name: MIGRATE_DB_PASSWORD, valueFrom: { secretKeyRef: { name: neuravic-mysql, key: migrate-password } } }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          readinessProbe:
+            exec: { command: ["sh", "-c", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$MYSQL_ROOT_PASSWORD\" --silent"] }
+            periodSeconds: 10
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/mysql }
+            - { name: init, mountPath: /docker-entrypoint-initdb.d, readOnly: true }
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits: { memory: 1Gi }
+      volumes:
+        - name: init
+          configMap: { name: neuravic-mysql-init, defaultMode: 0555 }
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources: { requests: { storage: 20Gi } }
+---
+# Only the backend pods may reach this MySQL (the chart's default-deny policy would otherwise block it).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: neuravic-mysql
+  namespace: neuravic
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/name: neuravic-mysql }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { neuravic/tier: backend }
+      ports:
+        - { protocol: TCP, port: 3306 }

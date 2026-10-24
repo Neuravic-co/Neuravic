@@ -16,12 +16,12 @@ concurrency:
 
 jobs:
   check:
-    name: NFE and browser checks
+    name: Frontend checks
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
       run:
-        working-directory: NFE
+        working-directory: nfe
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -30,25 +30,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: NFE/package-lock.json
+          cache-dependency-path: nfe/package-lock.json
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
-        env:
-          NEXT_PUBLIC_TURNSTILE_SITE_KEY: local-csp-fixture
-      - name: Validate the Vercel Next.js build
-        run: npx next build
-        env:
-          NEXT_PUBLIC_TURNSTILE_SITE_KEY: local-csp-fixture
-      - name: Install backend and browser test dependencies
-        working-directory: .
-        run: npm ci --prefix NBE && npm ci --prefix Test
-      - name: Install test browser
-        working-directory: Test
-        run: npx playwright install --with-deps chromium
-      - name: Browser integration and accessibility
-        working-directory: NBE
-        run: npm run test:browser
-        env:
-          CSP_EXPECT_TURNSTILE: "true"

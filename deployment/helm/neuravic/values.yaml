@@ -1,0 +1,81 @@
+# Default values. Override with `-f my-values.yaml` or `--set key=value`.
+# Secrets are NOT set here: create a Secret named by `existingSecret` (see the keys below) or use deployment/k8s/secrets.example.yaml.
+
+image:
+  backend: ghcr.io/neuravic-co/neuravic-backend
+  frontend: ghcr.io/neuravic-co/neuravic-frontend
+  tag: "0.1.0"
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+# A Secret in the same namespace with these keys:
+#   DATABASE_URL           mysql://neuravic_app:<password>@<host>:3306/neuravic
+#   MIGRATE_DATABASE_URL   mysql://neuravic_migrator:<password>@<host>:3306/neuravic
+#   PRIVACY_HASH_SECRET    32+ random characters
+#   MFA_ENCRYPTION_KEY     64 hex characters
+#   PROXY_SECRET           32+ random characters (the website uses the same value)
+# Optional keys: RESEND_API_KEY, SLACK_WEBHOOK_URL, SSO_PRIVATE_JWK, MALWARE_SCANNER_URL
+existingSecret: neuravic-secrets
+
+config:
+  appEnv: production
+  appUrl: https://www.example.com
+  allowedOrigins: https://www.example.com
+  emailFrom: "Neuravic <no-reply@example.com>"
+  notifyTo: team@example.com
+  bootstrapAdminEmail: ""
+  maintenanceMode: "false"
+  portalOpen: "true"
+
+ingress:
+  enabled: true
+  className: nginx
+  host: www.example.com
+  tlsSecretName: neuravic-tls
+  annotations: {}
+
+# Every backend service. `entry` is the file the image starts; `port` is where it listens.
+services:
+  gateway: { entry: nbe/services/gateway/src/index.ts, port: 8787, replicas: 2 }
+  auth:    { entry: nbe/services/auth/src/index.ts,    port: 8801, replicas: 2 }
+  portal:  { entry: nbe/services/portal/src/index.ts,  port: 8802, replicas: 2 }
+  leads:   { entry: nbe/services/leads/src/index.ts,   port: 8803, replicas: 2 }
+  admin:   { entry: nbe/services/admin/src/index.ts,   port: 8804, replicas: 1 }
+  # The worker sends email and runs maintenance. Keep it at one replica unless you have checked the jobs for duplicates.
+  worker:  { entry: nbe/services/worker/src/index.ts,  port: 8806, replicas: 1 }
+
+# The file server keeps uploads on one volume, so it runs a single replica.
+files:
+  port: 8805
+  persistence:
+    size: 10Gi
+    storageClass: ""
+
+frontend:
+  replicas: 2
+  port: 5173
+
+resources:
+  backend:
+    requests: { cpu: 100m, memory: 192Mi }
+    limits: { cpu: 500m, memory: 384Mi }
+  frontend:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: 500m, memory: 512Mi }
+
+autoscaling:
+  enabled: false
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+# Only the ingress may reach the website; only the gateway and website reach the services; only services reach MySQL.
+networkPolicy:
+  enabled: true
+  # Namespace label of your ingress controller.
+  ingressNamespace: ingress-nginx
+  # CIDR of the MySQL server the services connect to (the whole range is allowed on port 3306).
+  databaseCidr: 10.0.0.0/8
+
+# Run migrations before every install or upgrade.
+migration:
+  enabled: true

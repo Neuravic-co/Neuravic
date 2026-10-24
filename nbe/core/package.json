@@ -1,0 +1,20 @@
+{
+  "name": "@neuravic/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared backend code: configuration, database, security, and every business module. Services mount the routes they own.",
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.0",
+    "drizzle-orm": "0.45.4",
+    "hono": "^4.13.13",
+    "mysql2": "^3.14.0",
+    "zod": "^4.6.7"
+  }
+}
