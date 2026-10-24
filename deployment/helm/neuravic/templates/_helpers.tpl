@@ -45,7 +45,7 @@ securityContext:
   valueFrom:
     secretKeyRef: { name: {{ $.Values.existingSecret }}, key: {{ $key }} }
 {{- end }}
-{{- range $key := list "RESEND_API_KEY" "SLACK_WEBHOOK_URL" "SSO_PRIVATE_JWK" }}
+{{- range $key := list "RESEND_API_KEY" "SMTP_URL" "SLACK_WEBHOOK_URL" "SSO_PRIVATE_JWK" }}
 - name: {{ $key }}
   valueFrom:
     secretKeyRef: { name: {{ $.Values.existingSecret }}, key: {{ $key }}, optional: true }

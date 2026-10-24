@@ -23,6 +23,7 @@ x-backend: &backend
     MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?set MFA_ENCRYPTION_KEY}
     PROXY_SECRET: ${PROXY_SECRET:?set PROXY_SECRET}
     RESEND_API_KEY: ${RESEND_API_KEY:-}
+    SMTP_URL: ${SMTP_URL:-}
     AUTH_URL: http://auth:8801
     PORTAL_URL: http://portal:8802
     LEADS_URL: http://leads:8803

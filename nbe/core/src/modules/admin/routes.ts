@@ -31,7 +31,7 @@ adminRoutes.get("/security-status", async (c) => {
   await deps.db.execute(sql`select 1 as ready`);
   return c.json({
     database: "reachable",
-    controls: { deployedEnvironment: deps.config.environment !== "development", dedicatedPrivacyKey: deps.config.privacyHashSecret !== "neuravic-development-identifiers-only", staffMfaRequired: deps.config.staffMfaRequired, mfaKeyConfigured: Boolean(deps.config.mfaEncryptionKey), mailConfigured: Boolean(deps.config.resendApiKey), storageBound: Boolean(deps.blobs), scannerBound: Boolean(deps.scanner) },
+    controls: { deployedEnvironment: deps.config.environment !== "development", dedicatedPrivacyKey: deps.config.privacyHashSecret !== "neuravic-development-identifiers-only", staffMfaRequired: deps.config.staffMfaRequired, mfaKeyConfigured: Boolean(deps.config.mfaEncryptionKey), mailConfigured: Boolean(deps.config.resendApiKey || deps.config.smtpUrl), storageBound: Boolean(deps.blobs), scannerBound: Boolean(deps.scanner) },
     staff: { active: staff[0]?.total ?? 0, enrolled: factors[0]?.total ?? 0 },
     files: scans, outbox: jobs,
   });

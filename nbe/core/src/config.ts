@@ -12,6 +12,7 @@ export interface Config {
   bootstrapAdminEmail: string | null;
   slackWebhookUrl: string | null;
   resendApiKey: string | null;
+  smtpUrl: string | null;
   ssoAudiences: string[];
   ssoKeyId: string;
   ssoPrivateJwk: string | null;
@@ -91,6 +92,7 @@ export function loadConfig(env: Env): Config {
     bootstrapAdminEmail: env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase() || null,
     slackWebhookUrl: env.SLACK_WEBHOOK_URL || null,
     resendApiKey: env.RESEND_API_KEY || null,
+    smtpUrl: env.SMTP_URL || null,
     ssoAudiences: list(env.SSO_AUDIENCES),
     ssoKeyId: env.SSO_KEY_ID ?? "neuravic-1",
     ssoPrivateJwk: env.SSO_PRIVATE_JWK || null,

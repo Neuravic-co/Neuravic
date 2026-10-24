@@ -1,3 +1,4 @@
+import { createTransport, type Transporter } from "nodemailer";
 import type { Logger } from "../../lib/logger";
 import { DeliveryError, requireDeliverySuccess } from "../../lib/delivery";
 
@@ -32,6 +33,26 @@ export class ResendMailer implements Mailer {
     });
     requireDeliverySuccess(res, "resend");
     await res.body?.cancel();
+  }
+}
+
+/** Sends through any SMTP server (Gmail, Outlook, a hosting provider). `url` looks like smtps://user:password@host:465. */
+export class SmtpMailer implements Mailer {
+  private readonly transport: Transporter;
+
+  constructor(url: string, private readonly from: string) {
+    this.transport = createTransport({ url, connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 20_000 });
+  }
+
+  async send(message: EmailMessage): Promise<void> {
+    try {
+      await this.transport.sendMail({ from: this.from, to: message.to, subject: message.subject, text: message.text });
+    } catch (error) {
+      // 4xx answers (busy server, rate limit) are worth retrying; a refused login or address will not fix itself.
+      const code = (error as { responseCode?: number }).responseCode;
+      const retryable = code === undefined || code < 500;
+      throw new DeliveryError(code === undefined ? "smtp_unreachable" : retryable ? "smtp_temporary" : "smtp_rejected", retryable);
+    }
   }
 }
 
