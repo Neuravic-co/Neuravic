@@ -1,0 +1,113 @@
+# The whole system in containers: docker compose -f deployment/docker-compose.yml --env-file deployment/.env up --build
+# Copy deployment/.env.example to deployment/.env first and fill in the secrets (generate them with security/scripts/generate-secrets.mjs).
+
+x-backend: &backend
+  build:
+    context: ..
+    dockerfile: deployment/docker/backend.Dockerfile
+  image: neuravic-backend:local
+  restart: unless-stopped
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  environment: &backend-env
+    APP_ENV: ${APP_ENV:-production}
+    APP_URL: ${APP_URL:?set APP_URL}
+    ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:?set ALLOWED_ORIGINS}
+    EMAIL_FROM: ${EMAIL_FROM:-Neuravic <no-reply@neuravic.com>}
+    NOTIFY_TO: ${NOTIFY_TO:?set NOTIFY_TO}
+    BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+    DATABASE_URL: mysql://neuravic_app:${APP_DB_PASSWORD}@mysql:3306/neuravic
+    PRIVACY_HASH_SECRET: ${PRIVACY_HASH_SECRET:?set PRIVACY_HASH_SECRET}
+    MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?set MFA_ENCRYPTION_KEY}
+    PROXY_SECRET: ${PROXY_SECRET:?set PROXY_SECRET}
+    RESEND_API_KEY: ${RESEND_API_KEY:-}
+    AUTH_URL: http://auth:8801
+    PORTAL_URL: http://portal:8802
+    LEADS_URL: http://leads:8803
+    ADMIN_URL: http://admin:8804
+    FILES_URL: http://files:8805
+    WORKER_URL: http://worker:8806
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_bin", "--skip-log-bin"]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: neuravic
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD}
+      MIGRATE_DB_PASSWORD: ${MIGRATE_DB_PASSWORD:?set MIGRATE_DB_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  migrate:
+    <<: *backend
+    restart: "no"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      <<: *backend-env
+      ENTRY: database/scripts/migrate.ts
+      MIGRATE_DATABASE_URL: mysql://neuravic_migrator:${MIGRATE_DB_PASSWORD}@mysql:3306/neuravic
+
+  auth:
+    <<: *backend
+    environment: { <<: *backend-env, ENTRY: nbe/services/auth/src/index.ts }
+  portal:
+    <<: *backend
+    environment: { <<: *backend-env, ENTRY: nbe/services/portal/src/index.ts }
+  leads:
+    <<: *backend
+    environment: { <<: *backend-env, ENTRY: nbe/services/leads/src/index.ts }
+  admin:
+    <<: *backend
+    environment: { <<: *backend-env, ENTRY: nbe/services/admin/src/index.ts }
+  worker:
+    <<: *backend
+    environment: { <<: *backend-env, ENTRY: nbe/services/worker/src/index.ts }
+  files:
+    <<: *backend
+    environment: { <<: *backend-env, ENTRY: server/src/index.ts, MALWARE_SCANNER_URL: "${MALWARE_SCANNER_URL:-}" }
+    volumes:
+      - uploads:/data/uploads
+  gateway:
+    <<: *backend
+    environment: { <<: *backend-env, ENTRY: nbe/services/gateway/src/index.ts }
+    depends_on: [auth, portal, leads, admin, worker, files]
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: deployment/docker/frontend.Dockerfile
+      args:
+        NEXT_PUBLIC_PORTAL_OPEN: ${NEXT_PUBLIC_PORTAL_OPEN:-true}
+    image: neuravic-frontend:local
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp, /app/.next/cache]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      API_ORIGIN: http://gateway:8787
+      ALLOW_INSECURE_API_ORIGIN: "true"
+      API_PROXY_SECRET: ${PROXY_SECRET}
+    depends_on: [gateway]
+    ports:
+      - "5173:5173"
+
+volumes:
+  mysql-data:
+  uploads:

@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neuravic-frontend
+  labels:
+    {{- include "neuravic.labels" . | nindent 4 }}
+    app.kubernetes.io/name: neuravic-frontend
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.frontend.replicas }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: neuravic-frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: neuravic-frontend
+        neuravic/tier: frontend
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      automountServiceAccountToken: false
+      {{- include "neuravic.podSecurity" . | nindent 6 }}
+      containers:
+        - name: frontend
+          image: "{{ .Values.image.frontend }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- include "neuravic.containerSecurity" . | nindent 10 }}
+          ports:
+            - { name: http, containerPort: {{ .Values.frontend.port }} }
+          env:
+            - { name: API_ORIGIN, value: "http://neuravic-gateway:{{ .Values.services.gateway.port }}" }
+            # Traffic to the gateway stays inside the cluster; the ingress terminates HTTPS.
+            - { name: ALLOW_INSECURE_API_ORIGIN, value: "true" }
+            # ingress-nginx overwrites X-Real-IP with the real visitor address, so it can be trusted here.
+            - { name: TRUST_PROXY_HEADERS, value: "true" }
+            - name: API_PROXY_SECRET
+              valueFrom:
+                secretKeyRef: { name: {{ .Values.existingSecret }}, key: PROXY_SECRET }
+          readinessProbe:
+            httpGet: { path: /login, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /login, port: http }
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources: {{ toYaml .Values.resources.frontend | nindent 12 }}
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+            - { name: next-cache, mountPath: /app/.next/cache }
+      volumes:
+        - { name: tmp, emptyDir: {} }
+        - { name: next-cache, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: neuravic-frontend
+  labels:
+    {{- include "neuravic.labels" . | nindent 4 }}
+spec:
+  selector:
+    app.kubernetes.io/name: neuravic-frontend
+  ports:
+    - { name: http, port: {{ .Values.frontend.port }}, targetPort: http }

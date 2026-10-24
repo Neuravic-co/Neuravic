@@ -1,0 +1,31 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: neuravic
+  labels:
+    {{- include "neuravic.labels" . | nindent 4 }}
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # Uploads are limited to 10 MB by the application; leave room for the request envelope.
+    nginx.ingress.kubernetes.io/proxy-body-size: 11m
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  tls:
+    - hosts: [{{ .Values.ingress.host | quote }}]
+      secretName: {{ .Values.ingress.tlsSecretName }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          # Only the website is public. It forwards /api/* to the gateway inside the cluster.
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: neuravic-frontend
+                port: { number: {{ .Values.frontend.port }} }
+{{- end }}

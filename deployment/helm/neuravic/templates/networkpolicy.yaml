@@ -1,0 +1,85 @@
+{{- if .Values.networkPolicy.enabled }}
+# Start from "nothing may talk to anything", then allow only the paths the system needs.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: neuravic-default-deny
+  labels:
+    {{- include "neuravic.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+# Every pod may look up names in the cluster DNS.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: neuravic-allow-dns
+  labels:
+    {{- include "neuravic.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+# The ingress controller may reach the website, and only the website.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: neuravic-frontend
+  labels:
+    {{- include "neuravic.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels: { neuravic/tier: frontend }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.ingressNamespace }}
+      ports:
+        - { protocol: TCP, port: {{ .Values.frontend.port }} }
+  egress:
+    - to:
+        - podSelector:
+            matchLabels: { app.kubernetes.io/name: neuravic-gateway }
+      ports:
+        - { protocol: TCP, port: {{ .Values.services.gateway.port }} }
+---
+# Backend pods accept traffic only from the website and from each other, and may call out to the database
+# and to the internet over HTTPS (email provider, malware scanner).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: neuravic-backend
+  labels:
+    {{- include "neuravic.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels: { neuravic/tier: backend }
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { neuravic/tier: frontend }
+        - podSelector:
+            matchLabels: { neuravic/tier: backend }
+  egress:
+    - to:
+        - podSelector:
+            matchLabels: { neuravic/tier: backend }
+    - to:
+        - ipBlock: { cidr: {{ .Values.networkPolicy.databaseCidr }} }
+      ports:
+        - { protocol: TCP, port: 3306 }
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16]
+      ports:
+        - { protocol: TCP, port: 443 }
+{{- end }}

@@ -1,0 +1,10 @@
+# The namespace everything runs in. The labels make Kubernetes refuse pods that run as root,
+# add capabilities or skip the default seccomp profile ("restricted" Pod Security Standard).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neuravic
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
