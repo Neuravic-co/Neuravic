@@ -47,7 +47,6 @@ kubeconfig
 .azure/
 .gcloud/
 .npmrc.local
-.vercel
 .netrc
 service-account*.json
 credentials.json

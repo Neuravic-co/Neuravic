@@ -18,6 +18,6 @@ const values = {
   MIGRATE_DB_PASSWORD: hex(24),
 };
 
-console.log("Paste each value into Vercel (Project Settings, Environment Variables, Production, Sensitive).");
+console.log("Store each value in your secret manager (Kubernetes Secret, or the .env file for local use).");
 console.log("Set PROXY_SECRET on the backend project AND as API_PROXY_SECRET on the website project.\n");
 for (const [name, value] of Object.entries(values)) console.log(`${name}=${value}`);
