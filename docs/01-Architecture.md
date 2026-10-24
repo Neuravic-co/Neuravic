@@ -59,7 +59,7 @@ nfe/
   app/
     page.tsx              Home page (marketing)
     (auth)/login, signup  Email and password forms
-    portal/               Client portal: [section] pages, verify, privacy
+    portal/               "Under construction" page (the portal is not open yet)
     legal/[slug]          Terms, privacy and other legal pages
     api/[...path]/        Server-side proxy to the backend
     layout.tsx            Root layout, carries the CSP nonce
@@ -83,7 +83,6 @@ Configuration (`nfe/.env.local`):
 | `NEXT_PUBLIC_API_BASE_URL` | Where the browser calls the API. Unset in production to use the same-origin proxy |
 | `API_ORIGIN` | Backend origin used by the proxy (HTTPS in production) |
 | `API_PROXY_SECRET` | Shared secret with the backend (`PROXY_SECRET`), 32+ characters |
-| `NEXT_PUBLIC_PORTAL_OPEN` | `true` opens the portal; otherwise visitors see an "under construction" page |
 
 ## 3. The backend (NBE and Server)
 

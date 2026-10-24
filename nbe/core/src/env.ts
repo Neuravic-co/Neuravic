@@ -16,6 +16,8 @@ export interface Env {
   // Secrets
   BOOTSTRAP_ADMIN_EMAIL?: string;
   RESEND_API_KEY?: string;
+  /** Any SMTP server, e.g. smtps://you%40gmail.com:app-password@smtp.gmail.com:465 (user and password URL-encoded). */
+  SMTP_URL?: string;
   SLACK_WEBHOOK_URL?: string;
   SSO_PRIVATE_JWK?: string;
   /** Shared with the frontend proxy so the real visitor address can be trusted. */

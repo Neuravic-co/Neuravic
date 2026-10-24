@@ -11,7 +11,7 @@ import { DbRateLimiter } from "./lib/rate-limit";
 import { FsBlobStore } from "./modules/files/blob-store";
 import { DevMalwareScanner } from "./modules/files/dev-scanner";
 import { ServiceMalwareScanner } from "./modules/files/scanner";
-import { ConsoleMailer, DevMailer, ResendMailer } from "./modules/notifications/mailer";
+import { ConsoleMailer, DevMailer, ResendMailer, SmtpMailer } from "./modules/notifications/mailer";
 import { createJwtSigner } from "./modules/sso/jwt";
 import { devRoutes } from "./modules/dev/routes";
 
@@ -39,7 +39,7 @@ export function buildDeps(options: ServiceOptions) {
   const { db, pool } = createMysqlDatabase(url);
   const development = config.environment === "development";
   // Development has no mail provider by default: keep messages in memory so sign-in links can be read from the dev mailbox.
-  const devMailer = options.deliversMail && development && !config.resendApiKey ? new DevMailer() : null;
+  const devMailer = options.deliversMail && development && !config.resendApiKey && !config.smtpUrl ? new DevMailer() : null;
   const scannerUrl = process.env.MALWARE_SCANNER_URL;
 
   const deps: Deps = {
@@ -54,7 +54,11 @@ export function buildDeps(options: ServiceOptions) {
       : scannerUrl
         ? new ServiceMalwareScanner({ fetch: (_input, init) => fetch(scannerUrl, init) })
         : development ? new DevMalwareScanner() : null,
-    mailer: config.resendApiKey ? new ResendMailer(config.resendApiKey, config.emailFrom) : devMailer ?? new ConsoleMailer(jsonLogger),
+    mailer: config.resendApiKey
+      ? new ResendMailer(config.resendApiKey, config.emailFrom)
+      : config.smtpUrl
+        ? new SmtpMailer(config.smtpUrl, config.emailFrom)
+        : devMailer ?? new ConsoleMailer(jsonLogger),
     rateLimiter: new DbRateLimiter(db),
     deliversMail: options.deliversMail === true,
     now: () => Date.now(),

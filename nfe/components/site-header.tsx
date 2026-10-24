@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { UserRound } from "lucide-react";
-import { ProfileMenu } from "./profile-menu";
 
 const navItems = [
   { label: "Home", href: "#home", section: "home" },
@@ -81,7 +79,6 @@ export function SiteHeader() {
             <a className="site-header__portal" href={portalHref}>
               Portal
             </a>
-            <ProfileMenu />
           </div>
 
           <button
@@ -111,13 +108,6 @@ export function SiteHeader() {
                 </a>
               ))}
             </nav>
-            <a className="mobile-nav__portal" href="/login" onClick={closeMenu}>
-              <UserRound aria-hidden="true" size={18} strokeWidth={1.5} />
-              Log in
-            </a>
-            <a className="mobile-nav__portal" href="/signup" onClick={closeMenu}>
-              Sign up
-            </a>
             <a className="mobile-nav__portal" href={portalHref} onClick={closeMenu}>
               Portal
             </a>

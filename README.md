@@ -32,7 +32,7 @@ cp .env.example .env.local
 npm run dev             # website on http://localhost:5173
 ```
 
-Sign up at `/signup`, then log in at `/login`.
+The website has no sign-in for now: `/portal` shows an "under construction" page. The accounts API still exists in the backend.
 
 ## Documentation
 

@@ -14,7 +14,7 @@ imagePullSecrets: []
 #   PRIVACY_HASH_SECRET    32+ random characters
 #   MFA_ENCRYPTION_KEY     64 hex characters
 #   PROXY_SECRET           32+ random characters (the website uses the same value)
-# Optional keys: RESEND_API_KEY, SLACK_WEBHOOK_URL, SSO_PRIVATE_JWK, MALWARE_SCANNER_URL
+# Optional keys: RESEND_API_KEY, SMTP_URL, SLACK_WEBHOOK_URL, SSO_PRIVATE_JWK, MALWARE_SCANNER_URL
 existingSecret: neuravic-secrets
 
 config:
