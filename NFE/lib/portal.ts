@@ -1,4 +1,4 @@
-/** Types and helpers shared by the client portal. They mirror the NBE API responses. */
+/** Types and helpers shared by the client portal. They mirror the Server API responses. */
 
 export type OrgRole = "viewer" | "member" | "admin" | "owner";
 export type StaffRole = "admin" | "delivery" | "sales";

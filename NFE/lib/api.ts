@@ -1,5 +1,5 @@
 /**
- * Browser client for the Neuravic API (NBE).
+ * Browser client for the Neuravic API (Server).
  * Sends the session cookie, parses problem+json errors and returns typed JSON.
  */
 export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api/v1").replace(/\/$/, "");

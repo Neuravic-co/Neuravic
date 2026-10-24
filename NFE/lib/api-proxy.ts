@@ -1,5 +1,5 @@
 /**
- * Server-side proxy from the website to the Neuravic API (NBE).
+ * Server-side proxy from the website to the Neuravic API (Server).
  *
  * The browser only ever talks to its own domain, so the login cookie stays first-party.
  * The proxy also forwards the visitor's real address, signed with a shared secret, because the API
@@ -41,9 +41,11 @@ function problem(status: number, code: string, title: string): Response {
 }
 
 function visitorAddress(request: Request): string | undefined {
-  // Only Vercel's edge is known to overwrite these headers. Portable servers must not sign caller input.
-  if (process.env.VERCEL !== "1") return undefined;
-  return request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() || undefined;
+  // Only an edge that overwrites these headers may be believed. Portable servers must not sign caller input.
+  if (process.env.VERCEL === "1") return request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() || undefined;
+  // Behind a Kubernetes ingress that sets X-Real-IP itself (ingress-nginx does), set TRUST_PROXY_HEADERS=true.
+  if (process.env.TRUST_PROXY_HEADERS === "true") return request.headers.get("x-real-ip")?.trim() || undefined;
+  return undefined;
 }
 
 export async function proxyToApi(request: Request): Promise<Response> {
@@ -52,7 +54,7 @@ export async function proxyToApi(request: Request): Promise<Response> {
   try {
     const url = new URL(origin);
     if (url.origin !== origin || url.username || url.password ||
-      (url.protocol !== "https:" && !(url.protocol === "http:" && process.env.NODE_ENV !== "production"))) {
+      (url.protocol !== "https:" && !(url.protocol === "http:" && (process.env.NODE_ENV !== "production" || process.env.ALLOW_INSECURE_API_ORIGIN === "true")))) {
       return problem(503, "api_unavailable", "The API configuration is invalid");
     }
   } catch { return problem(503, "api_unavailable", "The API configuration is invalid"); }
