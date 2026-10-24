@@ -1,0 +1,34 @@
+{
+  "name": "neuravic",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Neuravic: website and client portal (nfe), backend microservices (nbe), file server (server), database (database) and deployment (deployment).",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "workspaces": [
+    "nbe/core",
+    "nbe/services/*",
+    "server",
+    "database",
+    "test"
+  ],
+  "scripts": {
+    "db:local": "npm run mysql:local -w @neuravic/database",
+    "db:migrate": "npm run migrate -w @neuravic/database",
+    "start": "node deployment/scripts/local.mjs",
+    "smoke": "tsx --env-file-if-exists=.env nbe/scripts/smoke.mts",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "security": "node security/scripts/security-check.mjs",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "npm run unit -w @neuravic/tests",
+    "test:integration": "npm run integration -w @neuravic/tests"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  },
+  "dependencies": {
+    "tsx": "^4.20.0"
+  }
+}

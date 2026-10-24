@@ -1,48 +1,39 @@
 # Neuravic
 
-```
-NFE/        Frontend: marketing site and client portal (Next.js)
-Server/     Backend: TypeScript API (Node.js, Hono, MySQL)
-Security/   Security policy, threat model, go-live checklist and the automated security check
-Docs/       Company profile (Word), backend architecture design (PDF) and the API reference
-README.md   This file
-```
+Neuravic is a technology company's website and client portal. Visitors read about the company and send enquiries. Clients sign up, log in and, once invited to an organisation, follow their projects, make requests, approve work, comment and share files. Neuravic staff manage enquiries, people, site content and security.
 
-| Folder | Start here |
+| Folder | What it is |
 |---|---|
-| [`NFE/`](NFE) | [`NFE/README.md`](NFE/README.md): brand, structure, how the site connects to the API |
-| [`Server/`](Server) | [`Server/README.md`](Server/README.md): running, configuring and how the backend is built |
-| [`Security/`](Security) | [`Security/README.md`](Security/README.md): what is protected, how, and what is still missing |
-| [`Docs/`](Docs) | [`Docs/README.md`](Docs/README.md): documents and the API reference |
+| `nfe/` | Frontend: the website and the client portal |
+| `nbe/` | Backend: small services behind one gateway (sign-in, portal, enquiries, staff tools, background worker) |
+| `server/` | File server: stores, scans and serves uploaded files |
+| `database/` | MySQL: access setup and migrations |
+| `security/` | Security tools: secret generator, secret and dependency scan |
+| `deployment/` | Docker, Kubernetes and Helm |
+| `images/` | Brand and documentation images |
+| `test/` | Unit tests and integration tests |
+| `docs/` | The documentation, start with [01 Architecture](docs/01-Architecture.md) |
 
-## Run everything locally
+## Run it
 
-Node.js 22.13 or newer and MySQL 8+ installed.
+Needs Node.js 22.13+ and MySQL 8+.
 
 ```bash
-# 1. Backend on http://127.0.0.1:8787
-cd Server
 npm install
-npm run mysql:local      # private MySQL on port 3307, creates the database and writes .env
-npm run migrate
-npm start
+npm run db:local        # private local MySQL, writes .env
+npm run db:migrate
+npm start               # backend on http://127.0.0.1:8787
+```
 
-# 2. Frontend on http://localhost:5173 (new terminal)
+```bash
 cd NFE
 npm install
 cp .env.example .env.local
-npm run dev
+npm run dev             # website on http://localhost:5173
 ```
 
-Open http://localhost:5173. Sign up with an email and a password at `/signup`, or log in at `/login`.
-Emailed sign-in links (optional) show up in the development mailbox at http://127.0.0.1:8787/api/v1/dev/mailbox.
+Sign up at `/signup`, then log in at `/login`.
 
-## Checks
+## Documentation
 
-```bash
-cd Server && npm start        # then, in another terminal: npm run smoke   (89 checks through the real API)
-cd NFE && npm run lint && npm run typecheck && npm run build
-./Security/scripts/security-check.sh                     # secrets and vulnerable dependencies
-```
-
-The frontend checks run in CI (`.github/workflows`), alongside the weekly security check and CodeQL.
+[01 Architecture](docs/01-Architecture.md) · [02 Getting started](docs/02-Getting-Started.md) · [03 API reference](docs/03-API.md) · [04 Security](docs/04-Security.md) · [05 Operations](docs/05-Operations.md)
