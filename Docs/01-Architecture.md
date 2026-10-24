@@ -1,50 +1,61 @@
 # Neuravic architecture
 
 How the whole system fits together: the website, the API, the database, security and how it runs.
-For the endpoint list see [`API.md`](API.md). For setup steps see the [root README](../README.md).
+Part of the Neuravic documentation set: **01 Architecture** (this file), [02 Getting started](02-Getting-Started.md), [03 API reference](03-API.md), [04 Security](04-Security.md), [05 Operations](05-Operations.md).
 
 ## 1. The system at a glance
 
-Two programs and one database. Nothing else is required to run Neuravic.
+A website, a set of small backend services behind one gateway, a file server and a MySQL database.
 
 ```mermaid
 flowchart LR
     V([Visitor / client / staff<br/>in a browser])
     subgraph FE["NFE: frontend (Next.js, port 5173)"]
         P[Pages: marketing site<br/>and client portal]
-        PX["/api/* proxy<br/>app/api/[...path]"]
+        PX["/api/* proxy"]
     end
-    subgraph BE["Server: backend (Node.js + Hono, port 8787)"]
-        MW[Middleware: origin check,<br/>session, MFA, rate limits]
-        M[Feature modules]
-        J[Background timer<br/>every 5 minutes]
+    subgraph NBE["NBE: backend microservices"]
+        GW[gateway :8787<br/>the only entrance]
+        AU[auth :8801]
+        PO[portal :8802]
+        LE[leads :8803]
+        AD[admin :8804]
+        WK[worker :8806<br/>email + maintenance]
     end
-    DB[(MySQL 8<br/>port 3307 locally)]
-    FS[/Uploaded files<br/>on disk/]
+    SV["Server: file server :8805<br/>uploads + malware scan"]
+    DB[(MySQL 8<br/>database/)]
+    FS[/Uploaded files<br/>persistent volume/]
     MAIL[[Email provider<br/>Resend, optional]]
 
     V -->|HTML, JS| P
     V -->|/api/v1/...| PX
-    PX -->|server to server| MW
-    MW --> M
-    M --> DB
-    M --> FS
-    M -->|outbox| MAIL
-    J --> DB
-    J --> MAIL
+    PX -->|server to server| GW
+    GW --> AU & PO & LE & AD & SV & WK
+    AU & PO & LE & AD & WK & SV --> DB
+    SV --> FS
+    WK -->|outbox| MAIL
 ```
 
-| Part | Folder | Technology | Role |
-|---|---|---|---|
-| Frontend | [`NFE/`](../NFE) | Next.js 16, React 19, TypeScript, Tailwind CSS 4 | Marketing site and the client portal |
-| Backend | [`Server/`](../Server) | Node.js 22+, Hono, Zod, Drizzle ORM | The API: accounts, projects, requests, files, content, enquiries |
-| Database | `Server/sql/` | MySQL 8+ | All data, plus rate-limit counters and the email outbox |
-| Security docs | [`Security/`](../Security) | Markdown and scripts | Policy, threat model, automated secret and dependency check |
+| Folder | Role | Technology |
+|---|---|---|
+| [`nfe/`](../nfe) | Frontend: marketing site and client portal | Next.js 16, React 19, TypeScript, Tailwind CSS 4 |
+| [`nbe/`](../nbe) | Backend: the shared core plus six services | Node.js 22+, Hono, Zod, Drizzle ORM |
+| [`server/`](../server) | File server: stores, scans and serves uploads | Node.js, Hono |
+| [`database/`](../database) | MySQL: access setup, migrations, private local server | MySQL 8+, mysql2 |
+| [`security/`](../security) | Security tooling: secret generator, secret and dependency scan | Node.js scripts |
+| [`test/`](../test) | Unit tests and integration tests | Node test runner, tsx |
+| [`images/`](../images) | Brand and documentation images | Image files |
+| [`deployment/`](../deployment) | Docker images, Compose, Kubernetes extras, Helm chart | Docker, Kubernetes, Helm |
+| [`docs/`](.) | These documents | Markdown |
+
+### Why microservices here
+
+Each service is its own process with its own port, health check, replicas and resource limits, so a busy portal cannot starve sign-in, the file server can be scaled and secured on its own, and the email worker can be paused without touching the API. The services share one MySQL database and one code library (`nbe/core`), which keeps rules such as roles, validation and security in a single place. They do not call each other; the gateway routes requests, and the database is the only shared state. This is a deliberate trade-off: it is simpler to run than one database per service, at the price of a shared schema that changes together.
 
 ## 2. The frontend (NFE)
 
 ```
-NFE/
+nfe/
   app/
     page.tsx              Home page (marketing)
     (auth)/login, signup  Email and password forms
@@ -65,7 +76,7 @@ How a page gets its data:
 3. The **proxy** (`lib/api-proxy.ts`) forwards those calls to `API_ORIGIN`. Because the browser only talks to its own domain, the login cookie is first-party and no cross-site cookie rules apply.
 4. The proxy strips connection-level and spoofable headers (`x-forwarded-for`, `authorization`, `x-proxy-secret` and similar), and adds the visitor address signed with `API_PROXY_SECRET` when it can be trusted, so rate limits count each visitor separately.
 
-Configuration (`NFE/.env.local`):
+Configuration (`nfe/.env.local`):
 
 | Variable | Purpose |
 |---|---|
@@ -74,24 +85,44 @@ Configuration (`NFE/.env.local`):
 | `API_PROXY_SECRET` | Shared secret with the backend (`PROXY_SECRET`), 32+ characters |
 | `NEXT_PUBLIC_PORTAL_OPEN` | `true` opens the portal; otherwise visitors see an "under construction" page |
 
-## 3. The backend (Server)
+## 3. The backend (NBE and Server)
 
 ```
-Server/
-  src/
-    server.ts        Entry point: builds dependencies, starts the HTTP server and the 5 minute timer
-    app.ts           Builds the Hono app: CORS, maintenance mode, body limits, middleware, routes, error mapping
-    config.ts, env.ts  Validated configuration (fails fast on bad or missing values)
-    deps.ts          The dependency bundle every route receives (db, mailer, blobs, clock, limiter, ...)
-    db/              MySQL pool, Drizzle schema, atomic batches
-    lib/             crypto, password hashing, rate limiter, body limits, errors, logging, ids
-    modules/         One folder per feature (below)
-  sql/               Numbered, forward-only migrations (001_init, 002_passwords)
-  scripts/           migrate.ts, mysql-local.mjs, smoke.ts
-  uploads/           Stored files (development default)
+nbe/
+  core/src/                 The shared library every service uses
+    bootstrap.ts            Builds dependencies and starts one service (port, routes, timers)
+    app.ts                  Builds the Hono app: CORS, maintenance mode, body limits, middleware, error mapping
+    config.ts, env.ts       Validated configuration (fails fast on bad or missing values)
+    deps.ts                 The dependency bundle every route receives (db, mailer, blobs, clock, limiter, ...)
+    db/                     MySQL pool, Drizzle schema, atomic batches
+    lib/                    crypto, password hashing, rate limiter, body limits, errors, logging, ids
+    modules/                One folder per feature (below)
+  services/
+    gateway/                Routes each request to the service that owns the path
+    auth/                   Sign-up, login, sessions, MFA, profile, privacy, single sign-on
+    portal/                 Organisations, members, projects, requests, approvals, comments, activity
+    leads/                  Website enquiries and the public site content
+    admin/                  Staff tools, audit log, security status, content editing
+    worker/                 Sends queued email, retries, cleanup and retention (no public routes)
+  scripts/smoke.mts         89 checks through the real HTTP API
+server/src/index.ts         The file server
 ```
 
-### Feature modules
+### Services and what they own
+
+| Service | Port | Paths (under `/api/v1`) | Notes |
+|---|---|---|---|
+| gateway | 8787 | everything; health and version itself | Public entrance. Keeps cookies, bodies and status codes unchanged. Checks nothing about users: every service still checks origin, session and role |
+| auth | 8801 | `/auth/*`, `/me`, `/me/privacy/*`, `/token/*`, `/admin/privacy-requests/*`, `/.well-known/jwks.json` | The only place that creates sessions |
+| portal | 8802 | `/orgs/*`, `/projects/*`, `/requests/*` (except files) | Client data, strictly per organisation |
+| leads | 8803 | `/leads/*`, `/content/*` | Public input, so it takes the most spam and abuse |
+| admin | 8804 | `/admin/*` (except privacy requests) | Staff only; also edits site content |
+| files (`server/`) | 8805 | `/requests/:id/files`, `/files/*` | Owns the uploads folder and the malware-scan loop |
+| worker | 8806 | `/dev/*` in development only | Sends email, runs maintenance; no business routes |
+
+Gateway rules are plain patterns in `nbe/services/gateway/src/index.ts`; the first match wins and specific paths come first.
+
+### Feature modules (in `nbe/core/src/modules`)
 
 | Module | Purpose |
 |---|---|
@@ -107,6 +138,8 @@ Server/
 | `notifications` | Email outbox and the Resend, dev and console mailers |
 | `audit` | Append-only record of security-relevant actions |
 | `maintenance` | Outbox retries, cleanup and data retention |
+
+A service is a few lines: it names the routes it owns and starts. For example the portal service mounts `orgsRoutes` and `portalRoutes` and nothing else.
 
 ### Request pipeline
 
@@ -169,14 +202,14 @@ Conventions: ids are ULIDs (sessions and tokens use a SHA-256 hash), all times a
 sequenceDiagram
     participant B as Browser
     participant N as NFE proxy
-    participant S as Server
+    participant S as auth service
     participant D as MySQL
     B->>N: POST /api/v1/auth/register {name, email, password, consent}
     N->>S: forward
     S->>S: rate limit, validate (password 8-128 chars)
     S->>D: insert user + scrypt hash (one transaction)
     S->>D: insert session (token hash only)
-    S-->>B: 200 + HttpOnly cookie nv_session
+    S-->>B: 200 + HttpOnly session cookie
     B->>B: redirect to /portal
 ```
 
@@ -207,7 +240,7 @@ flowchart LR
     subgraph NFE
       PXY[Proxy: strips spoofable headers,<br/>signs visitor address]
     end
-    subgraph Server
+    subgraph NBE
       ORI[Origin allow-list]
       SES[Server-side sessions]
       MFA[Staff MFA]
@@ -220,13 +253,13 @@ flowchart LR
       HASH[scrypt password hashes<br/>own table]
       DBG[DB triggers<br/>last admin, closed requests]
     end
-    Browser --> NFE --> Server --> Data
+    Browser --> NFE --> NBE --> Data
 ```
 
 | Area | How it is handled |
 |---|---|
 | Passwords | scrypt (N=16384, r=8, p=1) with a random salt per password, stored in `user_passwords` so no listing can return them. Login does equal work for unknown emails |
-| Sessions | Random 256-bit token in an `HttpOnly`, `SameSite=Lax` cookie (`Secure` outside development). Only its SHA-256 hash is stored. Clients: 30 days idle, 90 days absolute. Staff: 12 hours |
+| Sessions | Random 256-bit token in an `HttpOnly`, `SameSite=Lax` cookie (`__Host-nv_session` and `Secure` outside development, `nv_session` in development). Only its SHA-256 hash is stored. Clients: 30 days idle, 90 days absolute. Staff: 12 hours |
 | Staff MFA | Authenticator codes and recovery codes; required in staging and production; a session without proof is limited and expires |
 | Cross-site requests | Writes must come from an allowed origin; CORS only lists `ALLOWED_ORIGINS` |
 | Rate limiting | Database-backed fixed windows per IP and per account (login 30 per 15 min per IP and 10 per 15 min per email; register, sign-up and contact have their own limits) |
@@ -235,52 +268,66 @@ flowchart LR
 | Browser protection | Content-Security-Policy with a fresh nonce per page, `frame-ancestors 'none'`, HSTS, `nosniff`, strict referrer and permissions policies, `no-store` on portal pages |
 | Files | Size and type checks, quarantine until scanned, downloads served through the API with access checks |
 | Privacy | Pseudonymous hashing of IPs and user agents in the audit log, data export, privacy requests, retention windows enforced by the maintenance job |
-| Secrets | Only in environment files that are git-ignored; `Security/scripts/security-check` scans for leaked secrets and vulnerable dependencies weekly and in CI |
+| Secrets | Only in environment files that are git-ignored; `security/scripts/security-check` scans for leaked secrets and vulnerable dependencies weekly and in CI |
 | Contact spam | Honeypot field, spam scoring, per-address and per-IP limits (no third-party captcha) |
 
-Required production settings and the go-live list are in [`../Security/`](../Security): `APP_ENV=production`, HTTPS origins, a real `PRIVACY_HASH_SECRET`, `MFA_ENCRYPTION_KEY`, `PROXY_SECRET`, and an email provider key.
+The threat model, required production settings and the go-live checklist are in [04 Security](04-Security.md).
 
 ## 7. Background work
 
-One timer in the server process runs every 5 minutes (`modules/maintenance`):
+| Where | What | When |
+|---|---|---|
+| worker | Sends queued email, with retries and growing delays | every 2 seconds (`WORKER_POLL_MS`) |
+| worker | Cleanup (expired sessions, used tokens, old rate-limit rows) and retention: spam leads after 90 days, lost leads after 365, sent outbox rows after 30, dead ones after 90 | every 5 minutes |
+| file server | Scans files waiting for the malware check | every 30 seconds |
 
-- send queued emails and retry failures
-- scan files waiting for the malware check
-- delete expired sessions, used tokens and old rate-limit rows
-- apply retention: spam leads after 90 days, lost leads after 365, sent outbox rows after 30, dead ones after 90
-
-If you run more than one server process, only the work is repeated, not harmed: every step is idempotent.
+Only the worker delivers email. Every other service writes to the `outbox` table in the same transaction as its change, so a sign-up never fails because the mail provider is down. All steps are safe to repeat, so running two copies only repeats work.
 
 ## 8. Environments and deployment
 
 | | Development | Production |
 |---|---|---|
-| Frontend | `npm run dev` on 5173 | `npm run build` then `npm start`, behind HTTPS |
-| Backend | `npm start` on 127.0.0.1:8787 | Node process behind HTTPS with `APP_ENV=production` |
-| Database | `npm run mysql:local` (private MySQL on 3307) | Managed MySQL 8+ via `DATABASE_URL` |
-| Email | In-memory dev mailbox at `/api/v1/dev/mailbox` | Resend (`RESEND_API_KEY`) |
-| Files | `Server/uploads/` | A persistent volume (`UPLOAD_DIR`) |
+| Frontend | `npm run dev` on 5173 | Container image behind an HTTPS ingress |
+| Backend | `npm start` at the repo root runs all services | One container per service, started from one image |
+| Database | `npm run db:local` (private MySQL on 3307) | Managed MySQL 8+ |
+| Email | In-memory dev mailbox | Resend (`RESEND_API_KEY`) |
+| Files | `.data/files/` | A persistent volume mounted on the file server |
 | Staff MFA | Off by default | Required |
 
 ```mermaid
 flowchart LR
-    U([Users]) -->|HTTPS| RP[Reverse proxy / host]
-    RP --> FEP[NFE: next start]
-    FEP -->|private network| BEP[Server: node]
-    BEP --> MY[(Managed MySQL)]
-    BEP --> VOL[(Persistent volume<br/>uploads)]
-    BEP --> RS[[Resend]]
+    U([Users]) -->|HTTPS| IN[Ingress]
+    IN --> FE[frontend x2]
+    FE --> GW[gateway x2]
+    GW --> S[auth, portal, leads, admin<br/>worker, file server]
+    S --> MY[(Managed MySQL)]
+    S --> VOL[(Persistent volume<br/>uploads)]
+    S --> RS[[Resend]]
 ```
 
-Release steps: build the frontend, run `npm run migrate` against the production database, start the backend, then the frontend. Migrations are forward only: every schema change is a new numbered file in `Server/sql/`.
+How it is packaged ([`deployment/`](../deployment)):
+
+| Piece | What it is |
+|---|---|
+| `docker/backend.Dockerfile` | One image for every backend service and the file server; the `ENTRY` setting picks which one runs |
+| `docker/frontend.Dockerfile` | The website image |
+| `docker-compose.yml` | The whole system on one machine: MySQL, migration, seven backend containers and the website |
+| `helm/neuravic` | The Helm chart: a Deployment and Service per service, the file volume, ingress, a pre-upgrade migration job, network policies, disruption budgets and optional autoscaling |
+| `k8s/` | Namespace with the "restricted" pod standard, an example Secret and a test-only MySQL |
+
+Release order, rollback and day-to-day operation are in [05 Operations](05-Operations.md).
 
 ## 9. Testing and quality
 
 | Check | Command | Covers |
 |---|---|---|
-| API smoke test | `cd Server && npm start`, then `npm run smoke` | 89 checks through the real HTTP API: accounts, passwords, portal, files, staff tools, privacy, safety rules |
-| Frontend | `cd NFE && npm run lint && npm run typecheck && npm run build` | Code quality, types, production build |
-| Security | `./Security/scripts/security-check.sh` | Secret scan and dependency advisories for `Server` and `NFE` |
+| Unit tests | `npm run test:unit` at the repo root | 101 tests with no database or network: password hashing, crypto helpers, pagination, body limits, JSON validation, configuration rules, TOTP codes, session lifetimes, rate limiter, visitor address trust, gateway routing, spam score, single sign-on tokens, the website's form checks and CSP |
+| Integration tests | `npm start`, then `npm run test:integration` | 52 tests through the real gateway, services and MySQL: gateway routing and CORS, accounts and sessions, organisation isolation, roles, approvals, files and the scanner, enquiries, staff tools, privacy |
+| API smoke test | `npm run smoke` at the repo root | 89 checks through the real gateway: accounts, passwords, portal, files, staff tools, privacy, safety rules |
+| Types | `npm run typecheck` at the repo root; `npm run typecheck` in `nfe` | Every backend package and the frontend |
+| Frontend | `cd NFE && npm run lint && npm run build` | Code quality and a production build |
+| Chart | `helm lint deployment/helm/neuravic` and `helm template` | The Kubernetes manifests render and lint |
+| Security | `npm run security` | Secret scan and dependency advisories for the backend and `nfe` |
 | CI | `.github/workflows` | Frontend checks, weekly security check, CodeQL |
 
 ## 10. Known gaps
@@ -288,5 +335,7 @@ Release steps: build the frontend, run `npm run migrate` against the production 
 - Real email has to be configured before production (no email means invitations and link sign-in cannot reach people).
 - There is no captcha on the public forms; protection is rate limits, a honeypot and spam scoring. Add one if abuse appears.
 - Password reset by email is not built yet; people without a password can use the emailed sign-in link.
-- Uploaded files live on one disk; use a persistent volume, or move to object storage if you run several servers.
-- The backend smoke test needs a running server and database; there is no isolated unit test suite for `Server` yet.
+- Uploaded files live on one volume, so the file server runs a single replica; move to object storage to scale it out.
+- The services share one database schema. If a service ever needs to be developed or released fully on its own, give it its own tables first.
+- The Docker images and the Helm chart have been linted and rendered but not run on a cluster from this repository; try them in staging first.
+- The integration tests and the smoke test need running services and a development database. There are no browser end-to-end tests for the website yet.
