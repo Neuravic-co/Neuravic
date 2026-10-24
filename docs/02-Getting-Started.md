@@ -51,14 +51,11 @@ To use your own MySQL instead, create the accounts on it with `database/scripts/
 
 Check the backend any time: http://127.0.0.1:8787/api/v1/health lists every service and its state.
 
-## 4. Signing in locally
+## 4. Accounts
 
-- **Sign up** at `/signup` with your name, an email, a password (8 to 128 characters) and the terms checkbox. You are signed in at once and land on `/portal`.
-- **Log in** at `/login` with your email and password.
-- **Email link instead:** on the login page choose "Email me a sign-in link instead". Nothing is really emailed in development: open
-  http://127.0.0.1:8787/api/v1/dev/mailbox to read the message and its link. Invitations from an organisation also arrive as links.
-- **Staff admin:** signing up with the address in `BOOTSTRAP_ADMIN_EMAIL` (default `admin@neuravic.local`) creates the staff admin, in development only.
-  A new client has no organisation yet; an admin creates organisations and invites people through the API, and then the client sees projects in the portal.
+The website has no login or sign-up pages. `/portal` shows an "under construction" page, and the accounts API stays in the
+backend for when the portal opens. Enquiries from the contact form still work; read the emails at
+http://127.0.0.1:8787/api/v1/dev/mailbox in development.
 
 ## 5. Settings
 
@@ -80,7 +77,7 @@ Check the backend any time: http://127.0.0.1:8787/api/v1/health lists every serv
 | `ALLOWED_ORIGINS` | Comma list of website origins allowed to call the API; must include `APP_URL` | yes |
 | `EMAIL_FROM`, `NOTIFY_TO` | Sender of system emails and the inbox that receives new enquiries | yes |
 | `BOOTSTRAP_ADMIN_EMAIL` | Address that becomes the first staff admin | recommended |
-| `RESEND_API_KEY` | Real email delivery. Without it, development keeps messages in the dev mailbox | production |
+| `RESEND_API_KEY` or `SMTP_URL` | Real email delivery: Resend, or any mail server such as Gmail (`smtps://you%40gmail.com:app-password@smtp.gmail.com:465`, with `EMAIL_FROM` set to the same address). Without either, development keeps messages in the dev mailbox | production |
 | `PRIVACY_HASH_SECRET` | Random 32+ character key for pseudonymous identifiers | outside development |
 | `MFA_ENCRYPTION_KEY` | 64 hex characters (32 bytes) that encrypt staff authenticator seeds | when staff MFA is on |
 | `STAFF_MFA_REQUIRED` | `true` or `false`; defaults to `true` outside development | optional |
@@ -120,7 +117,6 @@ Optional: `DB_NAME` (default `neuravic`) and `DB_USER_HOSTS` (default `%`, a com
 | `API_PROXY_SECRET` | Must equal the backend's `PROXY_SECRET` |
 | `ALLOW_INSECURE_API_ORIGIN` | `true` lets a production build call an `http://` gateway on a private network (used in Docker and Kubernetes) |
 | `TRUST_PROXY_HEADERS` | `true` behind an ingress that sets `X-Real-IP` itself (ingress-nginx does), so rate limits see each visitor |
-| `NEXT_PUBLIC_PORTAL_OPEN` | `true` opens the portal; otherwise visitors see an "under construction" page |
 
 ## 6. Everyday commands
 
@@ -157,7 +153,7 @@ To add an API route, put it in the right module under `nbe/core/src/modules`, mo
 | "Too many attempts" | Rate limit reached; wait a few minutes. The smoke test clears its own limits in development |
 | Port already in use | Stop the old process on that port, or change `GATEWAY_PORT` and the service ports in `.env` |
 | A page says a service is not available (503) | Read the health response (`/api/v1/health`) to see which service is down, then look at its log line in the `npm start` output |
-| Emails never arrive | In development nothing is sent; read them at `/api/v1/dev/mailbox` (served by the worker, so it must be running). In production set `RESEND_API_KEY` |
+| Emails never arrive | In development nothing is sent; read them at `/api/v1/dev/mailbox` (served by the worker, so it must be running). In production set `RESEND_API_KEY` or `SMTP_URL` |
 
 ## 8. Brand and content
 
