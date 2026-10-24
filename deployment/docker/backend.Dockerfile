@@ -4,7 +4,7 @@
 #   server/src/index.ts                 database/scripts/migrate.ts       (run once per release)
 # Build from the repository root:  docker build -f deployment/docker/backend.Dockerfile -t neuravic-backend .
 
-FROM node:22-alpine AS deps
+FROM node:25-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY nbe/core/package.json nbe/core/package.json
@@ -18,7 +18,7 @@ COPY server/package.json server/package.json
 COPY database/package.json database/package.json
 RUN npm ci --omit=dev --ignore-scripts
 
-FROM node:22-alpine
+FROM node:25-alpine
 ENV NODE_ENV=production HOST=0.0.0.0 UPLOAD_DIR=/data/uploads
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
