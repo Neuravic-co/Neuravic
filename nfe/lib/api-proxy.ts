@@ -27,7 +27,6 @@ const HOP_BY_HOP = [
   "x-real-ip",
   "cf-connecting-ip",
   "true-client-ip",
-  "x-vercel-forwarded-for",
   "authorization",
 ];
 
@@ -42,7 +41,6 @@ function problem(status: number, code: string, title: string): Response {
 
 function visitorAddress(request: Request): string | undefined {
   // Only an edge that overwrites these headers may be believed. Portable servers must not sign caller input.
-  if (process.env.VERCEL === "1") return request.headers.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() || undefined;
   // Behind a Kubernetes ingress that sets X-Real-IP itself (ingress-nginx does), set TRUST_PROXY_HEADERS=true.
   if (process.env.TRUST_PROXY_HEADERS === "true") return request.headers.get("x-real-ip")?.trim() || undefined;
   return undefined;
