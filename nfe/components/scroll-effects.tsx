@@ -17,7 +17,8 @@ export function ScrollEffects() {
           observer.unobserve(entry.target);
         });
       },
-      { rootMargin: "0px 0px -8%", threshold: 0.08 },
+      // threshold 0: a tall block (the contact form on a phone) can never show 8% of itself, and stayed invisible.
+      { rootMargin: "0px 0px -8%", threshold: 0 },
     );
 
     revealNodes.forEach((node) => revealObserver.observe(node));
