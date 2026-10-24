@@ -55,7 +55,12 @@ if (!(await listening())) {
   if (!(await listening())) throw new Error("MySQL did not start in 30 seconds");
 }
 
-const existing = existsSync(envFile) ? readFileSync(envFile, "utf8") : "";
+let existing = "";
+try {
+  existing = readFileSync(envFile, "utf8");
+} catch {
+  // No .env yet: it is created below.
+}
 const read = (name) => new RegExp(`^${name}=(.+)$`, "m").exec(existing)?.[1]?.trim();
 const appPassword = /DATABASE_URL=mysql:\/\/neuravic_app:([^@]+)@/.exec(existing)?.[1] ?? randomBytes(18).toString("hex");
 const migratorPassword = /MIGRATE_DATABASE_URL=mysql:\/\/neuravic_migrator:([^@]+)@/.exec(existing)?.[1] ?? randomBytes(18).toString("hex");
