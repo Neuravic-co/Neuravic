@@ -1,0 +1,128 @@
+.portal-soon {
+  position: relative;
+  display: grid;
+  min-height: 100vh;
+  min-height: 100dvh;
+  place-items: center;
+  overflow: hidden;
+  padding: clamp(2rem, 6vw, 5rem) var(--page-gutter);
+  background: var(--ink);
+  color: #f5f7fa;
+  text-align: center;
+}
+
+.portal-soon__glow {
+  position: absolute;
+  inset: auto 0 -30% 0;
+  height: 70%;
+  background: radial-gradient(60% 60% at 50% 100%, rgb(54 91 255 / 0.35), transparent 70%);
+  pointer-events: none;
+}
+
+.portal-soon__inner {
+  position: relative;
+  display: grid;
+  width: min(100%, 44rem);
+  justify-items: center;
+  gap: 1.25rem;
+}
+
+.portal-soon__mark {
+  width: clamp(4rem, 12vw, 5.5rem);
+  height: auto;
+  filter: drop-shadow(0 0 1.5rem rgb(54 91 255 / 0.45));
+}
+
+.portal-soon__eyebrow {
+  margin: 0.5rem 0 0;
+  color: #9fb2ff;
+  font-size: 0.75rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.portal-soon__title {
+  margin: 0;
+  font-family: var(--font-brand);
+  font-size: clamp(2.25rem, 7vw, 4.5rem);
+  font-weight: 300;
+  line-height: 1.05;
+}
+
+.portal-soon__title span {
+  color: #8ea4ff;
+}
+
+.portal-soon__lead {
+  max-width: 34rem;
+  margin: 0;
+  color: #b4bdd0;
+  font-size: clamp(1rem, 2.4vw, 1.125rem);
+  line-height: 1.65;
+}
+
+.portal-soon__list {
+  display: grid;
+  width: 100%;
+  margin: 1rem 0 0;
+  padding: 0;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  list-style: none;
+}
+
+.portal-soon__list li {
+  display: grid;
+  gap: 0.4rem;
+  padding: 1.1rem 1.15rem;
+  border: 1px solid rgb(143 164 255 / 0.22);
+  border-radius: 0.75rem;
+  background: rgb(18 24 36 / 0.7);
+  text-align: left;
+}
+
+.portal-soon__list strong {
+  font-weight: 500;
+}
+
+.portal-soon__list span {
+  color: #aab4c8;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.portal-soon__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem 1.5rem;
+  margin-top: 1rem;
+}
+
+.portal-soon__button {
+  padding: 0.85rem 1.6rem;
+  border-radius: 999px;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+
+.portal-soon__button:hover {
+  background: #4d6fff;
+  transform: translateY(-1px);
+}
+
+.portal-soon__link {
+  color: #9fb2ff;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.portal-soon__button:focus-visible,
+.portal-soon__link:focus-visible {
+  outline: 2px solid #9fb2ff;
+  outline-offset: 3px;
+}
