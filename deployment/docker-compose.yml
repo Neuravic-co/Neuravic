@@ -24,6 +24,7 @@ x-backend: &backend
     PROXY_SECRET: ${PROXY_SECRET:?set PROXY_SECRET}
     RESEND_API_KEY: ${RESEND_API_KEY:-}
     SMTP_URL: ${SMTP_URL:-}
+    TURNSTILE_SECRET: ${TURNSTILE_SECRET:-}
     AUTH_URL: http://auth:8801
     PORTAL_URL: http://portal:8802
     LEADS_URL: http://leads:8803
@@ -95,6 +96,7 @@ services:
       dockerfile: deployment/docker/frontend.Dockerfile
       args:
         NEXT_PUBLIC_PORTAL_OPEN: ${NEXT_PUBLIC_PORTAL_OPEN:-true}
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
     image: neuravic-frontend:local
     restart: unless-stopped
     read_only: true

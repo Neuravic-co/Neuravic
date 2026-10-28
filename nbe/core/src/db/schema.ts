@@ -253,6 +253,12 @@ export const contentItems = mysqlTable(
   (t) => [uniqueIndex("content_kind_slug").on(t.kind, t.slug)],
 );
 
+/** Serializes identical contact intake across MySQL transactions. Contains only a keyed digest. */
+export const leadIntakeLocks = mysqlTable("lead_intake_locks", {
+  key: varchar("key", { length: 64 }).primaryKey(),
+  expiresAt: epoch("expires_at").notNull(),
+}, (t) => [index("lead_intake_locks_expiry").on(t.expiresAt)]);
+
 export const outbox = mysqlTable(
   "outbox",
   {
@@ -264,8 +270,13 @@ export const outbox = mysqlTable(
     nextAttemptAt: epoch("next_attempt_at").notNull(),
     lastError: varchar("last_error", { length: 255 }),
     createdAt: epoch("created_at").notNull(),
+    provider: varchar("provider", { length: 16 }),
+    providerMessageId: varchar("provider_message_id", { length: 255 }),
+    acceptedAt: epoch("accepted_at"),
+    leadId: id("lead_id"),
+    notificationKind: varchar("notification_kind", { length: 32 }),
   },
-  (t) => [index("outbox_due").on(t.state, t.nextAttemptAt)],
+  (t) => [index("outbox_due").on(t.state, t.nextAttemptAt), index("outbox_lead").on(t.leadId)],
 );
 
 export const auditLog = mysqlTable(

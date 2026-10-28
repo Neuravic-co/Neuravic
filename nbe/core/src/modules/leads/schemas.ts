@@ -15,6 +15,7 @@ export const createLeadSchema = z.object({
   consent: z.literal(true, { error: "Consent is required" }),
   /** Honeypot. Real users never fill this in. */
   website: z.string().max(200).optional(),
+  turnstileToken: z.string().max(2048).optional(),
 });
 export type CreateLeadInput = z.infer<typeof createLeadSchema>;
 

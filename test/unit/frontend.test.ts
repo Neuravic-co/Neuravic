@@ -73,3 +73,11 @@ describe("content security policy", () => {
     assert.doesNotThrow(() => policy(true, "http://localhost:8787/api/v1"));
   });
 });
+
+
+it("allows only the Turnstile frame origin when contact verification is enabled", () => {
+  const policy = contentSecurityPolicy("NONCE", false, undefined, true);
+  assert.ok(policy.includes("frame-src https://challenges.cloudflare.com"));
+  assert.ok(policy.includes("'strict-dynamic'"));
+  assert.ok(!policy.includes("'unsafe-inline' 'unsafe-eval'"));
+});

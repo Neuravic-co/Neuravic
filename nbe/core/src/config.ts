@@ -13,6 +13,7 @@ export interface Config {
   slackWebhookUrl: string | null;
   resendApiKey: string | null;
   smtpUrl: string | null;
+  turnstileSecret: string | null;
   ssoAudiences: string[];
   ssoKeyId: string;
   ssoPrivateJwk: string | null;
@@ -35,7 +36,11 @@ const envSchema = z.object({
   APP_ENV: z.enum(["development", "staging", "production"]).default("development"),
   APP_URL: z.string().url(),
   ALLOWED_ORIGINS: z.string().min(1),
-  EMAIL_FROM: z.string().min(3),
+  EMAIL_FROM: z.string().max(320).refine((value) => {
+    if (/[\r\n\x00-\x1f\x7f]/.test(value)) return false;
+    const match = /^(?:[^<>]+ <([^<>]+)>|([^<>]+))$/.exec(value);
+    return !!match && z.string().email().safeParse(match[1] ?? match[2]).success;
+  }),
   NOTIFY_TO: z.string().email(),
   PROXY_SECRET: z.string().min(32).optional(),
   PRIVACY_HASH_SECRET: z.string().min(32).optional(),
@@ -44,7 +49,7 @@ const envSchema = z.object({
   MAINTENANCE_MODE: z.enum(["true", "false"]).optional(),
 });
 
-/** Validates the Worker environment once and returns typed configuration. */
+/** Validates the service environment once and returns typed configuration. */
 export function loadConfig(env: Env): Config {
   const parsed = envSchema.safeParse(env);
   if (!parsed.success) {
@@ -93,6 +98,7 @@ export function loadConfig(env: Env): Config {
     slackWebhookUrl: env.SLACK_WEBHOOK_URL || null,
     resendApiKey: env.RESEND_API_KEY || null,
     smtpUrl: env.SMTP_URL || null,
+    turnstileSecret: env.TURNSTILE_SECRET?.trim() || null,
     ssoAudiences: list(env.SSO_AUDIENCES),
     ssoKeyId: env.SSO_KEY_ID ?? "neuravic-1",
     ssoPrivateJwk: env.SSO_PRIVATE_JWK || null,

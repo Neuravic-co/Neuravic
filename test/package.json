@@ -7,6 +7,13 @@
   "scripts": {
     "unit": "node --import tsx --test \"unit/**/*.test.ts\"",
     "integration": "node --import tsx --env-file-if-exists=../.env --test --test-concurrency=1 \"integration/**/*.test.ts\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "email": "node --import tsx --test --test-concurrency=1 \"email/**/*.test.ts\"",
+    "browser": "node --import tsx --test --test-concurrency=1 \"e2e/**/*.test.ts\"",
+    "contact-e2e": "node --import tsx --test \"contact-e2e/**/*.test.ts\""
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.64.1"
   }
 }

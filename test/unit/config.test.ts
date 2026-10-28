@@ -74,3 +74,21 @@ describe("configuration", () => {
     assert.doesNotThrow(() => loadConfig({ ...dev, SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/T/B/x" }));
   });
 });
+
+
+describe("email settings", () => {
+  for (const value of ["not-an-address", "Name\r\nBcc: other@example.com <sender@example.com>", "one@example.com,two@example.com"]) {
+    it("rejects an invalid or multiple sender without exposing its value", () => {
+      assert.throws(() => loadConfig({ ...dev, EMAIL_FROM: value }), (error: unknown) => {
+        assert.ok(error instanceof Error); assert.match(error.message, /EMAIL_FROM/); assert.ok(!error.message.includes(value)); return true;
+      });
+    });
+  }
+  it("accepts a plain sender and a named sender", () => {
+    assert.equal(loadConfig({ ...dev, EMAIL_FROM: "sender@example.com" }).emailFrom, "sender@example.com");
+    assert.equal(loadConfig(dev).emailFrom, dev.EMAIL_FROM);
+  });
+  it("does not invent provider or challenge credentials", () => {
+    const config = loadConfig(dev); assert.equal(config.resendApiKey, null); assert.equal(config.smtpUrl, null); assert.equal(config.turnstileSecret, null);
+  });
+});

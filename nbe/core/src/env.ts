@@ -16,6 +16,8 @@ export interface Env {
   // Secrets
   BOOTSTRAP_ADMIN_EMAIL?: string;
   RESEND_API_KEY?: string;
+  /** Required for contact intake outside development; paired with the frontend site key. */
+  TURNSTILE_SECRET?: string;
   /** Any SMTP server, e.g. smtps://you%40gmail.com:app-password@smtp.gmail.com:465 (user and password URL-encoded). */
   SMTP_URL?: string;
   SLACK_WEBHOOK_URL?: string;
