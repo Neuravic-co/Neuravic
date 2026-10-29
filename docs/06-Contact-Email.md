@@ -30,7 +30,7 @@ Keep real values in ignored `.env` files for local use and your hosting/Kubernet
 | `TURNSTILE_SECRET` | May be unset only in development | Required secret for the website's Turnstile widget |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Unset, or an appropriate test widget | Matching public site key; configure BEFORE the frontend build |
 | `API_ORIGIN` | Local gateway origin | Reachable gateway origin on the frontend server |
-| `NEXT_PUBLIC_API_BASE_URL` | Prefer unset for proxy testing | Unset to use same-origin `/api/v1` |
+| `NEXT_PUBLIC_API_BASE_URL` | Unset or empty for proxy testing | Unset or empty to use same-origin `/api/v1` |
 | `PROXY_SECRET` / `API_PROXY_SECRET` | Matching backend/frontend values | Matching secret; retain existing proxy trust configuration |
 
 Existing privacy/MFA/runtime settings remain required as documented in [Getting started](02-Getting-Started.md). Do not disable those controls to make contact testing pass. The new Turnstile check applies to contact intake only.
