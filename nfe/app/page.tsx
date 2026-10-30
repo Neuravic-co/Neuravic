@@ -13,6 +13,7 @@ import {
 import { ContactForm } from "@/components/contact-form";
 import { HeroArt } from "@/components/hero-art";
 import { ScrollEffects } from "@/components/scroll-effects";
+import { SectionDots } from "@/components/section-dots";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { getSiteContent } from "@/lib/site-content";
@@ -70,6 +71,7 @@ export default async function Home() {
         Skip to content
       </a>
       <SiteHeader />
+      <SectionDots />
 
       <main id="main-content">
         <section className="hero section-dark" id="home" data-nav-section>
@@ -313,7 +315,11 @@ export default async function Home() {
 
         </section>
 
-        <SiteFooter contactEmail={company.contactEmail} locations={company.locations} />
+        <SiteFooter
+          contactEmail={company.contactEmail}
+          locations={company.locations}
+          services={services.map((service) => service.title)}
+        />
       </main>
     </>
   );
