@@ -2016,9 +2016,9 @@ section {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 1rem 4rem;
-  padding: 1.1rem var(--page-gutter);
+  padding: 1.1rem max(var(--page-gutter), calc((100vw - 82rem) / 2));
   border-top: 1px solid color-mix(in srgb, var(--paper) 10%, transparent);
   background: color-mix(in srgb, var(--ink) 97%, transparent);
   box-shadow: 0 -1rem 3rem rgb(0 0 0 / 0.4);
@@ -3591,7 +3591,7 @@ section {
   border-top: 1px solid color-mix(in srgb, var(--paper) 12%, transparent);
   background: var(--ink);
   color: var(--paper);
-  --accent: #22c37a;
+  --accent: var(--blue-text);
 }
 
 .site-footer__grid {
@@ -3838,7 +3838,7 @@ section {
   width: 0.4rem;
   height: 0.4rem;
   border-radius: 999px;
-  background: #98a2b3;
+  background: color-mix(in srgb, var(--blue) 40%, #98a2b3);
   box-shadow: 0 0 0 1px rgb(255 255 255 / 0.25);
   transition: height 300ms var(--ease-out), width 300ms var(--ease-out), background 300ms var(--ease-out);
 }
@@ -3851,7 +3851,7 @@ section {
 .section-dots .is-active i {
   width: 0.55rem;
   height: 1.6rem;
-  background: #22c37a;
+  background: var(--blue);
 }
 
 .section-dots a:focus-visible {
@@ -3866,10 +3866,12 @@ section {
   right: calc(100% + 0.4rem);
   padding: 0.45rem 0.8rem;
   border-radius: 0.4rem;
-  background: #1f2937;
+  background: var(--slate);
+  border: 1px solid color-mix(in srgb, var(--blue) 55%, transparent);
   color: #fff;
   font-size: 0.8rem;
   font-weight: 600;
+  letter-spacing: 0.08em;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
