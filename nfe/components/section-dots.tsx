@@ -12,7 +12,7 @@ const SECTIONS = [
   { id: "contact", label: "Contact us" },
 ] as const;
 
-/** A dot rail on the right edge: one dot per section, the current one is a pill, hover shows its page number. */
+/** A dot rail on the right edge: one dot per section, the current one is a pill. */
 export function SectionDots() {
   const [active, setActive] = useState<string>(SECTIONS[0].id);
   const [overFooter, setOverFooter] = useState(false);
@@ -47,7 +47,7 @@ export function SectionDots() {
 
   return (
     <nav className={`section-dots${overFooter ? " is-hidden" : ""}`} aria-label="Page sections">
-      {SECTIONS.map(({ id, label }, index) => (
+      {SECTIONS.map(({ id, label }) => (
         <a
           key={id}
           href={`#${id}`}
@@ -55,9 +55,6 @@ export function SectionDots() {
           aria-label={label}
           aria-current={active === id ? "true" : undefined}
         >
-          <span className="section-dots__label" aria-hidden="true">
-            {String(index + 1).padStart(2, "0")}
-          </span>
           <i aria-hidden="true" />
         </a>
       ))}

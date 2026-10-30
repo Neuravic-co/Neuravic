@@ -3860,37 +3860,6 @@ section {
   border-radius: 0.4rem;
 }
 
-.section-dots__label {
-  position: absolute;
-  top: 50%;
-  right: calc(100% + 0.4rem);
-  padding: 0.45rem 0.8rem;
-  border-radius: 0.4rem;
-  background: var(--slate);
-  border: 1px solid color-mix(in srgb, var(--blue) 55%, transparent);
-  color: #fff;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(0.4rem, -50%);
-  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
-}
-
-.section-dots .is-active .section-dots__label,
-.section-dots a:hover .section-dots__label,
-.section-dots a:focus-visible .section-dots__label {
-  opacity: 1;
-  transform: translate(0, -50%);
-}
-
-/* The active label stays visible only on hover or focus of the rail, so it does not cover content. */
-.section-dots:not(:hover):not(:focus-within) .is-active .section-dots__label {
-  opacity: 0;
-}
-
 @media (max-width: 58rem), (max-height: 30rem) {
   .section-dots {
     display: none;
