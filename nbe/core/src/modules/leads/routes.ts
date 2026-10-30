@@ -6,6 +6,8 @@ import { parseJson } from "../../lib/validate";
 import { leadsAdminRoutes } from "./admin";
 import { createLeadSchema } from "./schemas";
 import { createLead } from "./service";
+import { verifyTurnstile } from "./turnstile";
+import { unprocessable } from "../../lib/errors";
 
 export const leadsRoutes = new Hono<AppEnv>();
 
@@ -14,6 +16,10 @@ leadsRoutes.post("/", rateLimit({ name: "leads", limit: 5, windowSeconds: 3600 }
   const deps = c.get("deps");
   const input = await parseJson(c, createLeadSchema);
   const ip = clientIp(c);
+
+  if (!await verifyTurnstile(deps, input.turnstileToken, ip)) {
+    throw unprocessable("The verification check failed. Please try again.");
+  }
 
   const created = await createLead(deps, input, ip);
   return c.json(created, 202);

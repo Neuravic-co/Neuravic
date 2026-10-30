@@ -76,6 +76,8 @@ export async function runMaintenance(deps: Deps): Promise<MaintenanceReport> {
     ))
     .limit(CLEANUP_BATCH_LIMIT));
 
+  await db.delete(schema.leadIntakeLocks).where(lt(schema.leadIntakeLocks.expiresAt, now)).limit(CLEANUP_BATCH_LIMIT);
+
   const limits = affectedRows(await db
     .delete(schema.rateLimits)
     .where(lt(schema.rateLimits.expiresAt, now))

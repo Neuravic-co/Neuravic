@@ -3,5 +3,13 @@
   "compilerOptions": {
     "allowImportingTsExtensions": true
   },
-  "include": ["unit", "integration", "../nfe/lib/csp.ts", "../nfe/lib/validation.ts"]
+  "include": [
+    "unit",
+    "integration",
+    "../nfe/lib/csp.ts",
+    "../nfe/lib/validation.ts",
+    "email",
+    "e2e",
+    "contact-e2e"
+  ]
 }

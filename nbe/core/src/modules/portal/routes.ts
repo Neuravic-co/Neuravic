@@ -298,7 +298,7 @@ portalRoutes.post("/requests/:id/approvals", async (c) => {
         'subject', concat('Your request was ', r.state, ': ', ${oneLine(request.title)}),
         'text', concat('Your request "', ${request.title}, '" is now ', r.state, '.',
           ${input.comment ? `\n\nComment: ${input.comment}` : ""}, ${`\n\n${deps.config.appUrl}/portal`})),
-      'pending', 0, ${now}, null, ${now}
+      'pending', 0, ${now}, null, ${now}, null, null, null, null, null
       from requests r join users u on u.id = r.requested_by
       where r.id = ${request.id} and r.state in ('approved', 'rejected') and row_count() > 0`),
     auditInsert(deps.db, { actorId: actor.user.id, orgId: request.orgId, action: `request.${input.decision}`, targetType: "request", targetId: request.id }, now),

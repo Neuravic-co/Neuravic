@@ -1,7 +1,8 @@
 "use client";
 
 import { ArrowUpRight } from "lucide-react";
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { ContactVerification } from "@/components/contact-verification";
 import { ApiError, api } from "@/lib/api";
 import { validateContact } from "@/lib/validation";
 
@@ -27,6 +28,11 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [sentTo, setSentTo] = useState("");
   const confirmation = useRef<HTMLDivElement>(null);
+  const submitting = useRef(false);
+  const verification = useRef<{ token: string; reset: () => void }>({ token: "", reset: () => {} });
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  const onToken = useCallback((token: string) => { verification.current.token = token; }, []);
+  const onResetReady = useCallback((reset: () => void) => { verification.current.reset = reset; }, []);
 
   // The form collapses on success: bring the confirmation into view and announce it.
   useEffect(() => {
@@ -50,7 +56,7 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (status === "sending") return;
+    if (submitting.current) return;
     const form = new FormData(event.currentTarget);
     const values = {
       firstName: String(form.get("firstName") ?? ""),
@@ -68,21 +74,29 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
       return;
     }
 
+    if (siteKey && !verification.current.token) {
+      setErrors({ form: "Please complete the verification check and try again." });
+      return;
+    }
+    submitting.current = true;
     setErrors({});
     setEmailInstead(null);
     setStatus("sending");
     try {
       const { firstName, lastName, ...details } = parsed.data;
-      await api("/leads", {
+      const receipt = await api<{ id: string; status: string }>("/leads", {
+        signal: AbortSignal.timeout(30_000),
         method: "POST",
         body: {
           ...details,
           // The API stores one full name.
           name: `${firstName} ${lastName}`,
           serviceInterest: services,
+          turnstileToken: verification.current.token || undefined,
           website: String(form.get("website") ?? ""),
         },
       });
+      if (!receipt?.id || receipt.status !== "received") throw new Error("Invalid receipt");
       setSentTo(parsed.data.email);
       setStatus("sent");
     } catch (error) {
@@ -97,6 +111,8 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
         setErrors(next);
       } else if (error instanceof ApiError && error.status === 429) {
         setErrors({ form: "Too many messages from this connection. Please try again in a little while." });
+      } else if (error instanceof ApiError && error.code === "bot_check_unavailable") {
+        setErrors({ form: "Verification is temporarily unavailable. Please try again later." });
       } else if (error instanceof ApiError && error.status === 422) {
         setErrors({ form: "The verification check failed. Please try again." });
       } else {
@@ -104,6 +120,9 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
         const body = `${parsed.data.message}\n\n${parsed.data.firstName} ${parsed.data.lastName}${parsed.data.company ? `, ${parsed.data.company}` : ""}\n${parsed.data.email}`;
         setEmailInstead(`mailto:${fallbackEmail}?subject=${encodeURIComponent("Start a project with Neuravic")}&body=${encodeURIComponent(body)}`);
       }
+    } finally {
+      submitting.current = false;
+      verification.current.reset();
     }
   }
 
@@ -112,7 +131,7 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
       <div className="contact-form contact-form--sent" role="status" tabIndex={-1} ref={confirmation}>
         <p className="contact-form__sent-title">Message received.</p>
         <p>
-          Thank you. We received your enquiry and will reply to <strong>{sentTo}</strong>.
+          Thank you. Your enquiry has been received for review. An acknowledgement is queued for <strong>{sentTo}</strong>.
         </p>
       </div>
     );
@@ -136,6 +155,7 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
       className="contact-form"
       onSubmit={onSubmit}
       onInput={(event) => clearError((event.target as HTMLInputElement).name)}
+      aria-busy={status === "sending"}
       noValidate
     >
       <div className="contact-form__row">
@@ -216,6 +236,8 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
         </span>
       ) : null}
 
+
+      {siteKey ? <ContactVerification siteKey={siteKey} onToken={onToken} onResetReady={onResetReady} /> : null}
 
       <div aria-live="polite">
         {errors.form ? <p className="contact-form__error contact-form__error--form">{errors.form}</p> : null}

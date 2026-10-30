@@ -3,7 +3,7 @@ import { contentSecurityPolicy } from "./lib/csp";
 
 export function proxy(request: NextRequest) {
   const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24))));
-  const csp = contentSecurityPolicy(nonce, process.env.NODE_ENV === "development", process.env.NEXT_PUBLIC_API_BASE_URL);
+  const csp = contentSecurityPolicy(nonce, process.env.NODE_ENV === "development", process.env.NEXT_PUBLIC_API_BASE_URL, Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY));
   const headers = new Headers(request.headers);
   // Overwrite caller-supplied values; the rendering nonce belongs to this request.
   headers.set("x-nonce", nonce);

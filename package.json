@@ -22,7 +22,10 @@
     "security": "node security/scripts/security-check.mjs",
     "test": "npm run test:unit && npm run test:integration",
     "test:unit": "npm run unit -w @neuravic/tests",
-    "test:integration": "npm run integration -w @neuravic/tests"
+    "test:integration": "npm run integration -w @neuravic/tests",
+    "test:email": "npm run email -w @neuravic/tests",
+    "test:browser": "npm run browser -w @neuravic/tests",
+    "test:contact-e2e": "npm run contact-e2e -w @neuravic/tests"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
