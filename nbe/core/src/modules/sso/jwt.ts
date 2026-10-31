@@ -78,7 +78,7 @@ export interface VerifiedJwt {
 }
 
 /**
- * Reference verifier (what DARKAGENT / COOLACCESS_DXB must do): check the
+ * Reference verifier (what DARKAGENT / CONTRACTGUARD / COOLACCESS must do): check the
  * signature against the JWKS, then `iss`, `aud` and `exp`.
  */
 export async function verifyJwt(

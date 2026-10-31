@@ -40,9 +40,17 @@ export const DEFAULT_CONTENT: DefaultContent[] = [
     },
   },
   {
-    kind: "project", slug: "coolaccess-dxb", position: 1,
+    kind: "project", slug: "contractguard", position: 1,
     data: {
-      number: "02", name: "COOLACCESS_DXB", eyebrow: "Access, made effortless.", title: "Access operations, made clear.",
+      number: "02", name: "CONTRACTGUARD", eyebrow: "Contracts, made clear.", title: "Contract risk, made visible.",
+      description: "A review workspace that flags risky clauses, tracks obligations and keeps renewals on schedule.",
+      surface: "ink",
+    },
+  },
+  {
+    kind: "project", slug: "coolaccess", position: 2,
+    data: {
+      number: "03", name: "COOLACCESS", eyebrow: "Access, made effortless.", title: "Access operations, made clear.",
       description: "A unified workflow platform for requests, approvals and access visibility across Dubai operations.",
       surface: "slate",
     },

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowUpRight, Mail, MapPin, ShieldCheck, X } from "lucide-react";
+import { Mail, MapPin, ShieldCheck, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { COOKIE_SETTINGS_EVENT } from "@/components/cookie-notice";
 import { LEGAL_DOCUMENTS, type LegalDocument } from "@/lib/legal-content";
@@ -65,28 +65,16 @@ export function SiteFooter({
             </span>
             <span>AI, software and design services</span>
           </div>
-          <a className="site-footer__cta" href="#contact">
-            Start a project <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.75} />
-          </a>
         </div>
 
-        <div className="site-footer__middle">
-          <nav className="site-footer__col" aria-label="Services">
-            <h2>What we build</h2>
-            {services.map((title) => (
-              <a key={title} href="#services" className="site-footer__strong">
-                {title}
-              </a>
-            ))}
-          </nav>
-          <nav className="site-footer__col site-footer__nav" aria-label="Company">
-            <h2 className="site-footer__h2--blue">Navigation</h2>
-            <a href="#home">Home</a>
-            <a href="#services">Services</a>
-            <a href="#about">About us</a>
-            <a href="#contact">Contact us</a>
-          </nav>
-        </div>
+        <nav className="site-footer__col" aria-label="Services">
+          <h2>What we build</h2>
+          {services.map((title) => (
+            <a key={title} href="#services" className="site-footer__strong">
+              {title}
+            </a>
+          ))}
+        </nav>
 
         <nav className="site-footer__col" aria-label="Legal">
           <h2>Legal &amp; compliance</h2>

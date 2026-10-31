@@ -23,14 +23,15 @@ const PROCESS_ICONS = [Search, PencilRuler, Cpu, Rocket];
 
 const PROJECT_NAMES: Record<string, string> = {
   DARKAGENT: "DarkAgent",
-  COOLACCESS_DXB: "CoolAccess DXB",
+  CONTRACTGUARD: "ContractGuard",
+  COOLACCESS: "CoolAccess",
 };
 
 /** A drawn stand-in for a product screenshot: a network for the first project, access tiles for the second. */
-function WorkVisual({ index }: { index: number }) {
+function WorkVisual({ name }: { name: string }) {
   return (
     <div className="work-card__visual" aria-hidden="true">
-      {index % 2 === 0 ? (
+      {name === "DARKAGENT" ? (
         <svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice">
           <g className="work-lines">
             <path d="M60 150L140 70L220 115L310 50L350 125" />
@@ -41,6 +42,16 @@ function WorkVisual({ index }: { index: number }) {
           <circle className="work-hub" cx="220" cy="115" r="10" />
           <circle cx="310" cy="50" r="6" />
           <circle cx="350" cy="125" r="5" />
+        </svg>
+      ) : name === "CONTRACTGUARD" ? (
+        <svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice">
+          <g className="work-lines">
+            <rect x="130" y="25" width="140" height="150" rx="8" />
+            <path d="M155 60h90M155 85h90M155 110h60M155 135h75" opacity="0.5" />
+          </g>
+          <circle className="work-hub" cx="245" cy="135" r="10" />
+          <circle cx="155" cy="60" r="4" />
+          <circle cx="155" cy="85" r="4" />
         </svg>
       ) : (
         <svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice">
@@ -177,9 +188,9 @@ export default async function Home() {
             </div>
 
             <div className="work__grid">
-              {projects.map((project, index) => (
+              {projects.map((project) => (
                 <article className="work-card" data-reveal key={project.number}>
-                  <WorkVisual index={index} />
+                  <WorkVisual name={project.name} />
                   <div className="work-card__body">
                     <span className="work-card__number">{project.number}</span>
                     <h3>{PROJECT_NAMES[project.name] ?? project.name}</h3>

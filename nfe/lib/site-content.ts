@@ -41,6 +41,24 @@ export interface SiteContent {
   company: Company;
 }
 
+const CONTRACTGUARD: Project = {
+  number: "02",
+  name: "CONTRACTGUARD",
+  eyebrow: "Contracts, made clear.",
+  title: "Contract risk, made visible.",
+  description: "A review workspace that flags risky clauses, tracks obligations and keeps renewals on schedule.",
+  surface: "ink",
+};
+
+/** The work section always shows DarkAgent, ContractGuard and CoolAccess (stored content may predate ContractGuard). */
+function workProjects(stored: Project[]): Project[] {
+  const list = stored.map((project) =>
+    project.name === "COOLACCESS_DXB" ? { ...project, name: "COOLACCESS" } : project,
+  );
+  if (!list.some((project) => project.name === CONTRACTGUARD.name)) list.splice(1, 0, CONTRACTGUARD);
+  return list.map((project, index) => ({ ...project, number: String(index + 1).padStart(2, "0") }));
+}
+
 export const DEFAULT_CONTENT: SiteContent = {
   services: [
     { number: "01", title: "AI Systems & Automation", description: "Inspectable agents, retrieval, document intelligence and computer vision." },
@@ -57,9 +75,10 @@ export const DEFAULT_CONTENT: SiteContent = {
       description: "A bounded multi-agent platform built for human authority, live inspection and reliable execution.",
       surface: "ink",
     },
+    CONTRACTGUARD,
     {
-      number: "02",
-      name: "COOLACCESS_DXB",
+      number: "03",
+      name: "COOLACCESS",
       eyebrow: "Access, made effortless.",
       title: "Access operations, made clear.",
       description: "A unified workflow platform for requests, approvals and access visibility across Dubai operations.",
@@ -124,7 +143,7 @@ export async function getSiteContent(): Promise<SiteContent> {
     const company = isList(data.company) ? (data.company[0] as Partial<Company>) : undefined;
     return {
       services: isList(data.services) ? (data.services as Service[]) : DEFAULT_CONTENT.services,
-      projects: isList(data.projects) ? (data.projects as Project[]) : DEFAULT_CONTENT.projects,
+      projects: isList(data.projects) ? workProjects(data.projects as Project[]) : DEFAULT_CONTENT.projects,
       process: isList(data.process) ? (data.process as ProcessStep[]) : DEFAULT_CONTENT.process,
       team: isList(data.team)
         ? (data.team as ApiTeamMember[]).map((m) => ({ number: m.number, city: m.city, label: teamLabel(m) }))

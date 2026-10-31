@@ -365,40 +365,6 @@ section {
   transform-origin: left;
 }
 
-/* Right side of the header: where we work, then the portal tab. */
-.site-header__aside {
-  display: flex;
-  justify-self: end;
-  align-items: center;
-  gap: clamp(1.1rem, 2vw, 1.75rem);
-}
-
-.site-header__portal {
-  display: inline-flex;
-  min-width: 5.6rem;
-  justify-content: center;
-  padding: 0.68rem 1.15rem;
-  border: 1px solid color-mix(in srgb, var(--blue) 78%, transparent);
-  border-radius: 0.25rem;
-  color: var(--paper);
-  font-size: 0.7rem;
-  letter-spacing: 0.045em;
-  text-transform: uppercase;
-  transition:
-    background-color 240ms var(--ease-out),
-    border-color 240ms var(--ease-out);
-}
-
-.site-header__portal:hover {
-  border-color: var(--blue);
-  background: color-mix(in srgb, var(--blue) 16%, transparent);
-}
-
-.site-header__portal:focus-visible {
-  outline: 2px solid var(--blue-text, var(--blue));
-  outline-offset: 3px;
-}
-
 
 
 .portal-button {
@@ -516,22 +482,6 @@ section {
   color: var(--muted);
   font-size: 0.7rem;
   letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-/* The portal is not one of the four page sections: it gets its own button under the list. */
-.mobile-nav a.mobile-nav__portal {
-  display: flex;
-  gap: 0.75rem;
-  min-height: 3.5rem;
-  align-items: center;
-  justify-content: center;
-  margin-top: 1.75rem;
-  padding: 0 1.5rem;
-  border: 1px solid color-mix(in srgb, var(--blue) 78%, transparent);
-  border-radius: 0.25rem;
-  font-size: 0.9rem;
-  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -1252,9 +1202,7 @@ section {
     gap: 0.9rem;
   }
 
-  .desktop-nav,
-  .portal-button,
-  .site-header__portal {
+  .desktop-nav {
     display: none;
   }
 
@@ -3007,7 +2955,7 @@ section {
 .work__grid {
   display: grid;
   width: 100%;
-  grid-template-columns: repeat(2, minmax(0, 34rem));
+  grid-template-columns: repeat(3, minmax(0, 26rem));
   justify-content: center;
   gap: 1.4rem;
 }
@@ -3596,7 +3544,7 @@ section {
 
 .site-footer__grid {
   display: grid;
-  grid-template-columns: 1.3fr 1.4fr 0.8fr 1.3fr;
+  grid-template-columns: 1.4fr 1.1fr 0.9fr 1.3fr;
   gap: clamp(2rem, 4vw, 3.5rem);
   padding-block: clamp(2.5rem, 6vh, 3.75rem) clamp(2rem, 5vh, 3rem);
 }
@@ -3631,41 +3579,6 @@ section {
   font-size: 0.8rem;
 }
 
-.site-footer__cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-top: 1.25rem;
-  color: var(--accent);
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.site-footer__cta:hover {
-  text-decoration: underline;
-  text-underline-offset: 0.3em;
-}
-
-.site-footer__middle {
-  display: grid;
-  align-content: start;
-  gap: 1.25rem;
-}
-
-.site-footer__nav {
-  padding-top: 1rem;
-  border-top: 1px solid color-mix(in srgb, var(--paper) 10%, transparent);
-}
-
-.site-footer__nav {
-  grid-template-columns: 1fr 1fr;
-  column-gap: 1.5rem;
-}
-
-.site-footer__nav h2 {
-  grid-column: 1 / -1;
-}
-
 .site-footer__col {
   display: grid;
   align-content: start;
@@ -3680,11 +3593,6 @@ section {
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-}
-
-.site-footer__col .site-footer__h2--blue {
-  margin-bottom: 0.35rem;
-  color: var(--blue-text);
 }
 
 .site-footer__col a,
