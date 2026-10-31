@@ -2005,72 +2005,193 @@ section {
 
 
 
-/* Cookie notice */
+/* Cookie notice: a full-width bar along the bottom edge */
 
 .cookie-notice {
   position: fixed;
   z-index: 60;
-  bottom: 1rem;
-  left: 1rem;
-  display: grid;
-  width: min(23rem, calc(100vw - 2rem));
-  gap: 0.6rem;
-  padding: 1.1rem 1.2rem 1.2rem;
-  border: 1px solid color-mix(in srgb, var(--paper) 16%, transparent);
-  border-radius: 0.9rem;
-  background: color-mix(in srgb, var(--slate) 92%, transparent);
-  box-shadow: 0 1.2rem 3rem rgb(0 0 0 / 0.45);
-  backdrop-filter: blur(14px);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 4rem;
+  padding: 1.1rem max(var(--page-gutter), calc((100vw - 82rem) / 2));
+  border-top: 1px solid color-mix(in srgb, var(--paper) 10%, transparent);
+  background: color-mix(in srgb, var(--ink) 97%, transparent);
+  box-shadow: 0 -1rem 3rem rgb(0 0 0 / 0.4);
   color: var(--paper);
-  --muted: color-mix(in srgb, var(--paper) 62%, var(--ink));
   animation: cookie-in 600ms var(--ease-out) 800ms both;
 }
 
+.cookie-notice__copy {
+  max-width: 46rem;
+}
+
 .cookie-notice__title {
-  margin: 0;
-  font-size: 0.72rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 700;
 }
 
 .cookie-notice__text {
   margin: 0;
-  color: color-mix(in srgb, var(--paper) 72%, transparent);
-  font-size: 0.8rem;
+  color: color-mix(in srgb, var(--paper) 78%, transparent);
+  font-size: 0.85rem;
   line-height: 1.55;
 }
 
 .cookie-notice__text a {
   color: var(--paper);
+  font-weight: 500;
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
 
+.cookie-notice__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .cookie-notice__button {
-  justify-self: start;
-  min-height: 2.5rem;
-  padding: 0 1.4rem;
-  border: 1px solid var(--paper);
-  border-radius: 999px;
-  background: var(--paper);
-  color: var(--ink);
+  min-height: 2.75rem;
+  padding: 0 1.1rem;
+  border: 1px solid var(--blue);
+  border-radius: 0.4rem;
+  background: var(--blue);
+  color: #fff;
   font: inherit;
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 220ms var(--ease-out), color 220ms var(--ease-out);
+  transition: background 220ms var(--ease-out), border-color 220ms var(--ease-out);
 }
 
 .cookie-notice__button:hover {
+  background: color-mix(in srgb, var(--blue) 82%, #fff);
+}
+
+.cookie-notice__button--ghost {
+  border-color: color-mix(in srgb, var(--paper) 55%, transparent);
   background: transparent;
   color: var(--paper);
+}
+
+.cookie-notice__button--ghost:hover {
+  border-color: var(--paper);
+  background: color-mix(in srgb, var(--paper) 8%, transparent);
+}
+
+.cookie-notice__button:focus-visible,
+.cookie-settings__close:focus-visible {
+  outline: 2px solid var(--blue-text, var(--blue));
+  outline-offset: 3px;
 }
 
 @keyframes cookie-in {
   from {
     opacity: 0;
     transform: translateY(1rem);
+  }
+}
+
+.cookie-settings {
+  width: min(32rem, calc(100vw - 2rem));
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--paper) 16%, transparent);
+  border-radius: 0.9rem;
+  background: var(--slate);
+  color: var(--paper);
+}
+
+.cookie-settings::backdrop {
+  background: rgb(0 0 0 / 0.6);
+}
+
+.cookie-settings__card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.4rem;
+}
+
+.cookie-settings__card header,
+.cookie-settings__card footer,
+.cookie-settings__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cookie-settings h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.cookie-settings h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.9rem;
+}
+
+.cookie-settings p {
+  margin: 0;
+  color: color-mix(in srgb, var(--paper) 70%, transparent);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.cookie-settings__row {
+  padding: 0.9rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--paper) 12%, transparent);
+  border-radius: 0.6rem;
+}
+
+.cookie-settings__badge {
+  flex: none;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--blue) 30%, transparent);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.cookie-settings__badge--off {
+  background: color-mix(in srgb, var(--paper) 12%, transparent);
+}
+
+.cookie-settings__close {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  background: none;
+  color: var(--paper);
+  cursor: pointer;
+}
+
+.cookie-settings__card footer a {
+  color: var(--paper);
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+@media (max-width: 40rem) {
+  .cookie-notice {
+    gap: 0.9rem;
+    padding-block: 1rem;
+  }
+
+  .cookie-notice__actions,
+  .cookie-notice__button {
+    flex: 1 1 auto;
   }
 }
 
@@ -3464,32 +3585,85 @@ section {
 
 
 
-/* Footer: a classic four-column footer in the base navy, white and blue */
+/* Footer: brand and company card, services and navigation, legal, contact */
 
 .site-footer {
   border-top: 1px solid color-mix(in srgb, var(--paper) 12%, transparent);
   background: var(--ink);
   color: var(--paper);
+  --accent: var(--blue-text);
 }
 
 .site-footer__grid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr 1.2fr;
-  gap: clamp(2rem, 5vw, 4rem);
+  grid-template-columns: 1.3fr 1.4fr 0.8fr 1.3fr;
+  gap: clamp(2rem, 4vw, 3.5rem);
   padding-block: clamp(2.5rem, 6vh, 3.75rem) clamp(2rem, 5vh, 3rem);
 }
 
 .site-footer__brand img {
-  width: 9.5rem;
+  width: 12rem;
   height: auto;
 }
 
 .site-footer__brand p {
-  max-width: 19rem;
   margin: 1.25rem 0 0;
+  color: color-mix(in srgb, var(--paper) 82%, transparent);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.site-footer__card {
+  display: grid;
+  gap: 0.2rem;
+  margin-top: 1.25rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--paper) 14%, transparent);
+  border-radius: 0.6rem;
+  background: color-mix(in srgb, var(--blue) 8%, var(--ink));
   color: var(--muted);
-  font-size: 0.85rem;
-  line-height: 1.7;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.site-footer__card strong {
+  color: var(--accent);
+  font-size: 0.8rem;
+}
+
+.site-footer__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1.25rem;
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.site-footer__cta:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+
+.site-footer__middle {
+  display: grid;
+  align-content: start;
+  gap: 1.25rem;
+}
+
+.site-footer__nav {
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--paper) 10%, transparent);
+}
+
+.site-footer__nav {
+  grid-template-columns: 1fr 1fr;
+  column-gap: 1.5rem;
+}
+
+.site-footer__nav h2 {
+  grid-column: 1 / -1;
 }
 
 .site-footer__col {
@@ -3501,26 +3675,38 @@ section {
 
 .site-footer__col h2 {
   margin: 0 0 0.75rem;
-  color: var(--blue-text);
-  font-size: 0.7rem;
-  font-weight: 400;
-  letter-spacing: 0.2em;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.site-footer__col .site-footer__h2--blue {
+  margin-bottom: 0.35rem;
+  color: var(--blue-text);
 }
 
 .site-footer__col a,
 .site-footer__col button,
 .site-footer__col span {
-  padding: 0.3rem 0;
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.25rem 0;
   border: 0;
   background: none;
-  color: color-mix(in srgb, var(--paper) 74%, transparent);
+  color: color-mix(in srgb, var(--paper) 82%, transparent);
   font: inherit;
-  font-size: 0.75rem;
-  letter-spacing: 0.1em;
+  font-size: 0.8rem;
   overflow-wrap: anywhere;
   text-align: left;
-  text-transform: uppercase;
+}
+
+.site-footer__col .site-footer__strong {
+  color: var(--paper);
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .site-footer__col a,
@@ -3535,8 +3721,24 @@ section {
 .site-footer__col button:focus-visible {
   color: var(--paper);
   text-decoration: underline;
-  text-decoration-color: var(--blue);
-  text-underline-offset: 0.35em;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 0.3em;
+}
+
+.site-footer__col .site-footer__settings {
+  margin-top: 0.5rem;
+  color: var(--accent);
+}
+
+.site-footer__contact a,
+.site-footer__contact span {
+  font-size: 0.85rem;
+}
+
+.site-footer__contact svg {
+  flex: none;
+  margin-top: 0.2rem;
+  color: var(--accent);
 }
 
 .site-footer__bar {
@@ -3544,30 +3746,48 @@ section {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.25rem 1.5rem;
+  gap: 0.5rem 1.5rem;
   padding-block: 1.25rem 1.5rem;
   border-top: 1px solid color-mix(in srgb, var(--paper) 9%, transparent);
   color: var(--muted);
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: 0.8rem;
 }
 
 .site-footer__bar p {
   margin: 0;
 }
 
-.site-footer__bar a {
+.site-footer__bar ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-footer__bar li + li::before {
+  content: "•";
+  margin-inline: 1rem;
+  color: var(--blue-text);
+}
+
+.site-footer__bar button {
   padding-block: 0.4rem;
+  border: 0;
+  background: none;
   color: color-mix(in srgb, var(--paper) 74%, transparent);
+  font: inherit;
+  cursor: pointer;
   transition: color 220ms var(--ease-out);
 }
 
-.site-footer__bar a:hover {
+.site-footer__bar button:hover,
+.site-footer__bar button:focus-visible {
   color: var(--paper);
 }
 
-@media (max-width: 58rem) {
+@media (max-width: 70rem) {
   .site-footer__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 2rem 1.5rem;
@@ -3576,6 +3796,73 @@ section {
 
   .site-footer__brand {
     grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 40rem) {
+  .site-footer__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Section dots: a rail on the right edge, one dot per section */
+
+.section-dots {
+  position: fixed;
+  z-index: 40;
+  top: 50%;
+  right: clamp(0.6rem, 1.4vw, 1.4rem);
+  display: grid;
+  gap: 0.2rem;
+  transform: translateY(-50%);
+}
+
+.section-dots {
+  transition: opacity 250ms var(--ease-out);
+}
+
+.section-dots.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.section-dots a {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.section-dots i {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--blue) 40%, #98a2b3);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.25);
+  transition: height 300ms var(--ease-out), width 300ms var(--ease-out), background 300ms var(--ease-out);
+}
+
+.section-dots a:hover i,
+.section-dots a:focus-visible i {
+  background: var(--paper);
+}
+
+.section-dots .is-active i {
+  width: 0.55rem;
+  height: 1.6rem;
+  background: var(--blue);
+}
+
+.section-dots a:focus-visible {
+  outline: 2px solid var(--blue-text, var(--blue));
+  outline-offset: 1px;
+  border-radius: 0.4rem;
+}
+
+@media (max-width: 58rem), (max-height: 30rem) {
+  .section-dots {
+    display: none;
   }
 }
 
@@ -3591,4 +3878,15 @@ section {
 .contact-form__fallback:focus-visible {
   outline: 2px solid var(--blue-text, var(--blue));
   outline-offset: 3px;
+}
+
+/* With the dot rail showing, the native scrollbar is hidden; scrolling still works as normal. */
+@media (min-width: 58.01rem) and (min-height: 30rem) {
+  html.has-section-dots {
+    scrollbar-width: none;
+  }
+
+  html.has-section-dots::-webkit-scrollbar {
+    display: none;
+  }
 }

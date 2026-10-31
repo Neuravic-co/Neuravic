@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { X } from "lucide-react";
+import { ArrowUpRight, Mail, MapPin, ShieldCheck, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { COOKIE_SETTINGS_EVENT } from "@/components/cookie-notice";
 import { LEGAL_DOCUMENTS, type LegalDocument } from "@/lib/legal-content";
 
 const TAB_LABELS: Record<string, string> = {
@@ -12,13 +13,15 @@ const TAB_LABELS: Record<string, string> = {
   license: "Licence",
 };
 
-/** A classic footer: brand, company links, legal links (popups), contact details and the copyright line; each tab opens its document in a popup. */
+/** A rich footer: brand and company card, service and navigation links, legal links (popups), contact details and the copyright line; each tab opens its document in a popup. */
 export function SiteFooter({
   contactEmail,
   locations,
+  services,
 }: {
   contactEmail: string;
   locations: { city: string; country: string }[];
+  services: string[];
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -51,21 +54,42 @@ export function SiteFooter({
             unoptimized
           />
           <p>
-            Intelligent systems for complex operations. AI, software, design and deployment
-            from one team.
+            A multidisciplinary technology team in Dubai and Cairo, bridging AI, software, product
+            design and deployment into systems people can actually run.
           </p>
+          <div className="site-footer__card">
+            <strong>Company details</strong>
+            <span>Entity: Neuravic</span>
+            <span>
+              Offices: {locations.map((location) => `${location.city}, ${location.country}`).join(" · ")}
+            </span>
+            <span>AI, software and design services</span>
+          </div>
+          <a className="site-footer__cta" href="#contact">
+            Start a project <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.75} />
+          </a>
         </div>
 
-        <nav className="site-footer__col" aria-label="Company">
-          <h2>Company</h2>
-          <a href="#home">Home</a>
-          <a href="#services">Services</a>
-          <a href="#about">About us</a>
-          <a href="#contact">Contact us</a>
-        </nav>
+        <div className="site-footer__middle">
+          <nav className="site-footer__col" aria-label="Services">
+            <h2>What we build</h2>
+            {services.map((title) => (
+              <a key={title} href="#services" className="site-footer__strong">
+                {title}
+              </a>
+            ))}
+          </nav>
+          <nav className="site-footer__col site-footer__nav" aria-label="Company">
+            <h2 className="site-footer__h2--blue">Navigation</h2>
+            <a href="#home">Home</a>
+            <a href="#services">Services</a>
+            <a href="#about">About us</a>
+            <a href="#contact">Contact us</a>
+          </nav>
+        </div>
 
         <nav className="site-footer__col" aria-label="Legal">
-          <h2>Legal</h2>
+          <h2>Legal &amp; compliance</h2>
           {LEGAL_DOCUMENTS.map((doc) => (
             <button
               type="button"
@@ -76,22 +100,52 @@ export function SiteFooter({
               {TAB_LABELS[doc.slug] ?? doc.title}
             </button>
           ))}
+          <button
+            type="button"
+            className="site-footer__settings"
+            aria-haspopup="dialog"
+            onClick={() => window.dispatchEvent(new Event(COOKIE_SETTINGS_EVENT))}
+          >
+            <ShieldCheck aria-hidden="true" size={14} strokeWidth={1.75} />
+            Cookie Settings
+          </button>
         </nav>
 
-        <div className="site-footer__col">
-          <h2>Contact</h2>
-          <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
+        <div className="site-footer__col site-footer__contact">
+          <h2>Offices &amp; contact</h2>
           {locations.map((location) => (
             <span key={location.city}>
-              {location.city} · {location.country}
+              <MapPin aria-hidden="true" size={16} strokeWidth={1.5} />
+              {location.city}, {location.country}
             </span>
           ))}
+          <a href={`mailto:${contactEmail}`}>
+            <Mail aria-hidden="true" size={16} strokeWidth={1.5} />
+            {contactEmail}
+          </a>
         </div>
       </div>
 
       <div className="page-shell site-footer__bar">
         <p>© 2026 Neuravic. All rights reserved.</p>
-        <a href="#home">Back to top ↑</a>
+        <ul>
+          {LEGAL_DOCUMENTS.map((doc) => (
+            <li key={doc.slug}>
+              <button type="button" aria-haspopup="dialog" onClick={() => open(doc)}>
+                {doc.title}
+              </button>
+            </li>
+          ))}
+          <li>
+            <button
+              type="button"
+              aria-haspopup="dialog"
+              onClick={() => window.dispatchEvent(new Event(COOKIE_SETTINGS_EVENT))}
+            >
+              Cookie Settings
+            </button>
+          </li>
+        </ul>
       </div>
 
       <dialog
