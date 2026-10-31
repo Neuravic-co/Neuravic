@@ -17,6 +17,12 @@ export function SectionDots() {
   const [active, setActive] = useState<string>(SECTIONS[0].id);
   const [overFooter, setOverFooter] = useState(false);
 
+  // The dots replace the browser scrollbar on this page (see .has-section-dots in globals.css).
+  useEffect(() => {
+    document.documentElement.classList.add("has-section-dots");
+    return () => document.documentElement.classList.remove("has-section-dots");
+  }, []);
+
   useEffect(() => {
     const nodes = SECTIONS.map(({ id }) => document.getElementById(id)).filter(
       (node): node is HTMLElement => node !== null,

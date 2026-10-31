@@ -3879,3 +3879,14 @@ section {
   outline: 2px solid var(--blue-text, var(--blue));
   outline-offset: 3px;
 }
+
+/* With the dot rail showing, the native scrollbar is hidden; scrolling still works as normal. */
+@media (min-width: 58.01rem) and (min-height: 30rem) {
+  html.has-section-dots {
+    scrollbar-width: none;
+  }
+
+  html.has-section-dots::-webkit-scrollbar {
+    display: none;
+  }
+}
