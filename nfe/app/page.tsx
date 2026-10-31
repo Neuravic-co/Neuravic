@@ -330,6 +330,7 @@ export default async function Home() {
           contactEmail={company.contactEmail}
           locations={company.locations}
           services={services.map((service) => service.title)}
+          projects={projects.map((project) => PROJECT_NAMES[project.name] ?? project.name)}
         />
       </main>
     </>

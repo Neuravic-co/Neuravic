@@ -13,15 +13,17 @@ const TAB_LABELS: Record<string, string> = {
   license: "Licence",
 };
 
-/** A rich footer: brand and company card, service and navigation links, legal links (popups), contact details and the copyright line; each tab opens its document in a popup. */
+/** A rich footer: brand and company card, service and project links, legal links (popups), contact details and the copyright line; each tab opens its document in a popup. */
 export function SiteFooter({
   contactEmail,
   locations,
   services,
+  projects,
 }: {
   contactEmail: string;
   locations: { city: string; country: string }[];
   services: string[];
+  projects: string[];
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -60,9 +62,6 @@ export function SiteFooter({
           <div className="site-footer__card">
             <strong>Company details</strong>
             <span>Entity: Neuravic</span>
-            <span>
-              Offices: {locations.map((location) => `${location.city}, ${location.country}`).join(" · ")}
-            </span>
             <span>AI, software and design services</span>
           </div>
         </div>
@@ -72,6 +71,15 @@ export function SiteFooter({
           {services.map((title) => (
             <a key={title} href="#services" className="site-footer__strong">
               {title}
+            </a>
+          ))}
+        </nav>
+
+        <nav className="site-footer__col" aria-label="Our work">
+          <h2>Our work</h2>
+          {projects.map((name) => (
+            <a key={name} href="#work" className="site-footer__strong">
+              {name}
             </a>
           ))}
         </nav>
@@ -88,15 +96,6 @@ export function SiteFooter({
               {TAB_LABELS[doc.slug] ?? doc.title}
             </button>
           ))}
-          <button
-            type="button"
-            className="site-footer__settings"
-            aria-haspopup="dialog"
-            onClick={() => window.dispatchEvent(new Event(COOKIE_SETTINGS_EVENT))}
-          >
-            <ShieldCheck aria-hidden="true" size={14} strokeWidth={1.75} />
-            Cookie Settings
-          </button>
         </nav>
 
         <div className="site-footer__col site-footer__contact">
@@ -116,24 +115,15 @@ export function SiteFooter({
 
       <div className="page-shell site-footer__bar">
         <p>© 2026 Neuravic. All rights reserved.</p>
-        <ul>
-          {LEGAL_DOCUMENTS.map((doc) => (
-            <li key={doc.slug}>
-              <button type="button" aria-haspopup="dialog" onClick={() => open(doc)}>
-                {doc.title}
-              </button>
-            </li>
-          ))}
-          <li>
-            <button
-              type="button"
-              aria-haspopup="dialog"
-              onClick={() => window.dispatchEvent(new Event(COOKIE_SETTINGS_EVENT))}
-            >
-              Cookie Settings
-            </button>
-          </li>
-        </ul>
+        <button
+          type="button"
+          className="site-footer__settings"
+          aria-haspopup="dialog"
+          onClick={() => window.dispatchEvent(new Event(COOKIE_SETTINGS_EVENT))}
+        >
+          <ShieldCheck aria-hidden="true" size={14} strokeWidth={1.75} />
+          Cookie Settings
+        </button>
       </div>
 
       <dialog
