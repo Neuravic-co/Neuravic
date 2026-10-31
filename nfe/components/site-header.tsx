@@ -10,8 +10,6 @@ const navItems = [
   { label: "Contact us", href: "#contact", section: "contact" },
 ] as const;
 
-const portalHref = "/portal";
-
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -75,11 +73,7 @@ export function SiteHeader() {
             ))}
           </nav>
 
-          <div className="site-header__aside">
-            <a className="site-header__portal" href={portalHref}>
-              Portal
-            </a>
-          </div>
+          <span aria-hidden="true" />
 
           <button
             className={`menu-toggle${menuOpen ? " is-open" : ""}`}
@@ -108,9 +102,6 @@ export function SiteHeader() {
                 </a>
               ))}
             </nav>
-            <a className="mobile-nav__portal" href={portalHref} onClick={closeMenu}>
-              Portal
-            </a>
           </div>
           <p>Dubai / Cairo</p>
         </div>
