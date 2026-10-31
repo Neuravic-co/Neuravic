@@ -68,6 +68,16 @@ Compose starts MySQL (creating both accounts on first start), runs the migration
    The chart runs the migration job first (a Helm hook), then rolls out the deployments. Set `networkPolicy.databaseCidr` to your database's address range and `networkPolicy.ingressNamespace` to your ingress controller's namespace.
 4. Check: `kubectl -n neuravic get pods`, then `https://<host>/api/v1/health` shows every service as `ok`.
 
+### Website on Vercel
+
+The frontend (`nfe/`) can be hosted on Vercel on its own. In the Vercel project set **Root Directory** to `nfe`;
+`nfe/vercel.json` sets the framework and build. Set these environment variables:
+
+- `API_ORIGIN`: HTTPS origin of the API (the backend is not hosted on Vercel). Without it the pages render, but
+  portal and form requests return 503.
+- `API_PROXY_SECRET`: must equal `PROXY_SECRET` on the backend.
+- Leave `NEXT_PUBLIC_API_BASE_URL` unset so the browser uses the built-in same-origin proxy.
+
 ### Release
 
 1. Merge only when the checks pass: frontend lint, typecheck and build; backend typecheck and `npm run smoke`; `helm lint`; the security check; CodeQL.
