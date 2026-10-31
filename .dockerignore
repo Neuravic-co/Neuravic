@@ -17,3 +17,7 @@ nfe/.next
 docs
 test
 deployment
+
+# Local verification downloads, disposable databases and package caches.
+tmp
+.npm-cache

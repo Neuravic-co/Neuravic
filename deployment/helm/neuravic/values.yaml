@@ -14,7 +14,9 @@ imagePullSecrets: []
 #   PRIVACY_HASH_SECRET    32+ random characters
 #   MFA_ENCRYPTION_KEY     64 hex characters
 #   PROXY_SECRET           32+ random characters (the website uses the same value)
-# Optional keys: RESEND_API_KEY, SMTP_URL, SLACK_WEBHOOK_URL, SSO_PRIVATE_JWK, MALWARE_SCANNER_URL
+# Contact intake requires TURNSTILE_SECRET in staging/production.
+# Build the frontend image with its matching NEXT_PUBLIC_TURNSTILE_SITE_KEY.
+# Optional keys: TURNSTILE_SECRET, RESEND_API_KEY, SMTP_URL, SLACK_WEBHOOK_URL, SSO_PRIVATE_JWK, MALWARE_SCANNER_URL
 existingSecret: neuravic-secrets
 
 config:

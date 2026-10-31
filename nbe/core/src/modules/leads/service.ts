@@ -1,16 +1,16 @@
 import { and, eq, gte } from "drizzle-orm";
 import { runBatch, schema } from "../../db";
 import type { Deps } from "../../deps";
-import { sha256Hex } from "../../lib/crypto";
+import { hmacHex, sha256Hex } from "../../lib/crypto";
 import { isDatabaseGuard } from "../../lib/errors";
 import { ulid } from "../../lib/ids";
 import { auditInsert, hashIdentifier } from "../audit/audit";
-import { drainOutbox, emailJob, slackJob } from "../notifications/outbox";
+import { emailJob, slackJob } from "../notifications/outbox";
 import type { CreateLeadInput } from "./schemas";
 import { SPAM_THRESHOLD, spamScore } from "./spam";
 
 const DEDUPE_WINDOW_MS = 24 * 3_600_000;
-const oneLine = (value: string) => value.replace(/[\r\n]+/g, " ").trim();
+const oneLine = (value: string) => value.replace(/[\x00-\x1f\x7f]+/g, " ").trim();
 
 export interface CreatedLead {
   id: string;
@@ -48,7 +48,12 @@ export async function createLead(deps: Deps, input: CreateLeadInput, ip: string)
   const isSpam = score >= SPAM_THRESHOLD;
   const id = ulid(now);
 
+  // The old trigger alone cannot serialize concurrent MySQL inserts: both transactions can see no lead.
+  // Lock one digest row before the trigger reads, so the loser sees the committed winner and rolls back.
+  const intakeKey = await hmacHex(config.privacyHashSecret, "lead-intake", JSON.stringify([input.email, messageHash]));
   const writes: unknown[] = [
+    db.insert(schema.leadIntakeLocks).values({ key: intakeKey, expiresAt: now + DEDUPE_WINDOW_MS })
+      .onDuplicateKeyUpdate({ set: { expiresAt: now + DEDUPE_WINDOW_MS } }),
     db.insert(schema.leads).values({
       id,
       name: input.name,
@@ -76,6 +81,7 @@ export async function createLead(deps: Deps, input: CreateLeadInput, ip: string)
         to: config.notifyTo,
         subject: `New enquiry: ${oneLine(input.name)}`,
         text: [
+          `Enquiry: ${id}`,
           `Name: ${oneLine(input.name)}`,
           `Email: ${input.email}`,
           `Company: ${oneLine(input.company ?? "-")}`,
@@ -84,12 +90,12 @@ export async function createLead(deps: Deps, input: CreateLeadInput, ip: string)
           "",
           input.message,
         ].join("\n"),
-      }),
+      }, undefined, { leadId: id, notificationKind: "team" }),
       emailJob(db, now, {
         to: input.email,
         subject: "We received your message - Neuravic",
         text: `Hi ${oneLine(input.name)},\n\nThanks for reaching out. We received your message and will reply shortly.\n\nNeuravic\nDubai / Cairo`,
-      }),
+      }, undefined, { leadId: id, notificationKind: "acknowledgement" }),
       slackJob(db, now, `New enquiry from ${oneLine(input.name)} (${input.email})`),
     );
   }
@@ -105,6 +111,6 @@ export async function createLead(deps: Deps, input: CreateLeadInput, ip: string)
     }
     throw error;
   }
-  if (!isSpam) await deps.runInBackground(() => drainOutbox(deps));
+  // The independent worker polls durable jobs. A notification outage cannot turn this committed receipt into an HTTP failure.
   return { id, status: "received" };
 }

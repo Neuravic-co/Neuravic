@@ -36,4 +36,4 @@ The website has no sign-in for now: `/portal` shows an "under construction" page
 
 ## Documentation
 
-[01 Architecture](docs/01-Architecture.md) · [02 Getting started](docs/02-Getting-Started.md) · [03 API reference](docs/03-API.md) · [04 Security](docs/04-Security.md) · [05 Operations](docs/05-Operations.md)
+[01 Architecture](docs/01-Architecture.md) · [02 Getting started](docs/02-Getting-Started.md) · [03 API reference](docs/03-API.md) · [04 Security](docs/04-Security.md) · [05 Operations](docs/05-Operations.md) ? [06 Contact email](docs/06-Contact-Email.md)
