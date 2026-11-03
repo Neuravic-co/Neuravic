@@ -28,7 +28,7 @@
     "test:contact-e2e": "npm run contact-e2e -w @neuravic/tests"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.6.6",
     "typescript": "^5.9.0"
   },
   "dependencies": {
