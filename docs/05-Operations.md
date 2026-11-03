@@ -72,6 +72,12 @@ Compose starts MySQL (creating both accounts on first start), runs the migration
 
 Both halves can run on Vercel as two projects from this repository. Vercel does not host MySQL: use a managed **MySQL 8 service that supports triggers** (the schema in `database/migrations/001_init.sql` relies on triggers for its integrity and security guards). Services built on Vitess, such as PlanetScale, do not support triggers and cannot run this schema as it is.
 
+**Database on Aiven for MySQL**
+1. In the Aiven console create a **MySQL** service (the free plan is enough to start; pick a region near the Vercel function region, `iad1`/US East).
+2. Open the service, copy the **Service URI** (`mysql://avnadmin:...@host:port/defaultdb?ssl-mode=REQUIRED`) and download the **CA certificate**.
+3. In Vercel, set `DATABASE_URL` to the Service URI with the query string removed (`mysql://avnadmin:...@host:port/defaultdb`), and `DATABASE_CA_CERT` to the certificate text. Keep both as sensitive variables.
+4. Create a separate application user in the console if you prefer not to run the app as `avnadmin`; it needs SELECT, INSERT, UPDATE and DELETE. Migrations create triggers, so run them with a user that may create triggers (`MIGRATE_DATABASE_URL`).
+
 **Website** (`nfe/`): set **Root Directory** to `nfe` (`nfe/vercel.json` sets the build).
 
 | Variable | Value |
@@ -88,7 +94,8 @@ Both halves can run on Vercel as two projects from this repository. Vercel does 
 |---|---|
 | `APP_ENV` | `production` |
 | `APP_URL`, `ALLOWED_ORIGINS` | The exact HTTPS website origin |
-| `DATABASE_URL` | Application database user (add `?ssl=...` if the provider requires TLS) |
+| `DATABASE_URL` | Application database user |
+| `DATABASE_CA_CERT` | The provider's CA certificate (PEM) when it requires TLS with its own CA, as Aiven does; a single line with `\n` for line breaks is accepted |
 | `MIGRATE_DATABASE_URL` | Optional separate migration user; used only during the build |
 | `PROXY_SECRET` | Shared with the website's `API_PROXY_SECRET` |
 | `PRIVACY_HASH_SECRET`, `MFA_ENCRYPTION_KEY` | Independent random keys (`node security/scripts/generate-secrets.mjs`) |
