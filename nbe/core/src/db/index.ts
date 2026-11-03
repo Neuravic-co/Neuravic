@@ -1,6 +1,7 @@
 import { drizzle, type MySql2Database } from "drizzle-orm/mysql2";
 import type { Pool } from "mysql2/promise";
 import { createPool } from "mysql2/promise";
+import { databaseSsl } from "./ssl";
 import * as schema from "./schema";
 
 export { schema };
@@ -24,6 +25,7 @@ export function createMysqlDatabase(url: string): Database {
     flags: ["+FOUND_ROWS"],
     charset: "utf8mb4",
     timezone: "Z",
+    ssl: databaseSsl(),
   });
   const db = drizzle(pool, { schema, mode: "default" });
   poolOf.set(db, pool);

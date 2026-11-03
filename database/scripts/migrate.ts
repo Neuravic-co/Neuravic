@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createConnection } from "mysql2/promise";
+import { databaseSsl } from "../../nbe/core/src/db/ssl";
 
 /** Applies sql/*.sql in order, once each. Forward only: add a new numbered file for every schema change. */
 const url = process.env.MIGRATE_DATABASE_URL ?? process.env.DATABASE_URL;
@@ -10,7 +11,7 @@ if (!url) throw new Error("DATABASE_URL is not set (see docs/02-Getting-Started.
 const dir = join(dirname(fileURLToPath(import.meta.url)), "..", "migrations");
 const files = readdirSync(dir).filter((name) => name.endsWith(".sql")).sort();
 
-const connection = await createConnection({ uri: url, multipleStatements: false });
+const connection = await createConnection({ uri: url, multipleStatements: false, ssl: databaseSsl() });
 try {
   await connection.query(
     "CREATE TABLE IF NOT EXISTS schema_migrations (name varchar(200) NOT NULL PRIMARY KEY, applied_at bigint NOT NULL) ENGINE=InnoDB",
