@@ -7,6 +7,8 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const root = import.meta.dirname;
+// Hobby plans only allow daily cron jobs: set CRON_SCHEDULE (for example "0 4 * * *") there. Pro plans can keep every minute.
+const cronSchedule = process.env.CRON_SCHEDULE || "* * * * *";
 const repo = join(root, "..", "..", "..");
 const output = join(root, ".vercel", "output");
 const func = join(output, "functions", "index.func");
@@ -43,8 +45,8 @@ writeFileSync(
   JSON.stringify({
     version: 3,
     routes: [{ src: "/(.*)", dest: "/index" }],
-    // Sends queued email every minute (needs a Vercel plan that allows per-minute crons) and runs maintenance every fifth.
-    crons: [{ path: "/internal/cron", schedule: "* * * * *" }],
+    // Retries queued email and runs maintenance. New enquiries are sent right after their response, so this is the backstop.
+    crons: [{ path: "/internal/cron", schedule: cronSchedule }],
   }),
 );
 console.log("Built .vercel/output");

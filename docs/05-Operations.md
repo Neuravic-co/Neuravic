@@ -82,7 +82,7 @@ Both halves can run on Vercel as two projects from this repository. Vercel does 
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Public Turnstile key; set it before the build |
 | `NEXT_PUBLIC_API_BASE_URL` | Leave unset so the browser uses the same-origin `/api/v1` proxy |
 
-**Backend** (`nbe/services/vercel/`): set **Root Directory** to `nbe/services/vercel`. `vercel.json` there installs from the repository root and runs `build.mjs`, which bundles every API service into one function and, on production builds, applies `database/migrations` first. It also registers a cron job that calls `/internal/cron` every minute to send queued email (and every fifth minute run the maintenance rules). A per-minute cron needs a Vercel plan that allows it.
+**Backend** (`nbe/services/vercel/`): set **Root Directory** to `nbe/services/vercel`. `vercel.json` there installs from the repository root and runs `build.mjs`, which bundles every API service into one function and, on production builds, applies `database/migrations` first. It also registers a cron job that calls `/internal/cron` to retry queued email and run the maintenance rules. A new enquiry's email is sent right after its response, so the cron is the retry backstop. The schedule is every minute by default, which needs a Vercel Pro plan; on a Hobby plan set `CRON_SCHEDULE` (for example `0 4 * * *`, daily) on the backend project, or the build is rejected. With a daily schedule, failed sends and retries wait up to a day.
 
 | Variable | Value |
 |---|---|
@@ -93,6 +93,7 @@ Both halves can run on Vercel as two projects from this repository. Vercel does 
 | `PROXY_SECRET` | Shared with the website's `API_PROXY_SECRET` |
 | `PRIVACY_HASH_SECRET`, `MFA_ENCRYPTION_KEY` | Independent random keys (`node security/scripts/generate-secrets.mjs`) |
 | `CRON_SECRET` | Random value; Vercel sends it to the cron endpoint as a bearer token |
+| `CRON_SCHEDULE` | Optional cron expression; default every minute (Pro). Hobby: `0 4 * * *` |
 | `EMAIL_FROM`, `NOTIFY_TO`, `RESEND_API_KEY` | See [06 Contact email](06-Contact-Email.md) |
 | `TURNSTILE_SECRET` | Private Turnstile key matching the website's site key |
 | `BOOTSTRAP_ADMIN_EMAIL` | First staff account |
