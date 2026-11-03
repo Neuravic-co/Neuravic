@@ -21,6 +21,11 @@ function sameSecret(a: string, b: string) {
   return x.length === y.length && x.length > 0 && timingSafeEqual(x, y);
 }
 
+/** A committed enquiry queues email jobs; with no worker polling, the host sends them as soon as the response is out. */
+export function shouldDrainAfter(request: Request, response: Response): boolean {
+  return request.method === "POST" && new URL(request.url).pathname.replace(/\/+$/, "") === "/api/v1/leads" && response.status === 202;
+}
+
 export interface BackendOptions {
   /** Keeps the function alive until the task ends (Vercel's waitUntil). */
   waitUntil: (promise: Promise<unknown>) => void;
@@ -90,7 +95,12 @@ export function createBackend(options: BackendOptions) {
     if (owner === "worker") return problem(404, "not_found", "Not found");
     try {
       if (pathname === "/internal/cron") return await cron(request);
-      return await get().app.fetch(withVisitorAddress(request), env as never);
+      const { app, deps } = get();
+      const response = await app.fetch(withVisitorAddress(request), env as never);
+      if (shouldDrainAfter(request, response)) {
+        options.waitUntil(drainOutbox(deps).catch(() => jsonLogger.error("background_task_failed")));
+      }
+      return response;
     } catch (error) {
       jsonLogger.error("backend_unavailable", { error: error instanceof Error ? error.message : "unknown" });
       return problem(503, "service_unavailable", "This service is not available right now", { "retry-after": "5" });

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createBackend } from "../../nbe/services/vercel/src/app";
+import { createBackend, shouldDrainAfter } from "../../nbe/services/vercel/src/app";
 
 const CRON = "c".repeat(40);
 
@@ -34,5 +34,14 @@ describe("one-process backend", () => {
     const api = await call(backend(), "/api/v1/health");
     assert.equal(api.status, 503);
     assert.equal(api.headers.get("retry-after"), "5");
+  });
+
+  it("sends queued email right after an accepted enquiry, and only then", () => {
+    const post = (path: string, method = "POST") => new Request(`https://api.example.com${path}`, { method });
+    assert.equal(shouldDrainAfter(post("/api/v1/leads"), new Response(null, { status: 202 })), true);
+    assert.equal(shouldDrainAfter(post("/api/v1/leads/"), new Response(null, { status: 202 })), true);
+    assert.equal(shouldDrainAfter(post("/api/v1/leads"), new Response(null, { status: 422 })), false);
+    assert.equal(shouldDrainAfter(post("/api/v1/leads", "GET"), new Response(null, { status: 202 })), false);
+    assert.equal(shouldDrainAfter(post("/api/v1/auth/login"), new Response(null, { status: 202 })), false);
   });
 });
