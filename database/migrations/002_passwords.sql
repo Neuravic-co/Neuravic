@@ -4,4 +4,4 @@ CREATE TABLE user_passwords (
   password_hash varchar(255) NOT NULL,
   updated_at bigint NOT NULL,
   CONSTRAINT fk_user_passwords_user FOREIGN KEY (user_id) REFERENCES users (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+)

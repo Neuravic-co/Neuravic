@@ -47,7 +47,7 @@ describe("JSON body validation", () => {
 
 describe("database error recognition", () => {
   it("finds a duplicate-key error even when wrapped", () => {
-    const inner = new Error("Duplicate entry 'x' for key 'users_email_unique'");
+    const inner = Object.assign(new Error('duplicate key value violates unique constraint "users_email_unique"'), { code: "23505" });
     assert.equal(isUniqueViolation(new Error("Failed query", { cause: inner })), true);
     assert.equal(isUniqueViolation(new Error("something else")), false);
   });

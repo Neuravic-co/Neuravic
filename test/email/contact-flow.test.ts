@@ -17,7 +17,7 @@ const mail = { to: "visitor@example.com", subject: "Test enquiry", text: "Privat
 const rows = () => h.db.select().from(schema.outbox);
 const enqueue = () => emailJob(h.db, h.deps.now(), mail);
 
-describe("contact API, real MySQL and mocked Resend", () => {
+describe("contact API, real Postgres and mocked Resend", () => {
   it("saves the enquiry and both pending notifications before returning a received receipt", async () => {
     const response = await h.post(enquiry);
     assert.equal(response.status, 202);

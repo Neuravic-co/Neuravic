@@ -14,7 +14,7 @@
     "test"
   ],
   "scripts": {
-    "db:local": "npm run mysql:local -w @neuravic/database",
+    "db:local": "npm run postgres:local -w @neuravic/database",
     "db:migrate": "npm run migrate -w @neuravic/database",
     "start": "node deployment/scripts/local.mjs",
     "smoke": "tsx --env-file-if-exists=.env nbe/scripts/smoke.mts",

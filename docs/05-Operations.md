@@ -8,7 +8,7 @@ Production deployment, secret rotation, restores and repository protection chang
 ## 1. What runs where
 
 ```
-Users --HTTPS--> ingress --> frontend --private network--> gateway --> auth, portal, leads, admin, worker, file server --> MySQL 8
+Users --HTTPS--> ingress --> frontend --private network--> gateway --> auth, portal, leads, admin, worker, file server --> Postgres
                                                                                                   file server --> uploads volume
                                                                                                   worker      --> Resend (email)
                                                                                                   file server --> malware scanner (private service)
@@ -16,7 +16,7 @@ Users --HTTPS--> ingress --> frontend --private network--> gateway --> auth, por
 
 | Part | Image / command | Replicas | Needs |
 |---|---|---|---|
-| Database | managed MySQL 8+ | provider | A database and the two accounts (`neuravic_app`, `neuravic_migrator`), created with `database/scripts/create-access.mjs` |
+| Database | managed PostgreSQL 14+ | provider | A database and the two roles (`neuravic_app`, `neuravic_migrator`), created with `database/scripts/create-access.mjs` |
 | Migration | backend image with `ENTRY=database/scripts/migrate.ts` | one job per release | `MIGRATE_DATABASE_URL` |
 | gateway, auth, portal, leads | backend image, `ENTRY=nbe/services/<name>/src/index.ts` | 2 or more | The shared settings in [02 Getting started](02-Getting-Started.md) |
 | admin | backend image | 1 or more | Same |
@@ -46,7 +46,7 @@ cp deployment/.env.example deployment/.env          # fill in the values; genera
 docker compose -f deployment/docker-compose.yml --env-file deployment/.env up --build -d
 ```
 
-Compose starts MySQL (creating both accounts on first start), runs the migration, starts the services and the gateway, then the website on port 5173. Put HTTPS in front of port 5173.
+Compose starts Postgres (creating both roles on first start), runs the migration, starts the services and the gateway, then the website on port 5173. Put HTTPS in front of port 5173.
 
 ### Kubernetes with Helm
 
@@ -57,7 +57,7 @@ Compose starts MySQL (creating both accounts on first start), runs the migration
    kubectl -n neuravic create secret generic neuravic-secrets --from-literal=DATABASE_URL=... (see the example file for every key)
    ```
 
-2. For a test cluster only, `kubectl apply -f deployment/k8s/mysql.yaml` adds a single MySQL. In production use a managed MySQL and put its address in `DATABASE_URL`.
+2. For a test cluster only, `kubectl apply -f deployment/k8s/postgres.yaml` adds a single Postgres. In production use a managed Postgres and put its address in `DATABASE_URL`.
 3. Write a small values file (kept out of Git) with your images, host and settings, then install:
 
    ```bash
@@ -70,13 +70,15 @@ Compose starts MySQL (creating both accounts on first start), runs the migration
 
 ### Hosting on Vercel
 
-Both halves can run on Vercel as two projects from this repository. Vercel does not host MySQL: use a managed **MySQL 8 service that supports triggers** (the schema in `database/migrations/001_init.sql` relies on triggers for its integrity and security guards). Services built on Vitess, such as PlanetScale, do not support triggers and cannot run this schema as it is.
+Both halves can run on Vercel as two projects from this repository. Vercel does not host a database: use a managed **PostgreSQL** service. The schema in `database/migrations/001_init.sql` relies on triggers and functions for its integrity and security guards, which every standard Postgres host supports (Neon, Supabase, Railway, RDS).
 
-**Database on Aiven for MySQL**
-1. In the Aiven console create a **MySQL** service (the free plan is enough to start; pick a region near the Vercel function region, `iad1`/US East).
-2. Open the service, copy the **Service URI** (`mysql://avnadmin:...@host:port/defaultdb?ssl-mode=REQUIRED`) and download the **CA certificate**.
-3. In Vercel, set `DATABASE_URL` to the Service URI with the query string removed (`mysql://avnadmin:...@host:port/defaultdb`), and `DATABASE_CA_CERT` to the certificate text. Keep both as sensitive variables.
-4. Create a separate application user in the console if you prefer not to run the app as `avnadmin`; it needs SELECT, INSERT, UPDATE and DELETE. Migrations create triggers, so run them with a user that may create triggers (`MIGRATE_DATABASE_URL`).
+**Database on Neon (recommended: one click from Vercel)**
+1. In the Vercel dashboard open the **backend project** (`neuravic-api`) → **Storage** → **Create Database** → **Neon**, choose the free plan and a region near the function region (`iad1`/US East), and connect it to the project. Vercel adds the connection variables for you.
+2. Make sure the backend project has `DATABASE_URL` set to the **pooled** connection string (the host contains `-pooler`; it ends with `?sslmode=require`). Serverless functions open many short connections, and the pooled string is built for that.
+3. Set `MIGRATE_DATABASE_URL` to the **direct** (unpooled) connection string. The build applies `database/migrations` with it on every production deploy. Neon's default role owns the database, so the single role is fine; you do not need `neuravic_app` and `neuravic_migrator` unless you want the extra separation.
+4. Redeploy the backend. Check `https://<backend>/api/v1/health`: it should answer `ok`.
+
+Any other Postgres works the same way: put its connection string (with `?sslmode=require` when the host needs TLS) in `DATABASE_URL`. Set `DATABASE_CA_CERT` only if the host signs with its own certificate authority.
 
 **Website** (`nfe/`): set **Root Directory** to `nfe` (`nfe/vercel.json` sets the build).
 
@@ -94,9 +96,9 @@ Both halves can run on Vercel as two projects from this repository. Vercel does 
 |---|---|
 | `APP_ENV` | `production` |
 | `APP_URL`, `ALLOWED_ORIGINS` | The exact HTTPS website origin |
-| `DATABASE_URL` | Application database user |
-| `DATABASE_CA_CERT` | The provider's CA certificate (PEM) when it requires TLS with its own CA, as Aiven does; a single line with `\n` for line breaks is accepted |
-| `MIGRATE_DATABASE_URL` | Optional separate migration user; used only during the build |
+| `DATABASE_URL` | Pooled Postgres connection string (Neon: the `-pooler` host, `?sslmode=require`) |
+| `DATABASE_CA_CERT` | Only if your host signs with its own certificate authority (PEM); a single line with `\n` for line breaks is accepted. Not needed on Neon |
+| `MIGRATE_DATABASE_URL` | Direct (unpooled) connection string; used only during the build |
 | `PROXY_SECRET` | Shared with the website's `API_PROXY_SECRET` |
 | `PRIVACY_HASH_SECRET`, `MFA_ENCRYPTION_KEY` | Independent random keys (`node security/scripts/generate-secrets.mjs`) |
 | `CRON_SECRET` | Random value; Vercel sends it to the cron endpoint as a bearer token |
@@ -151,7 +153,7 @@ Suggested alerts (calibrate in staging and name a responder for each):
 
 ## 5. Backups
 
-- **Database:** encrypted automated backups plus point-in-time recovery if your MySQL service offers it. Decide the retention, the recovery point objective (how much data you can lose) and the recovery time objective (how long you can be down), and name who may approve a restore.
+- **Database:** encrypted automated backups plus point-in-time recovery if your Postgres service offers it. Decide the retention, the recovery point objective (how much data you can lose) and the recovery time objective (how long you can be down), and name who may approve a restore.
 - **Uploads:** back up the `UPLOAD_DIR` volume together with the database. The `files` table and the files on disk must match.
 - **Keys:** store `MFA_ENCRYPTION_KEY`, `PRIVACY_HASH_SECRET`, `SSO_PRIVATE_JWK` and `PROXY_SECRET` in a secret manager with a recovery copy kept separately from the database backups. Without `MFA_ENCRYPTION_KEY` staff must be re-enrolled.
 - **Audit log:** export `audit_log` to a separate store that administrators cannot edit.
@@ -216,7 +218,7 @@ People can ask for a copy of their data or for deletion in the portal. A staff a
 
 | Symptom | Check |
 |---|---|
-| Users see "sign-in is not available" | `/api/v1/health` through the website (it shows which service is down); `API_ORIGIN` and `API_PROXY_SECRET` on the website; `kubectl -n neuravic get pods`; MySQL reachability; the network policies |
+| Users see "sign-in is not available" | `/api/v1/health` through the website (it shows which service is down); `API_ORIGIN` and `API_PROXY_SECRET` on the website; `kubectl -n neuravic get pods`; Postgres reachability; the network policies |
 | A service answers 503 "service_unavailable" | The gateway cannot reach it: check its pod, its `<NAME>_URL` setting and the network policy |
 | Every visitor is rate limited together | `PROXY_SECRET` and `API_PROXY_SECRET` differ or are missing, or `TRUST_PROXY_HEADERS` is off behind the ingress; the visitor address is only trusted when signed |
 | No emails arrive | `RESEND_API_KEY`, the sending domain, and the outbox: `pending` rows mean delivery is failing, `dead` rows mean retries ran out |

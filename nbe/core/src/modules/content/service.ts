@@ -13,7 +13,7 @@ export async function ensureSeeded(db: Db, now: number): Promise<void> {
   await db
     .insert(schema.contentItems)
     .values(DEFAULT_CONTENT.map((item) => ({ id: ulid(now), ...item, published: true, updatedAt: now })))
-    .onDuplicateKeyUpdate({ set: { id: sql`${schema.contentItems.id}` } });
+    .onConflictDoNothing();
 }
 
 export const toItem = (row: Row) => ({ slug: row.slug, position: row.position, published: row.published, ...row.data });

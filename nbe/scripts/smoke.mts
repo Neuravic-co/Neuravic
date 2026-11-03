@@ -69,8 +69,9 @@ const bob = `bob+${run}@example.com`;
 
 // Development convenience: the sign-up and enquiry limits are per address, so clear them between runs.
 if (process.env.DATABASE_URL && process.env.APP_ENV === "development") {
-  const { createConnection } = await import("mysql2/promise");
-  const connection = await createConnection({ uri: process.env.DATABASE_URL });
+  const { default: pg } = await import("pg");
+  const connection = new pg.Client({ connectionString: process.env.DATABASE_URL });
+  await connection.connect();
   await connection.query("DELETE FROM rate_limits");
   await connection.end();
 }
@@ -85,7 +86,7 @@ console.log("Public API");
   const version = await anon.call("GET", "/version");
   check("version answers", version.status === 200, version.data);
   const content = await anon.call("GET", "/content");
-  check("site content comes from MySQL", content.status === 200 && content.data.services?.length > 0, Object.keys(content.data));
+  check("site content comes from the database", content.status === 200 && content.data.services?.length > 0, Object.keys(content.data));
   const section = await anon.call("GET", "/content/services");
   check("one content section", section.status === 200 && section.data.items?.length > 0);
   const me = await anon.call("GET", "/me");

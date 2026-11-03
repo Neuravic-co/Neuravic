@@ -79,7 +79,7 @@ export async function setupMfa(deps: Deps, actor: Actor) {
   await deps.db.delete(schema.staffMfa).where(and(eq(schema.staffMfa.userId, actor.user.id), isNull(schema.staffMfa.enabledAt), lt(schema.staffMfa.createdAt, now - MFA_PENDING_TTL_MS)));
   const pendingBinding = JSON.stringify([actor.user.id, actor.sessionId]);
   const encryptedSecret = await seal(deps, pendingBinding, newTotpSecret());
-  await deps.db.insert(schema.staffMfa).values({ userId: actor.user.id, encryptedSecret, createdAt: now, recoveryHashes: [] }).onDuplicateKeyUpdate({ set: { userId: sql`${schema.staffMfa.userId}` } });
+  await deps.db.insert(schema.staffMfa).values({ userId: actor.user.id, encryptedSecret, createdAt: now, recoveryHashes: [] }).onConflictDoNothing();
   const record = await mfaRecord(deps, actor.user.id);
   if (!record || record.enabledAt !== null) throw new AppError(409, "mfa_already_enabled", "Staff verification is already set up");
   // The same pending secret is returned on retries; an active factor is never overwritten.

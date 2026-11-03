@@ -36,9 +36,10 @@ export function auditInsert(db: Db, entry: AuditEntry, now: number, ipHash: stri
   };
   if (!condition) return db.insert(schema.auditLog).values(row);
   // All values remain bound parameters. This can follow a conditional mutation in the same batch.
-  return db.insert(schema.auditLog).select(sql`select ${row.id}, ${row.at}, ${row.actorId}, ${row.orgId},
-    ${row.action}, ${row.targetType}, ${row.targetId}, ${row.ipHash}, ${row.meta ? JSON.stringify(row.meta) : null}
-    from dual where ${condition}`);
+  // Postgres types a bare parameter in a SELECT list as text, so each one is cast to its column's type.
+  return db.insert(schema.auditLog).select(sql`select ${row.id}::varchar, ${row.at}::bigint, ${row.actorId}::varchar, ${row.orgId}::varchar,
+    ${row.action}::varchar, ${row.targetType}::varchar, ${row.targetId}::varchar, ${row.ipHash}::varchar, ${row.meta ? JSON.stringify(row.meta) : null}::text
+    where ${condition}`);
 }
 
 export async function writeAudit(db: Db, entry: AuditEntry, now: number, privacySecret?: string): Promise<void> {

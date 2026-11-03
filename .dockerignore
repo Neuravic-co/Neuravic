@@ -11,7 +11,7 @@
 **/.next
 **/dist
 **/*.log
-database/.mysql
+database/.postgres
 .data
 nfe/.next
 docs

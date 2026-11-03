@@ -1,8 +1,8 @@
 ﻿import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { createConnection } from "mysql2/promise";
-import { createMysqlDatabase, schema } from "../../nbe/core/src/db";
+import pg from "pg";
+import { createDatabase, schema } from "../../nbe/core/src/db";
 import { loadConfig } from "../../nbe/core/src/config";
 import { createApp } from "../../nbe/core/src/app";
 import type { Deps } from "../../nbe/core/src/deps";
@@ -14,22 +14,23 @@ import { leadsRoutes } from "../../nbe/core/src/modules/leads/routes";
 /** Destructive fixtures are allowed ONLY in this explicitly named, loopback-only disposable database. */
 export async function emailHarness() {
   const raw = process.env.TEST_DATABASE_URL;
-  if (!raw) throw new Error("MySQL verification blocked: set TEST_DATABASE_URL to a disposable local neuravic_contact_test database. Never use production.");
+  if (!raw) throw new Error("Postgres verification blocked: set TEST_DATABASE_URL to a disposable local neuravic_contact_test database. Never use production.");
   const url = new URL(raw);
-  assert.ok(["127.0.0.1", "localhost", "[::1]"].includes(url.hostname) && url.pathname === "/neuravic_contact_test" && url.protocol === "mysql:", "Only the disposable local neuravic_contact_test database is permitted");
-  const connection = await createConnection(raw);
+  assert.ok(["127.0.0.1", "localhost", "[::1]"].includes(url.hostname) && url.pathname === "/neuravic_contact_test" && ["postgres:", "postgresql:"].includes(url.protocol), "Only the disposable local neuravic_contact_test database is permitted");
+  const connection = new pg.Client({ connectionString: raw });
+  await connection.connect();
   try {
     await connection.query("CREATE TABLE IF NOT EXISTS schema_migrations (name varchar(200) PRIMARY KEY, applied_at bigint NOT NULL)");
-    const [rows] = await connection.query("SELECT name FROM schema_migrations");
-    const applied = new Set((rows as { name: string }[]).map(r => r.name));
+    const { rows } = await connection.query<{ name: string }>("SELECT name FROM schema_migrations");
+    const applied = new Set(rows.map(r => r.name));
     const dir = fileURLToPath(new URL("../../database/migrations/", import.meta.url));
     for (const file of readdirSync(dir).filter(f => f.endsWith(".sql")).sort()) {
       if (applied.has(file)) continue;
       for (const statement of readFileSync(`${dir}/${file}`, "utf8").split(/^-- @@\s*$/m).map(s => s.trim()).filter(Boolean)) await connection.query(statement);
-      await connection.query("INSERT INTO schema_migrations VALUES (?, ?)", [file, Date.now()]);
+      await connection.query("INSERT INTO schema_migrations VALUES ($1, $2)", [file, Date.now()]);
     }
   } finally { await connection.end(); }
-  const { db, pool } = createMysqlDatabase(raw);
+  const { db, pool } = createDatabase(raw);
   let clock = Date.now();
   const logs: unknown[] = [];
   const requests: { key: string; body: any }[] = [];

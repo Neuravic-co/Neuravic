@@ -1,8 +1,8 @@
-import { bigint, boolean, customType, index, int, mysqlTable, primaryKey, text, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
+import { bigint, boolean, customType, index, integer, pgTable, primaryKey, text, uniqueIndex, varchar } from "drizzle-orm/pg-core";
 
 /**
- * MySQL schema. The tables, triggers and the partial-index replacement are created by sql/001_init.sql,
- * which is what actually runs; the indexes below document it and keep the types in sync.
+ * PostgreSQL schema. The tables, triggers and indexes are created by database/migrations/*.sql,
+ * which is what actually runs; the definitions below document it and keep the types in sync.
  * All timestamps are UTC epoch milliseconds. All ids are ULIDs (or sha256 hex for sessions and tokens).
  */
 
@@ -21,12 +21,12 @@ const epoch = (name: string) => bigint(name, { mode: "number" });
 /** JSON kept in a text column, so equality comparisons behave like plain strings. */
 const jsonText = <T>() =>
   customType<{ data: T; driverData: string }>({
-    dataType: () => "mediumtext",
+    dataType: () => "text",
     toDriver: (value) => JSON.stringify(value),
     fromDriver: (value) => JSON.parse(value) as T,
   });
 
-export const users = mysqlTable(
+export const users = pgTable(
   "users",
   {
     id: id("id").primaryKey(),
@@ -40,7 +40,7 @@ export const users = mysqlTable(
   (t) => [uniqueIndex("users_email_unique").on(t.email)],
 );
 
-export const orgs = mysqlTable(
+export const orgs = pgTable(
   "orgs",
   {
     id: id("id").primaryKey(),
@@ -51,7 +51,7 @@ export const orgs = mysqlTable(
   (t) => [uniqueIndex("orgs_slug_unique").on(t.slug)],
 );
 
-export const memberships = mysqlTable(
+export const memberships = pgTable(
   "memberships",
   {
     userId: id("user_id").notNull().references(() => users.id),
@@ -62,7 +62,7 @@ export const memberships = mysqlTable(
   (t) => [primaryKey({ columns: [t.userId, t.orgId] }), index("memberships_org").on(t.orgId), index("memberships_org_page").on(t.orgId, t.createdAt, t.userId)],
 );
 
-export const sessions = mysqlTable(
+export const sessions = pgTable(
   "sessions",
   {
     /** sha256 of the cookie token. The raw token is never stored. */
@@ -79,7 +79,7 @@ export const sessions = mysqlTable(
 );
 
 /** Staff factors are encrypted separately from the database; recovery codes are one-way hashes. */
-export const staffMfa = mysqlTable("staff_mfa", {
+export const staffMfa = pgTable("staff_mfa", {
   userId: id("user_id").primaryKey().references(() => users.id),
   encryptedSecret: varchar("encrypted_secret", { length: 512 }).notNull(),
   enabledAt: epoch("enabled_at"),
@@ -89,7 +89,7 @@ export const staffMfa = mysqlTable("staff_mfa", {
 });
 
 /** Request tracking only. Fulfillment must follow the approved identity/retention review. */
-export const privacyRequests = mysqlTable(
+export const privacyRequests = pgTable(
   "privacy_requests",
   {
     id: id("id").primaryKey(),
@@ -104,7 +104,7 @@ export const privacyRequests = mysqlTable(
   (t) => [index("privacy_requests_user").on(t.userId, t.createdAt, t.id), index("privacy_requests_created").on(t.createdAt, t.id)],
 );
 
-export const authTokens = mysqlTable(
+export const authTokens = pgTable(
   "auth_tokens",
   {
     /** sha256 of the emailed token. */
@@ -120,7 +120,7 @@ export const authTokens = mysqlTable(
   (t) => [index("auth_tokens_email").on(t.email), index("auth_tokens_expires").on(t.expiresAt)],
 );
 
-export const leads = mysqlTable(
+export const leads = pgTable(
   "leads",
   {
     id: id("id").primaryKey(),
@@ -133,7 +133,7 @@ export const leads = mysqlTable(
     budgetBand: varchar("budget_band", { length: 100 }),
     source: varchar("source", { length: 100 }).notNull().default("website"),
     status: varchar("status", { length: 16, enum: LEAD_STATUSES }).notNull().default("new"),
-    spamScore: int("spam_score").notNull().default(0),
+    spamScore: integer("spam_score").notNull().default(0),
     consentAt: epoch("consent_at").notNull(),
     ipHash: varchar("ip_hash", { length: 64 }),
     createdAt: epoch("created_at").notNull(),
@@ -146,7 +146,7 @@ export const leads = mysqlTable(
   ],
 );
 
-export const leadNotes = mysqlTable(
+export const leadNotes = pgTable(
   "lead_notes",
   {
     id: id("id").primaryKey(),
@@ -158,7 +158,7 @@ export const leadNotes = mysqlTable(
   (t) => [index("lead_notes_lead").on(t.leadId)],
 );
 
-export const projects = mysqlTable(
+export const projects = pgTable(
   "projects",
   {
     id: id("id").primaryKey(),
@@ -172,7 +172,7 @@ export const projects = mysqlTable(
   (t) => [index("projects_org").on(t.orgId, t.createdAt, t.id)],
 );
 
-export const requests = mysqlTable(
+export const requests = pgTable(
   "requests",
   {
     id: id("id").primaryKey(),
@@ -182,7 +182,7 @@ export const requests = mysqlTable(
     title: varchar("title", { length: 255 }).notNull(),
     body: text("body").notNull(),
     state: varchar("state", { length: 16, enum: REQUEST_STATES }).notNull().default("open"),
-    requiredApprovals: int("required_approvals").notNull().default(1),
+    requiredApprovals: integer("required_approvals").notNull().default(1),
     requestedBy: id("requested_by").notNull().references(() => users.id),
     createdAt: epoch("created_at").notNull(),
     updatedAt: epoch("updated_at").notNull(),
@@ -194,7 +194,7 @@ export const requests = mysqlTable(
   ],
 );
 
-export const approvals = mysqlTable(
+export const approvals = pgTable(
   "approvals",
   {
     id: id("id").primaryKey(),
@@ -207,7 +207,7 @@ export const approvals = mysqlTable(
   (t) => [uniqueIndex("approvals_unique").on(t.requestId, t.approverId)],
 );
 
-export const comments = mysqlTable(
+export const comments = pgTable(
   "comments",
   {
     id: id("id").primaryKey(),
@@ -219,7 +219,7 @@ export const comments = mysqlTable(
   (t) => [index("comments_request").on(t.requestId, t.createdAt), index("comments_request_page").on(t.requestId, t.createdAt, t.id)],
 );
 
-export const files = mysqlTable(
+export const files = pgTable(
   "files",
   {
     id: id("id").primaryKey(),
@@ -227,11 +227,11 @@ export const files = mysqlTable(
     requestId: id("request_id").notNull().references(() => requests.id),
     storageKey: varchar("storage_key", { length: 255 }).notNull(),
     name: varchar("name", { length: 255 }).notNull(),
-    size: int("size").notNull(),
+    size: integer("size").notNull(),
     mime: varchar("mime", { length: 150 }).notNull(),
     sha256: varchar("sha256", { length: 64 }).notNull(),
     scanState: varchar("scan_state", { length: 16, enum: ["pending", "clean", "infected"] }).notNull().default("pending"),
-    scanAttempts: int("scan_attempts").notNull().default(0),
+    scanAttempts: integer("scan_attempts").notNull().default(0),
     nextScanAt: epoch("next_scan_at").notNull().default(0),
     uploadedBy: id("uploaded_by").notNull().references(() => users.id),
     createdAt: epoch("created_at").notNull(),
@@ -239,13 +239,13 @@ export const files = mysqlTable(
   (t) => [index("files_request").on(t.requestId, t.createdAt), index("files_scan_due").on(t.scanState, t.nextScanAt)],
 );
 
-export const contentItems = mysqlTable(
+export const contentItems = pgTable(
   "content_items",
   {
     id: id("id").primaryKey(),
     kind: varchar("kind", { length: 16, enum: CONTENT_KINDS }).notNull(),
     slug: varchar("slug", { length: 120 }).notNull(),
-    position: int("position").notNull().default(0),
+    position: integer("position").notNull().default(0),
     data: jsonText<Record<string, unknown>>()("data").notNull(),
     published: boolean("published").notNull().default(true),
     updatedAt: epoch("updated_at").notNull(),
@@ -253,20 +253,20 @@ export const contentItems = mysqlTable(
   (t) => [uniqueIndex("content_kind_slug").on(t.kind, t.slug)],
 );
 
-/** Serializes identical contact intake across MySQL transactions. Contains only a keyed digest. */
-export const leadIntakeLocks = mysqlTable("lead_intake_locks", {
+/** Serializes identical contact intake across concurrent transactions. Contains only a keyed digest. */
+export const leadIntakeLocks = pgTable("lead_intake_locks", {
   key: varchar("key", { length: 64 }).primaryKey(),
   expiresAt: epoch("expires_at").notNull(),
 }, (t) => [index("lead_intake_locks_expiry").on(t.expiresAt)]);
 
-export const outbox = mysqlTable(
+export const outbox = pgTable(
   "outbox",
   {
     id: id("id").primaryKey(),
     topic: varchar("topic", { length: 16, enum: ["email", "slack"] }).notNull(),
     payload: jsonText<Record<string, unknown>>()("payload").notNull(),
     state: varchar("state", { length: 16, enum: OUTBOX_STATES }).notNull().default("pending"),
-    attempts: int("attempts").notNull().default(0),
+    attempts: integer("attempts").notNull().default(0),
     nextAttemptAt: epoch("next_attempt_at").notNull(),
     lastError: varchar("last_error", { length: 255 }),
     createdAt: epoch("created_at").notNull(),
@@ -279,7 +279,7 @@ export const outbox = mysqlTable(
   (t) => [index("outbox_due").on(t.state, t.nextAttemptAt), index("outbox_lead").on(t.leadId)],
 );
 
-export const auditLog = mysqlTable(
+export const auditLog = pgTable(
   "audit_log",
   {
     id: id("id").primaryKey(),
@@ -296,17 +296,17 @@ export const auditLog = mysqlTable(
 );
 
 /** Fixed-window counters for rate limiting. One row per key and window; old rows are removed by maintenance. */
-export const rateLimits = mysqlTable(
+export const rateLimits = pgTable(
   "rate_limits",
   {
     key: varchar("key", { length: 255 }).primaryKey(),
-    count: int("count").notNull(),
+    count: integer("count").notNull(),
     expiresAt: epoch("expires_at").notNull(),
   },
   (t) => [index("rate_limits_expires").on(t.expiresAt)],
 );
 
-export const userPasswords = mysqlTable("user_passwords", {
+export const userPasswords = pgTable("user_passwords", {
   userId: id("user_id").primaryKey().references(() => users.id),
   /** scrypt$N$r$p$salt$hash (base64url). Never returned by any endpoint. */
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),

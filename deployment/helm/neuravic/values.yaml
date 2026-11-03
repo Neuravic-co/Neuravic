@@ -9,8 +9,8 @@ image:
 imagePullSecrets: []
 
 # A Secret in the same namespace with these keys:
-#   DATABASE_URL           mysql://neuravic_app:<password>@<host>:3306/neuravic
-#   MIGRATE_DATABASE_URL   mysql://neuravic_migrator:<password>@<host>:3306/neuravic
+#   DATABASE_URL           postgres://neuravic_app:<password>@<host>:5432/neuravic
+#   MIGRATE_DATABASE_URL   postgres://neuravic_migrator:<password>@<host>:5432/neuravic
 #   PRIVACY_HASH_SECRET    32+ random characters
 #   MFA_ENCRYPTION_KEY     64 hex characters
 #   PROXY_SECRET           32+ random characters (the website uses the same value)
@@ -70,12 +70,12 @@ autoscaling:
   maxReplicas: 6
   targetCPUUtilizationPercentage: 70
 
-# Only the ingress may reach the website; only the gateway and website reach the services; only services reach MySQL.
+# Only the ingress may reach the website; only the gateway and website reach the services; only services reach Postgres.
 networkPolicy:
   enabled: true
   # Namespace label of your ingress controller.
   ingressNamespace: ingress-nginx
-  # CIDR of the MySQL server the services connect to (the whole range is allowed on port 3306).
+  # CIDR of the Postgres server the services connect to (the whole range is allowed on port 5432).
   databaseCidr: 10.0.0.0/8
 
 # Run migrations before every install or upgrade.

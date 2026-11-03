@@ -59,7 +59,10 @@ contentAdminRoutes.put("/:segment/:slug", async (c) => {
     deps.db
       .insert(schema.contentItems)
       .values({ id: ulid(now), kind, slug, position: input.position, data, published: input.published, updatedAt: now })
-      .onDuplicateKeyUpdate({ set: { position: input.position, data, published: input.published, updatedAt: now } }),
+      .onConflictDoUpdate({
+        target: [schema.contentItems.kind, schema.contentItems.slug],
+        set: { position: input.position, data, published: input.published, updatedAt: now },
+      }),
     auditInsert(deps.db, { actorId: actor.user.id, action: "content.upserted", targetType: kind, targetId: slug }, now),
   ]);
   return c.json({ kind, slug, position: input.position, published: input.published, ...data });

@@ -12,8 +12,8 @@ const values = {
   PRIVACY_HASH_SECRET: hex(32),
   // AES-256 key for staff MFA seeds: exactly 64 hexadecimal characters. Losing it locks staff out of MFA.
   MFA_ENCRYPTION_KEY: hex(32),
-  // MySQL accounts (see database/scripts/create-access.mjs). Use a different value for each.
-  MYSQL_ROOT_PASSWORD: hex(24),
+  // Postgres administrator and the two roles (see database/scripts/create-access.mjs). Use a different value for each.
+  POSTGRES_PASSWORD: hex(24),
   APP_DB_PASSWORD: hex(24),
   MIGRATE_DB_PASSWORD: hex(24),
 };

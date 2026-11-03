@@ -48,12 +48,12 @@ export async function createLead(deps: Deps, input: CreateLeadInput, ip: string)
   const isSpam = score >= SPAM_THRESHOLD;
   const id = ulid(now);
 
-  // The old trigger alone cannot serialize concurrent MySQL inserts: both transactions can see no lead.
+  // The trigger alone cannot serialize concurrent inserts: both transactions can see no lead.
   // Lock one digest row before the trigger reads, so the loser sees the committed winner and rolls back.
   const intakeKey = await hmacHex(config.privacyHashSecret, "lead-intake", JSON.stringify([input.email, messageHash]));
   const writes: unknown[] = [
     db.insert(schema.leadIntakeLocks).values({ key: intakeKey, expiresAt: now + DEDUPE_WINDOW_MS })
-      .onDuplicateKeyUpdate({ set: { expiresAt: now + DEDUPE_WINDOW_MS } }),
+      .onConflictDoUpdate({ target: schema.leadIntakeLocks.key, set: { expiresAt: now + DEDUPE_WINDOW_MS } }),
     db.insert(schema.leads).values({
       id,
       name: input.name,

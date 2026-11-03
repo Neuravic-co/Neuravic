@@ -1,5 +1,6 @@
-import { and, eq, inArray, lt, or } from "drizzle-orm";
-import { affectedRows, runBatch, schema } from "../../db";
+import { and, eq, inArray, lt, or, type SQL } from "drizzle-orm";
+import type { PgColumn, PgTable } from "drizzle-orm/pg-core";
+import { affectedRows, runBatch, schema, type Db } from "../../db";
 import type { Deps } from "../../deps";
 import { drainOutbox } from "../notifications/outbox";
 import { scanPendingFiles } from "../files/scanner";
@@ -15,6 +16,11 @@ export const RETENTION = {
   deadOutboxMs: 90 * DAY,
   usedTokensMs: DAY,
 };
+
+/** Deletes at most CLEANUP_BATCH_LIMIT matching rows. Postgres has no DELETE ... LIMIT, so the rows are picked by key first. */
+function deleteBounded(db: Db, table: PgTable, key: PgColumn, where: SQL | undefined) {
+  return db.delete(table).where(inArray(key, db.select({ key }).from(table).where(where).limit(CLEANUP_BATCH_LIMIT)));
+}
 
 export interface MaintenanceReport {
   emailsSent: number;
@@ -37,16 +43,11 @@ export async function runMaintenance(deps: Deps): Promise<MaintenanceReport> {
   const { sent } = await drainOutbox(deps);
   await scanPendingFiles(deps);
 
-  // MySQL can delete a bounded batch directly (DELETE ... LIMIT); the rows are chosen by their index.
-  const sessions = affectedRows(await db
-    .delete(schema.sessions)
-    .where(or(lt(schema.sessions.expiresAt, now), lt(schema.sessions.absoluteExpiresAt, now)))
-    .limit(CLEANUP_BATCH_LIMIT));
+  const sessions = affectedRows(await deleteBounded(db, schema.sessions, schema.sessions.id,
+    or(lt(schema.sessions.expiresAt, now), lt(schema.sessions.absoluteExpiresAt, now))));
 
-  const tokens = affectedRows(await db
-    .delete(schema.authTokens)
-    .where(lt(schema.authTokens.expiresAt, now - RETENTION.usedTokensMs))
-    .limit(CLEANUP_BATCH_LIMIT));
+  const tokens = affectedRows(await deleteBounded(db, schema.authTokens, schema.authTokens.id,
+    lt(schema.authTokens.expiresAt, now - RETENTION.usedTokensMs)));
 
   const staleLead = or(
     and(eq(schema.leads.status, "spam"), lt(schema.leads.createdAt, now - RETENTION.spamLeadsMs)),
@@ -68,20 +69,14 @@ export async function runMaintenance(deps: Deps): Promise<MaintenanceReport> {
     leadsRemoved += removed?.affectedRows ?? 0;
   }
 
-  const outbox = affectedRows(await db
-    .delete(schema.outbox)
-    .where(or(
-      and(eq(schema.outbox.state, "sent"), lt(schema.outbox.createdAt, now - RETENTION.sentOutboxMs)),
-      and(eq(schema.outbox.state, "dead"), lt(schema.outbox.createdAt, now - RETENTION.deadOutboxMs)),
-    ))
-    .limit(CLEANUP_BATCH_LIMIT));
+  const outbox = affectedRows(await deleteBounded(db, schema.outbox, schema.outbox.id, or(
+    and(eq(schema.outbox.state, "sent"), lt(schema.outbox.createdAt, now - RETENTION.sentOutboxMs)),
+    and(eq(schema.outbox.state, "dead"), lt(schema.outbox.createdAt, now - RETENTION.deadOutboxMs)),
+  )));
 
-  await db.delete(schema.leadIntakeLocks).where(lt(schema.leadIntakeLocks.expiresAt, now)).limit(CLEANUP_BATCH_LIMIT);
+  await deleteBounded(db, schema.leadIntakeLocks, schema.leadIntakeLocks.key, lt(schema.leadIntakeLocks.expiresAt, now));
 
-  const limits = affectedRows(await db
-    .delete(schema.rateLimits)
-    .where(lt(schema.rateLimits.expiresAt, now))
-    .limit(CLEANUP_BATCH_LIMIT));
+  const limits = affectedRows(await deleteBounded(db, schema.rateLimits, schema.rateLimits.key, lt(schema.rateLimits.expiresAt, now)));
 
   const report = {
     emailsSent: sent,

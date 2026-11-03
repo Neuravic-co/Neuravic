@@ -2,7 +2,7 @@
 //   npm run db:local && npm run db:migrate && npm start      (once, in another terminal)
 //   npm run test:integration
 // Nothing here changes production data: it refuses to run unless APP_ENV is development.
-import { createConnection } from "mysql2/promise";
+import pg from "pg";
 import { before } from "node:test";
 
 export const BASE = process.env.API_URL ?? "http://127.0.0.1:8787";
@@ -57,7 +57,8 @@ export function requireBackend() {
 /** Sign-up, login and enquiry limits are per visitor address; clear them so repeated runs do not trip them (development only). */
 export async function clearRateLimits() {
   if (process.env.DATABASE_URL && process.env.APP_ENV === "development") {
-    const connection = await createConnection({ uri: process.env.DATABASE_URL });
+    const connection = new pg.Client({ connectionString: process.env.DATABASE_URL });
+    await connection.connect();
     await connection.query("DELETE FROM rate_limits");
     await connection.end();
   }

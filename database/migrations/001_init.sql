@@ -1,6 +1,13 @@
--- Neuravic MySQL schema (MySQL 8+). Statements are separated by lines that read "-- @@" (run by scripts/migrate.ts).
--- Text is compared byte for byte (utf8mb4_bin), like the SQLite database this was ported from.
+-- Neuravic PostgreSQL schema (PostgreSQL 14+; works on Neon, Supabase and any other host).
+-- Statements are separated by lines that read "-- @@" (run by scripts/migrate.ts).
+-- Text is compared byte for byte, and all timestamps are UTC epoch milliseconds stored in bigint columns.
 
+-- Reports how many rows the statement just before it touched, inside one atomic batch (see runBatch in nbe/core/src/db).
+-- This is how an audit row is written only when the change it describes really happened.
+CREATE FUNCTION row_count() RETURNS bigint LANGUAGE sql VOLATILE AS $$
+  SELECT coalesce(nullif(current_setting('app.row_count', true), '')::bigint, 0)
+$$
+-- @@
 CREATE TABLE users (
   id varchar(64) NOT NULL PRIMARY KEY,
   email varchar(254) NOT NULL,
@@ -8,17 +15,19 @@ CREATE TABLE users (
   status varchar(16) NOT NULL DEFAULT 'invited',
   staff_role varchar(16) NULL,
   created_at bigint NOT NULL,
-  last_login_at bigint NULL,
-  UNIQUE KEY users_email_unique (email)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+  last_login_at bigint NULL
+)
+-- @@
+CREATE UNIQUE INDEX users_email_unique ON users (email)
 -- @@
 CREATE TABLE orgs (
   id varchar(64) NOT NULL PRIMARY KEY,
   name varchar(255) NOT NULL,
   slug varchar(120) NOT NULL,
-  created_at bigint NOT NULL,
-  UNIQUE KEY orgs_slug_unique (slug)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+  created_at bigint NOT NULL
+)
+-- @@
+CREATE UNIQUE INDEX orgs_slug_unique ON orgs (slug)
 -- @@
 CREATE TABLE memberships (
   user_id varchar(64) NOT NULL,
@@ -26,11 +35,13 @@ CREATE TABLE memberships (
   role varchar(16) NOT NULL,
   created_at bigint NOT NULL,
   PRIMARY KEY (user_id, org_id),
-  KEY memberships_org (org_id),
-  KEY memberships_org_page (org_id, created_at, user_id),
   CONSTRAINT fk_memberships_user FOREIGN KEY (user_id) REFERENCES users (id),
   CONSTRAINT fk_memberships_org FOREIGN KEY (org_id) REFERENCES orgs (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+)
+-- @@
+CREATE INDEX memberships_org ON memberships (org_id)
+-- @@
+CREATE INDEX memberships_org_page ON memberships (org_id, created_at, user_id)
 -- @@
 CREATE TABLE sessions (
   id varchar(64) NOT NULL PRIMARY KEY,
@@ -41,11 +52,14 @@ CREATE TABLE sessions (
   ua_hash varchar(64) NULL,
   mfa_verified_at bigint NULL,
   created_at bigint NOT NULL,
-  KEY sessions_user (user_id),
-  KEY sessions_expires (expires_at),
-  KEY sessions_absolute_expires (absolute_expires_at),
   CONSTRAINT fk_sessions_user FOREIGN KEY (user_id) REFERENCES users (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+)
+-- @@
+CREATE INDEX sessions_user ON sessions (user_id)
+-- @@
+CREATE INDEX sessions_expires ON sessions (expires_at)
+-- @@
+CREATE INDEX sessions_absolute_expires ON sessions (absolute_expires_at)
 -- @@
 CREATE TABLE staff_mfa (
   user_id varchar(64) NOT NULL PRIMARY KEY,
@@ -53,11 +67,10 @@ CREATE TABLE staff_mfa (
   enabled_at bigint NULL,
   created_at bigint NOT NULL,
   last_used_step bigint NOT NULL DEFAULT -1,
-  recovery_hashes mediumtext NOT NULL,
+  recovery_hashes text NOT NULL,
   CONSTRAINT fk_staff_mfa_user FOREIGN KEY (user_id) REFERENCES users (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+)
 -- @@
--- open_key replaces the partial unique index SQLite had: it is 1 only while a request is open, and NULLs never collide.
 CREATE TABLE privacy_requests (
   id varchar(64) NOT NULL PRIMARY KEY,
   user_id varchar(64) NOT NULL,
@@ -67,13 +80,16 @@ CREATE TABLE privacy_requests (
   updated_at bigint NOT NULL,
   reviewed_by varchar(64) NULL,
   review_reference varchar(100) NULL,
-  open_key tinyint GENERATED ALWAYS AS (CASE WHEN state IN ('pending', 'in_review') THEN 1 ELSE NULL END) VIRTUAL,
-  KEY privacy_requests_user (user_id, created_at, id),
-  KEY privacy_requests_created (created_at, id),
-  UNIQUE KEY privacy_requests_open (user_id, kind, open_key),
   CONSTRAINT fk_privacy_user FOREIGN KEY (user_id) REFERENCES users (id),
   CONSTRAINT fk_privacy_reviewer FOREIGN KEY (reviewed_by) REFERENCES users (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+)
+-- @@
+CREATE INDEX privacy_requests_user ON privacy_requests (user_id, created_at, id)
+-- @@
+CREATE INDEX privacy_requests_created ON privacy_requests (created_at, id)
+-- @@
+-- A person can have only one open request of each kind. Closed requests do not count.
+CREATE UNIQUE INDEX privacy_requests_open ON privacy_requests (user_id, kind) WHERE state IN ('pending', 'in_review')
 -- @@
 CREATE TABLE auth_tokens (
   id varchar(64) NOT NULL PRIMARY KEY,
@@ -82,10 +98,12 @@ CREATE TABLE auth_tokens (
   expires_at bigint NOT NULL,
   used_at bigint NULL,
   created_at bigint NOT NULL,
-  claimed_session_id varchar(64) NULL,
-  KEY auth_tokens_email (email),
-  KEY auth_tokens_expires (expires_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+  claimed_session_id varchar(64) NULL
+)
+-- @@
+CREATE INDEX auth_tokens_email ON auth_tokens (email)
+-- @@
+CREATE INDEX auth_tokens_expires ON auth_tokens (expires_at)
 -- @@
 CREATE TABLE leads (
   id varchar(64) NOT NULL PRIMARY KEY,
@@ -94,19 +112,22 @@ CREATE TABLE leads (
   company varchar(255) NULL,
   message text NOT NULL,
   message_hash varchar(64) NOT NULL,
-  service_interest mediumtext NOT NULL,
+  service_interest text NOT NULL,
   budget_band varchar(100) NULL,
   source varchar(100) NOT NULL DEFAULT 'website',
   status varchar(16) NOT NULL DEFAULT 'new',
-  spam_score int NOT NULL DEFAULT 0,
+  spam_score integer NOT NULL DEFAULT 0,
   consent_at bigint NOT NULL,
   ip_hash varchar(64) NULL,
   created_at bigint NOT NULL,
-  updated_at bigint NOT NULL,
-  KEY leads_status_created (status, created_at, id),
-  KEY leads_created (created_at, id),
-  KEY leads_email_hash (email, message_hash)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+  updated_at bigint NOT NULL
+)
+-- @@
+CREATE INDEX leads_status_created ON leads (status, created_at, id)
+-- @@
+CREATE INDEX leads_created ON leads (created_at, id)
+-- @@
+CREATE INDEX leads_email_hash ON leads (email, message_hash)
 -- @@
 CREATE TABLE lead_notes (
   id varchar(64) NOT NULL PRIMARY KEY,
@@ -114,10 +135,11 @@ CREATE TABLE lead_notes (
   author_id varchar(64) NOT NULL,
   body text NOT NULL,
   created_at bigint NOT NULL,
-  KEY lead_notes_lead (lead_id),
   CONSTRAINT fk_lead_notes_lead FOREIGN KEY (lead_id) REFERENCES leads (id),
   CONSTRAINT fk_lead_notes_author FOREIGN KEY (author_id) REFERENCES users (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+)
+-- @@
+CREATE INDEX lead_notes_lead ON lead_notes (lead_id)
 -- @@
 CREATE TABLE projects (
   id varchar(64) NOT NULL PRIMARY KEY,
@@ -127,10 +149,11 @@ CREATE TABLE projects (
   status varchar(16) NOT NULL DEFAULT 'active',
   created_by varchar(64) NOT NULL,
   created_at bigint NOT NULL,
-  KEY projects_org (org_id, created_at, id),
   CONSTRAINT fk_projects_org FOREIGN KEY (org_id) REFERENCES orgs (id),
   CONSTRAINT fk_projects_creator FOREIGN KEY (created_by) REFERENCES users (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+)
+-- @@
+CREATE INDEX projects_org ON projects (org_id, created_at, id)
 -- @@
 CREATE TABLE requests (
   id varchar(64) NOT NULL PRIMARY KEY,
@@ -140,17 +163,20 @@ CREATE TABLE requests (
   title varchar(255) NOT NULL,
   body text NOT NULL,
   state varchar(16) NOT NULL DEFAULT 'open',
-  required_approvals int NOT NULL DEFAULT 1,
+  required_approvals integer NOT NULL DEFAULT 1,
   requested_by varchar(64) NOT NULL,
   created_at bigint NOT NULL,
   updated_at bigint NOT NULL,
-  KEY requests_project (project_id, created_at, id),
-  KEY requests_org_state_created (org_id, state, created_at, id),
-  KEY requests_org_created (org_id, created_at, id),
   CONSTRAINT fk_requests_project FOREIGN KEY (project_id) REFERENCES projects (id),
   CONSTRAINT fk_requests_org FOREIGN KEY (org_id) REFERENCES orgs (id),
   CONSTRAINT fk_requests_requester FOREIGN KEY (requested_by) REFERENCES users (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+)
+-- @@
+CREATE INDEX requests_project ON requests (project_id, created_at, id)
+-- @@
+CREATE INDEX requests_org_state_created ON requests (org_id, state, created_at, id)
+-- @@
+CREATE INDEX requests_org_created ON requests (org_id, created_at, id)
 -- @@
 CREATE TABLE approvals (
   id varchar(64) NOT NULL PRIMARY KEY,
@@ -159,10 +185,11 @@ CREATE TABLE approvals (
   decision varchar(16) NOT NULL,
   comment text NULL,
   decided_at bigint NOT NULL,
-  UNIQUE KEY approvals_unique (request_id, approver_id),
   CONSTRAINT fk_approvals_request FOREIGN KEY (request_id) REFERENCES requests (id),
   CONSTRAINT fk_approvals_approver FOREIGN KEY (approver_id) REFERENCES users (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+)
+-- @@
+CREATE UNIQUE INDEX approvals_unique ON approvals (request_id, approver_id)
 -- @@
 CREATE TABLE comments (
   id varchar(64) NOT NULL PRIMARY KEY,
@@ -170,11 +197,13 @@ CREATE TABLE comments (
   author_id varchar(64) NOT NULL,
   body text NOT NULL,
   created_at bigint NOT NULL,
-  KEY comments_request (request_id, created_at),
-  KEY comments_request_page (request_id, created_at, id),
   CONSTRAINT fk_comments_request FOREIGN KEY (request_id) REFERENCES requests (id),
   CONSTRAINT fk_comments_author FOREIGN KEY (author_id) REFERENCES users (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+)
+-- @@
+CREATE INDEX comments_request ON comments (request_id, created_at)
+-- @@
+CREATE INDEX comments_request_page ON comments (request_id, created_at, id)
 -- @@
 CREATE TABLE files (
   id varchar(64) NOT NULL PRIMARY KEY,
@@ -182,44 +211,48 @@ CREATE TABLE files (
   request_id varchar(64) NOT NULL,
   storage_key varchar(255) NOT NULL,
   name varchar(255) NOT NULL,
-  size int NOT NULL,
+  size integer NOT NULL,
   mime varchar(150) NOT NULL,
   sha256 varchar(64) NOT NULL,
   scan_state varchar(16) NOT NULL DEFAULT 'pending',
-  scan_attempts int NOT NULL DEFAULT 0,
+  scan_attempts integer NOT NULL DEFAULT 0,
   next_scan_at bigint NOT NULL DEFAULT 0,
   uploaded_by varchar(64) NOT NULL,
   created_at bigint NOT NULL,
-  KEY files_request (request_id, created_at),
-  KEY files_scan_due (scan_state, next_scan_at),
   CONSTRAINT fk_files_org FOREIGN KEY (org_id) REFERENCES orgs (id),
   CONSTRAINT fk_files_request FOREIGN KEY (request_id) REFERENCES requests (id),
   CONSTRAINT fk_files_uploader FOREIGN KEY (uploaded_by) REFERENCES users (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+)
+-- @@
+CREATE INDEX files_request ON files (request_id, created_at)
+-- @@
+CREATE INDEX files_scan_due ON files (scan_state, next_scan_at)
 -- @@
 CREATE TABLE content_items (
   id varchar(64) NOT NULL PRIMARY KEY,
   kind varchar(16) NOT NULL,
   slug varchar(120) NOT NULL,
-  position int NOT NULL DEFAULT 0,
-  data mediumtext NOT NULL,
-  published tinyint(1) NOT NULL DEFAULT 1,
-  updated_at bigint NOT NULL,
-  UNIQUE KEY content_kind_slug (kind, slug)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+  position integer NOT NULL DEFAULT 0,
+  data text NOT NULL,
+  published boolean NOT NULL DEFAULT true,
+  updated_at bigint NOT NULL
+)
+-- @@
+CREATE UNIQUE INDEX content_kind_slug ON content_items (kind, slug)
 -- @@
 -- Column order matters: the portal inserts into outbox with INSERT ... SELECT.
 CREATE TABLE outbox (
   id varchar(64) NOT NULL PRIMARY KEY,
   topic varchar(16) NOT NULL,
-  payload mediumtext NOT NULL,
+  payload text NOT NULL,
   state varchar(16) NOT NULL DEFAULT 'pending',
-  attempts int NOT NULL DEFAULT 0,
+  attempts integer NOT NULL DEFAULT 0,
   next_attempt_at bigint NOT NULL,
   last_error varchar(255) NULL,
-  created_at bigint NOT NULL,
-  KEY outbox_due (state, next_attempt_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+  created_at bigint NOT NULL
+)
+-- @@
+CREATE INDEX outbox_due ON outbox (state, next_attempt_at)
 -- @@
 -- Column order matters: audit rows are also written with INSERT ... SELECT.
 CREATE TABLE audit_log (
@@ -231,53 +264,73 @@ CREATE TABLE audit_log (
   target_type varchar(64) NULL,
   target_id varchar(255) NULL,
   ip_hash varchar(64) NULL,
-  meta mediumtext NULL,
-  KEY audit_at (at, id),
-  KEY audit_org (org_id, at, id),
-  KEY audit_action (action, at, id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+  meta text NULL
+)
+-- @@
+CREATE INDEX audit_at ON audit_log (at, id)
+-- @@
+CREATE INDEX audit_org ON audit_log (org_id, at, id)
+-- @@
+CREATE INDEX audit_action ON audit_log (action, at, id)
 -- @@
 CREATE TABLE rate_limits (
-  `key` varchar(255) NOT NULL PRIMARY KEY,
-  count int NOT NULL,
-  expires_at bigint NOT NULL,
-  KEY rate_limits_expires (expires_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+  key varchar(255) NOT NULL PRIMARY KEY,
+  count integer NOT NULL,
+  expires_at bigint NOT NULL
+)
+-- @@
+CREATE INDEX rate_limits_expires ON rate_limits (expires_at)
 -- @@
 -- Write guards. They run inside the same transaction as the write that trips them. The error message is the marker
 -- the application looks for (see lib/errors.ts).
-CREATE TRIGGER users_revoke_credentials AFTER UPDATE ON users FOR EACH ROW
+CREATE FUNCTION users_revoke_credentials() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
-  IF (NEW.status = 'disabled' AND NOT (OLD.status <=> NEW.status)) OR NOT (NEW.staff_role <=> OLD.staff_role) THEN
+  IF (NEW.status = 'disabled' AND OLD.status IS DISTINCT FROM NEW.status) OR NEW.staff_role IS DISTINCT FROM OLD.staff_role THEN
     DELETE FROM sessions WHERE user_id = NEW.id;
     DELETE FROM auth_tokens WHERE email = OLD.email;
   END IF;
+  RETURN NULL;
 END
+$$
 -- @@
-CREATE TRIGGER users_keep_active_admin BEFORE UPDATE ON users FOR EACH ROW
+CREATE TRIGGER users_revoke_credentials AFTER UPDATE ON users FOR EACH ROW EXECUTE FUNCTION users_revoke_credentials()
+-- @@
+CREATE FUNCTION users_keep_active_admin() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   IF OLD.status = 'active' AND OLD.staff_role = 'admin'
-    AND (NEW.status <> 'active' OR NOT (NEW.staff_role <=> 'admin'))
+    AND (NEW.status <> 'active' OR NEW.staff_role IS DISTINCT FROM 'admin')
     AND NOT EXISTS (SELECT 1 FROM users WHERE id <> OLD.id AND status = 'active' AND staff_role = 'admin') THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'last_staff_admin';
+    RAISE EXCEPTION 'last_staff_admin';
   END IF;
+  RETURN NEW;
 END
+$$
 -- @@
-CREATE TRIGGER leads_deduplicate BEFORE INSERT ON leads FOR EACH ROW
+CREATE TRIGGER users_keep_active_admin BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION users_keep_active_admin()
+-- @@
+CREATE FUNCTION leads_deduplicate() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   IF EXISTS (SELECT 1 FROM leads WHERE email = NEW.email AND message_hash = NEW.message_hash AND created_at >= NEW.created_at - 86400000) THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'duplicate_lead';
+    RAISE EXCEPTION 'duplicate_lead';
   END IF;
+  RETURN NEW;
 END
+$$
 -- @@
-CREATE TRIGGER approvals_require_open_request BEFORE INSERT ON approvals FOR EACH ROW
+CREATE TRIGGER leads_deduplicate BEFORE INSERT ON leads FOR EACH ROW EXECUTE FUNCTION leads_deduplicate()
+-- @@
+CREATE FUNCTION approvals_require_open_request() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM requests WHERE id = NEW.request_id AND state = 'open') THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'request_not_open';
+    RAISE EXCEPTION 'request_not_open';
   END IF;
+  RETURN NEW;
 END
+$$
 -- @@
-CREATE TRIGGER approvals_require_authorized_actor BEFORE INSERT ON approvals FOR EACH ROW
+CREATE TRIGGER approvals_require_open_request BEFORE INSERT ON approvals FOR EACH ROW EXECUTE FUNCTION approvals_require_open_request()
+-- @@
+CREATE FUNCTION approvals_require_authorized_actor() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM requests r JOIN users u ON u.id = NEW.approver_id
@@ -286,36 +339,56 @@ BEGIN
         SELECT 1 FROM memberships m WHERE m.org_id = r.org_id AND m.user_id = u.id AND m.role IN ('admin', 'owner')
       ))
   ) THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'approver_not_authorized';
+    RAISE EXCEPTION 'approver_not_authorized';
   END IF;
+  RETURN NEW;
 END
+$$
 -- @@
-CREATE TRIGGER files_enforce_quota BEFORE INSERT ON files FOR EACH ROW
+CREATE TRIGGER approvals_require_authorized_actor BEFORE INSERT ON approvals FOR EACH ROW EXECUTE FUNCTION approvals_require_authorized_actor()
+-- @@
+CREATE FUNCTION files_enforce_quota() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   IF (SELECT count(*) FROM files WHERE request_id = NEW.request_id) >= 20 THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'file_limit_reached';
+    RAISE EXCEPTION 'file_limit_reached';
   END IF;
+  RETURN NEW;
 END
+$$
 -- @@
-CREATE TRIGGER files_match_request BEFORE INSERT ON files FOR EACH ROW
+CREATE TRIGGER files_enforce_quota BEFORE INSERT ON files FOR EACH ROW EXECUTE FUNCTION files_enforce_quota()
+-- @@
+CREATE FUNCTION files_match_request() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM requests WHERE id = NEW.request_id AND org_id = NEW.org_id AND state <> 'cancelled') THEN
-    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'file_request_unavailable';
+    RAISE EXCEPTION 'file_request_unavailable';
   END IF;
+  RETURN NEW;
 END
+$$
 -- @@
-CREATE TRIGGER staff_mfa_revoke_on_delete AFTER DELETE ON staff_mfa FOR EACH ROW
+CREATE TRIGGER files_match_request BEFORE INSERT ON files FOR EACH ROW EXECUTE FUNCTION files_match_request()
+-- @@
+CREATE FUNCTION staff_mfa_revoke_on_delete() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   IF OLD.enabled_at IS NOT NULL THEN
     DELETE FROM sessions WHERE user_id = OLD.user_id;
     DELETE FROM auth_tokens WHERE email IN (SELECT email FROM users WHERE id = OLD.user_id);
   END IF;
+  RETURN NULL;
 END
+$$
 -- @@
-CREATE TRIGGER staff_mfa_revoke_on_reset AFTER UPDATE ON staff_mfa FOR EACH ROW
+CREATE TRIGGER staff_mfa_revoke_on_delete AFTER DELETE ON staff_mfa FOR EACH ROW EXECUTE FUNCTION staff_mfa_revoke_on_delete()
+-- @@
+CREATE FUNCTION staff_mfa_revoke_on_reset() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
-  IF OLD.enabled_at IS NOT NULL AND (NOT (NEW.enabled_at <=> OLD.enabled_at) OR NOT (NEW.user_id <=> OLD.user_id)) THEN
+  IF OLD.enabled_at IS NOT NULL AND (NEW.enabled_at IS DISTINCT FROM OLD.enabled_at OR NEW.user_id IS DISTINCT FROM OLD.user_id) THEN
     DELETE FROM sessions WHERE user_id = OLD.user_id;
     DELETE FROM auth_tokens WHERE email IN (SELECT email FROM users WHERE id = OLD.user_id);
   END IF;
+  RETURN NULL;
 END
+$$
+-- @@
+CREATE TRIGGER staff_mfa_revoke_on_reset AFTER UPDATE ON staff_mfa FOR EACH ROW EXECUTE FUNCTION staff_mfa_revoke_on_reset()

@@ -38,7 +38,7 @@ In scope: the website (`nfe`), the portal at `/portal` and the API (`nbe`, behin
 | A malicious website | Tricking a signed-in person's browser |
 | A vulnerable dependency | Supply chain |
 
-Trust boundaries: the browser talks only to the website (`nfe`). The website's server-side proxy talks to the backend gateway. The gateway reaches the services, and only the services talk to MySQL, the file server's volume and the email provider; they hold all secrets. The website holds no database access and no user secrets. In Kubernetes the network policies enforce these paths (see below).
+Trust boundaries: the browser talks only to the website (`nfe`). The website's server-side proxy talks to the backend gateway. The gateway reaches the services, and only the services talk to Postgres, the file server's volume and the email provider; they hold all secrets. The website holds no database access and no user secrets. In Kubernetes the network policies enforce these paths (see below).
 
 ## 3. Controls
 
@@ -62,8 +62,8 @@ Trust boundaries: the browser talks only to the website (`nfe`). The website's s
 | Privacy | Account data copy, export and erasure requests reviewed by a second admin, retention windows enforced by the maintenance job (see [05 Operations](05-Operations.md)) | `modules/privacy/*`, `modules/maintenance/*` |
 | Email delivery | Outbox with retries and 10 second provider timeouts; auth emails expire with their link; delivered and dead messages are scrubbed | `modules/notifications/*` |
 | Errors and logs | One error shape; unknown errors become a generic 500; logs carry request ids, route templates and no tokens, bodies or email addresses | `app.ts`, `lib/logger.ts` |
-| Database accounts | Two MySQL accounts: `neuravic_app` (SELECT, INSERT, UPDATE, DELETE on the `neuravic` database only) runs every service; `neuravic_migrator` (adds CREATE, ALTER, DROP, INDEX, REFERENCES, TRIGGER) runs only the migration job. Neither can grant rights or touch another database. The services cannot change the schema | `database/scripts/create-access.mjs` |
-| Service isolation | Each service runs as its own process. In Kubernetes: a default-deny network policy, then only ingress to website, website to gateway, services to each other and to MySQL, and HTTPS out; non-root user, read-only filesystem, no capabilities, seccomp, no service-account token, "restricted" pod standard on the namespace | `deployment/helm/neuravic/templates/networkpolicy.yaml`, `deployment/k8s/namespace.yaml` |
+| Database accounts | Two Postgres roles: `neuravic_app` (SELECT, INSERT, UPDATE, DELETE on the `neuravic` database only) runs every service; `neuravic_migrator` (adds CREATE, ALTER, DROP, INDEX, REFERENCES, TRIGGER) runs only the migration job. Neither can grant rights or touch another database. The services cannot change the schema | `database/scripts/create-access.mjs` |
+| Service isolation | Each service runs as its own process. In Kubernetes: a default-deny network policy, then only ingress to website, website to gateway, services to each other and to Postgres, and HTTPS out; non-root user, read-only filesystem, no capabilities, seccomp, no service-account token, "restricted" pod standard on the namespace | `deployment/helm/neuravic/templates/networkpolicy.yaml`, `deployment/k8s/namespace.yaml` |
 | Images | Built from a small base, run as the `node` user, secrets never copied in (`.dockerignore`), `.env` files and local data excluded | `deployment/docker/*`, `.dockerignore` |
 | Secrets and dependencies | Secrets only in git-ignored environment files or Kubernetes Secrets (the repository `.gitignore` blocks `.env`, keys, certificates, uploads, database data and real Helm values); a scan of source and history for secrets, plus `npm audit` on both projects, runs weekly and on every change; Dependabot proposes weekly updates; CodeQL analyses the code | `security/scripts/security-check.*`, `.github/workflows` |
 
@@ -106,7 +106,7 @@ Use separate secrets for staging and production. Never paste secrets, tokens, ex
 | `SSO_PRIVATE_JWK`, `SSO_KEY_ID`, `SSO_AUDIENCES` | An Ed25519 key and the allowed product audiences, when other products use single sign-on |
 | `MAINTENANCE_MODE` | `false`. Set to `true` only to contain an incident or during a recovery |
 
-Generate values with `node security/scripts/generate-secrets.mjs`. Put the API and the website behind HTTPS, run MySQL on a private network with a least-privilege user, keep the uploads folder on a private volume that is never served directly, and turn on two-factor authentication on the Git host, the hosting account and the email provider.
+Generate values with `node security/scripts/generate-secrets.mjs`. Put the API and the website behind HTTPS, run Postgres on a private network with a least-privilege user, keep the uploads folder on a private volume that is never served directly, and turn on two-factor authentication on the Git host, the hosting account and the email provider.
 
 ### Staff accounts and MFA
 
@@ -132,7 +132,7 @@ Nothing below is approved or done until the owner records it.
 - [ ] `APP_ENV=production`; all required secrets set and independent; no development secrets
 - [ ] Response headers checked on the home page, `/portal`, `/portal/verify` and an error page: CSP nonce differs per request, HTML is `no-store`, no CDN serves a shared nonce
 - [ ] Only the website is exposed by the ingress; the gateway and services are reachable only inside the cluster (network policies on); forged forwarding headers do not change the visitor identity
-- [ ] MySQL private; the app runs as `neuravic_app` and migrations as `neuravic_migrator`; automated encrypted backups; one tested restore
+- [ ] Postgres private; the app runs as `neuravic_app` and migrations as `neuravic_migrator`; automated encrypted backups; one tested restore
 
 **Accounts**
 - [ ] Bootstrap admin created, MFA enrolled, recovery codes stored; every staff member enrolled

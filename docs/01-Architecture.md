@@ -5,7 +5,7 @@ Part of the Neuravic documentation set: **01 Architecture** (this file), [02 Get
 
 ## 1. The system at a glance
 
-A website, a set of small backend services behind one gateway, a file server and a MySQL database.
+A website, a set of small backend services behind one gateway, a file server and a Postgres database.
 
 ```mermaid
 flowchart LR
@@ -23,7 +23,7 @@ flowchart LR
         WK[worker :8806<br/>email + maintenance]
     end
     SV["Server: file server :8805<br/>uploads + malware scan"]
-    DB[(MySQL 8<br/>database/)]
+    DB[(PostgreSQL<br/>database/)]
     FS[/Uploaded files<br/>persistent volume/]
     MAIL[[Email provider<br/>Resend, optional]]
 
@@ -41,7 +41,7 @@ flowchart LR
 | [`nfe/`](../nfe) | Frontend: marketing site and client portal | Next.js 16, React 19, TypeScript, Tailwind CSS 4 |
 | [`nbe/`](../nbe) | Backend: the shared core plus six services | Node.js 22+, Hono, Zod, Drizzle ORM |
 | [`server/`](../server) | File server: stores, scans and serves uploads | Node.js, Hono |
-| [`database/`](../database) | MySQL: access setup, migrations, private local server | MySQL 8+, mysql2 |
+| [`database/`](../database) | Postgres: access setup, migrations, private local server | PostgreSQL 14+, pg |
 | [`security/`](../security) | Security tooling: secret generator, secret and dependency scan | Node.js scripts |
 | [`test/`](../test) | Unit tests and integration tests | Node test runner, tsx |
 | [`images/`](../images) | Brand and documentation images | Image files |
@@ -50,7 +50,7 @@ flowchart LR
 
 ### Why microservices here
 
-Each service is its own process with its own port, health check, replicas and resource limits, so a busy portal cannot starve sign-in, the file server can be scaled and secured on its own, and the email worker can be paused without touching the API. The services share one MySQL database and one code library (`nbe/core`), which keeps rules such as roles, validation and security in a single place. They do not call each other; the gateway routes requests, and the database is the only shared state. This is a deliberate trade-off: it is simpler to run than one database per service, at the price of a shared schema that changes together.
+Each service is its own process with its own port, health check, replicas and resource limits, so a busy portal cannot starve sign-in, the file server can be scaled and secured on its own, and the email worker can be paused without touching the API. The services share one Postgres database and one code library (`nbe/core`), which keeps rules such as roles, validation and security in a single place. They do not call each other; the gateway routes requests, and the database is the only shared state. This is a deliberate trade-off: it is simpler to run than one database per service, at the price of a shared schema that changes together.
 
 ## 2. The frontend (NFE)
 
@@ -93,7 +93,7 @@ nbe/
     app.ts                  Builds the Hono app: CORS, maintenance mode, body limits, middleware, error mapping
     config.ts, env.ts       Validated configuration (fails fast on bad or missing values)
     deps.ts                 The dependency bundle every route receives (db, mailer, blobs, clock, limiter, ...)
-    db/                     MySQL pool, Drizzle schema, atomic batches
+    db/                     Postgres pool, Drizzle schema, atomic batches
     lib/                    crypto, password hashing, rate limiter, body limits, errors, logging, ids
     modules/                One folder per feature (below)
   services/
@@ -202,7 +202,7 @@ sequenceDiagram
     participant B as Browser
     participant N as NFE proxy
     participant S as auth service
-    participant D as MySQL
+    participant D as Postgres
     B->>N: POST /api/v1/auth/register {name, email, password, consent}
     N->>S: forward
     S->>S: rate limit, validate (password 8-128 chars)
@@ -288,7 +288,7 @@ Only the worker delivers email. Every other service writes to the `outbox` table
 |---|---|---|
 | Frontend | `npm run dev` on 5173 | Container image behind an HTTPS ingress |
 | Backend | `npm start` at the repo root runs all services | One container per service, started from one image |
-| Database | `npm run db:local` (private MySQL on 3307) | Managed MySQL 8+ |
+| Database | `npm run db:local` (private Postgres on 5433) | Managed PostgreSQL (Neon, Supabase, RDS...) |
 | Email | In-memory dev mailbox | Resend (`RESEND_API_KEY`) |
 | Files | `.data/files/` | A persistent volume mounted on the file server |
 | Staff MFA | Off by default | Required |
@@ -299,7 +299,7 @@ flowchart LR
     IN --> FE[frontend x2]
     FE --> GW[gateway x2]
     GW --> S[auth, portal, leads, admin<br/>worker, file server]
-    S --> MY[(Managed MySQL)]
+    S --> MY[(Managed Postgres)]
     S --> VOL[(Persistent volume<br/>uploads)]
     S --> RS[[Resend]]
 ```
@@ -310,9 +310,9 @@ How it is packaged ([`deployment/`](../deployment)):
 |---|---|
 | `docker/backend.Dockerfile` | One image for every backend service and the file server; the `ENTRY` setting picks which one runs |
 | `docker/frontend.Dockerfile` | The website image |
-| `docker-compose.yml` | The whole system on one machine: MySQL, migration, seven backend containers and the website |
+| `docker-compose.yml` | The whole system on one machine: Postgres, migration, seven backend containers and the website |
 | `helm/neuravic` | The Helm chart: a Deployment and Service per service, the file volume, ingress, a pre-upgrade migration job, network policies, disruption budgets and optional autoscaling |
-| `k8s/` | Namespace with the "restricted" pod standard, an example Secret and a test-only MySQL |
+| `k8s/` | Namespace with the "restricted" pod standard, an example Secret and a test-only Postgres |
 
 Release order, rollback and day-to-day operation are in [05 Operations](05-Operations.md).
 
@@ -321,7 +321,7 @@ Release order, rollback and day-to-day operation are in [05 Operations](05-Opera
 | Check | Command | Covers |
 |---|---|---|
 | Unit tests | `npm run test:unit` at the repo root | 101 tests with no database or network: password hashing, crypto helpers, pagination, body limits, JSON validation, configuration rules, TOTP codes, session lifetimes, rate limiter, visitor address trust, gateway routing, spam score, single sign-on tokens, the website's form checks and CSP |
-| Integration tests | `npm start`, then `npm run test:integration` | 52 tests through the real gateway, services and MySQL: gateway routing and CORS, accounts and sessions, organisation isolation, roles, approvals, files and the scanner, enquiries, staff tools, privacy |
+| Integration tests | `npm start`, then `npm run test:integration` | 52 tests through the real gateway, services and Postgres: gateway routing and CORS, accounts and sessions, organisation isolation, roles, approvals, files and the scanner, enquiries, staff tools, privacy |
 | API smoke test | `npm run smoke` at the repo root | 89 checks through the real gateway: accounts, passwords, portal, files, staff tools, privacy, safety rules |
 | Types | `npm run typecheck` at the repo root; `npm run typecheck` in `nfe` | Every backend package and the frontend |
 | Frontend | `cd NFE && npm run lint && npm run build` | Code quality and a production build |

@@ -7,7 +7,7 @@ Neuravic is a technology company's website and client portal. Visitors read abou
 | `nfe/` | Frontend: the website and the client portal |
 | `nbe/` | Backend: small services behind one gateway (sign-in, portal, enquiries, staff tools, background worker) |
 | `server/` | File server: stores, scans and serves uploaded files |
-| `database/` | MySQL: access setup and migrations |
+| `database/` | PostgreSQL: access setup and migrations |
 | `security/` | Security tools: secret generator, secret and dependency scan |
 | `deployment/` | Docker, Kubernetes and Helm |
 | `images/` | Brand and documentation images |
@@ -16,11 +16,11 @@ Neuravic is a technology company's website and client portal. Visitors read abou
 
 ## Run it
 
-Needs Node.js 22.13+ and MySQL 8+.
+Needs Node.js 22.13+. The local database runs from an npm package, so there is nothing else to install.
 
 ```bash
 npm install
-npm run db:local        # private local MySQL, writes .env
+npm run db:local        # private local Postgres (leave it running), writes .env
 npm run db:migrate
 npm start               # backend on http://127.0.0.1:8787
 ```

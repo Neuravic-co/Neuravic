@@ -1,34 +1,48 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createConnection } from "mysql2/promise";
+import pg from "pg";
 import { databaseSsl } from "../../nbe/core/src/db/ssl";
 
-/** Applies sql/*.sql in order, once each. Forward only: add a new numbered file for every schema change. */
+/** Applies migrations/*.sql in order, once each. Forward only: add a new numbered file for every schema change. */
 const url = process.env.MIGRATE_DATABASE_URL ?? process.env.DATABASE_URL;
 if (!url) throw new Error("DATABASE_URL is not set (see docs/02-Getting-Started.md)");
 
 const dir = join(dirname(fileURLToPath(import.meta.url)), "..", "migrations");
 const files = readdirSync(dir).filter((name) => name.endsWith(".sql")).sort();
 
-const connection = await createConnection({ uri: url, multipleStatements: false, ssl: databaseSsl() });
+const client = new pg.Client({ connectionString: url, ssl: databaseSsl() });
+await client.connect();
 try {
-  await connection.query(
-    "CREATE TABLE IF NOT EXISTS schema_migrations (name varchar(200) NOT NULL PRIMARY KEY, applied_at bigint NOT NULL) ENGINE=InnoDB",
+  await client.query(
+    "CREATE TABLE IF NOT EXISTS schema_migrations (name varchar(200) NOT NULL PRIMARY KEY, applied_at bigint NOT NULL)",
   );
-  const [rows] = await connection.query("SELECT name FROM schema_migrations");
-  const applied = new Set((rows as { name: string }[]).map((row) => row.name));
   for (const file of files) {
-    if (applied.has(file)) continue;
     const statements = readFileSync(join(dir, file), "utf8")
       .split(/^-- @@\s*$/m)
       .map((statement) => statement.trim())
       .filter(Boolean);
-    for (const statement of statements) await connection.query(statement);
-    await connection.query("INSERT INTO schema_migrations (name, applied_at) VALUES (?, ?)", [file, Date.now()]);
+    // Postgres can roll back schema changes, so a failed file leaves nothing half-applied.
+    await client.query("BEGIN");
+    try {
+      // Two people running the migration at once would otherwise race; the second waits here, then sees the first's work.
+      // A transaction-level lock also works through a connection pooler, unlike a session-level one.
+      await client.query("SELECT pg_advisory_xact_lock(7263418)");
+      const done = await client.query("SELECT 1 FROM schema_migrations WHERE name = $1", [file]);
+      if (done.rowCount) {
+        await client.query("ROLLBACK");
+        continue;
+      }
+      for (const statement of statements) await client.query(statement);
+      await client.query("INSERT INTO schema_migrations (name, applied_at) VALUES ($1, $2)", [file, Date.now()]);
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => undefined);
+      throw error;
+    }
     console.log(`applied ${file} (${statements.length} statements)`);
   }
   console.log("database is up to date");
 } finally {
-  await connection.end();
+  await client.end();
 }

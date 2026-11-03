@@ -34,22 +34,22 @@ jobs:
 
 
   contact-email:
-    name: Contact email and MySQL
+    name: Contact email and Postgres
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
-      mysql:
-        image: mysql:8.4
+      postgres:
+        image: postgres:16
         env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-          MYSQL_DATABASE: neuravic_contact_test
+          POSTGRES_PASSWORD: test-only
+          POSTGRES_DB: neuravic_contact_test
         ports:
-          - 3306:3306
+          - 5432:5432
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-cmd="pg_isready -U postgres"
           --health-interval=5s --health-timeout=5s --health-retries=30
     env:
-      TEST_DATABASE_URL: mysql://root@127.0.0.1:3306/neuravic_contact_test
+      TEST_DATABASE_URL: postgres://postgres:test-only@127.0.0.1:5432/neuravic_contact_test
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

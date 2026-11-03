@@ -22,7 +22,7 @@ export const orgsRoutes = new Hono<AppEnv>();
  */
 function keepsAnOwner(orgId: string, staysOwner: boolean): SQL {
   if (staysOwner) return sql`1 = 1`;
-  // MySQL cannot read the table being changed from a subquery unless it is materialised first; DISTINCT forces that.
+  // Count distinct owners in a subquery of the same statement, so two owners cannot remove each other at once.
   return sql`(${schema.memberships.role} <> 'owner' OR (SELECT count(*) FROM (SELECT DISTINCT user_id FROM memberships WHERE org_id = ${orgId} AND role = 'owner') owners) > 1)`;
 }
 

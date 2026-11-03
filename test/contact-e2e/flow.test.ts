@@ -41,7 +41,7 @@ after(async () => {
   if (apiServer) await new Promise<void>(resolve => apiServer.close(() => resolve()));
   await h?.pool.end();
 });
-it("submits through the production frontend proxy, real API and MySQL into Resend acceptance tracking", async () => {
+it("submits through the production frontend proxy, real API and Postgres into Resend acceptance tracking", async () => {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();
   await page.route("https://challenges.cloudflare.com/**", route => route.fulfill({ contentType: "application/javascript", body: `window.turnstile={render:(_el,opts)=>{queueMicrotask(()=>{opts.callback('local-token');_el.dataset.ready='true'});return 'test'},reset:()=>{},remove:()=>{}}` }));

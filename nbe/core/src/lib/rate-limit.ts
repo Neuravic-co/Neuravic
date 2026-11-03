@@ -25,7 +25,7 @@ export class DbRateLimiter implements RateLimiter {
     await this.db
       .insert(schema.rateLimits)
       .values({ key: bucketKey, count: 1, expiresAt })
-      .onDuplicateKeyUpdate({ set: { count: sql`${schema.rateLimits.count} + 1` } });
+      .onConflictDoUpdate({ target: schema.rateLimits.key, set: { count: sql`${schema.rateLimits.count} + 1` } });
     const [row] = await this.db.select({ count: schema.rateLimits.count }).from(schema.rateLimits).where(eq(schema.rateLimits.key, bucketKey)).limit(1);
     return (row?.count ?? 1) <= limit;
   }

@@ -30,6 +30,8 @@ await build({
   target: "node22",
   minify: false,
   sourcemap: false,
+  // The pg driver can optionally use a native add-on; it is never installed here, so leave it out of the bundle.
+  external: ["pg-native"],
   // Some dependencies still use require(); give the ES module one.
   banner: { js: 'import { createRequire as __cr } from "node:module"; const require = __cr(import.meta.url);' },
   logLevel: "info",

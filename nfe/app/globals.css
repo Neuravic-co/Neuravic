@@ -885,7 +885,7 @@ section {
   padding-bottom: 0.6rem;
 }
 
-.contact__copy p {
+.contact__copy > p {
   max-width: 33rem;
   margin: 0 0 2.8rem;
   color: color-mix(in srgb, var(--paper) 65%, transparent);
@@ -1495,7 +1495,7 @@ section {
     line-height: 1.05;
   }
   .section-lede,
-  .contact__copy p {
+  .contact__copy > p {
     font-size: 1rem;
     line-height: 1.7;
   }
@@ -1729,7 +1729,7 @@ section {
     line-height: 1.06;
   }
 
-  .contact__copy p {
+  .contact__copy > p {
     max-width: 22rem;
     margin-bottom: 2.75rem;
     font-size: 1rem;
@@ -1899,7 +1899,7 @@ section {
     padding-block: var(--screen-pad-top) var(--screen-pad-bottom);
   }
 
-  .contact__copy p {
+  .contact__copy > p {
     margin-bottom: clamp(0.8rem, 2vh, 1.6rem);
     font-size: clamp(0.95rem, min(1.15vw, 2.2vh), 1.1rem);
   }
@@ -3210,13 +3210,13 @@ section {
 }
 
 @media (min-width: 58.01rem) and (min-height: 38rem) and (max-height: 60rem) {
-  .contact__copy p {
+  .contact__copy > p {
     display: none;
   }
 }
 
 @media (max-width: 58rem) {
-  .contact__copy p {
+  .contact__copy > p {
     display: none;
   }
 

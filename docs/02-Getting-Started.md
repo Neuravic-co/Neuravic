@@ -8,7 +8,7 @@ Part of the documentation set: [01 Architecture](01-Architecture.md), **02 Getti
 | Tool | Version |
 |---|---|
 | Node.js | 22.13 or newer |
-| MySQL | 8 or newer, installed on the machine (only needed for the private local database) |
+| PostgreSQL | Nothing to install for local work: `npm run db:local` runs a private Postgres from an npm package. For hosting, any PostgreSQL 14+ (Neon is the easiest) |
 | Git | any recent version |
 
 ## 2. Repository map
@@ -17,7 +17,7 @@ Part of the documentation set: [01 Architecture](01-Architecture.md), **02 Getti
 nfe/        Frontend: marketing site and client portal (Next.js)
 nbe/        Backend: the shared core and six services (gateway, auth, portal, leads, admin, worker)
 server/     File server: stores, scans and serves uploaded files
-database/   MySQL: access setup, migrations, a private local server
+database/   PostgreSQL: access setup, migrations, a private local server
 security/   Security tooling: secret generator, secret and dependency scan
 deployment/     Docker images, Compose, Kubernetes extras, Helm chart
 images/         Brand and documentation images
@@ -32,12 +32,12 @@ Everything starts from the repository root.
 
 ```bash
 npm install              # installs the backend, file server and database tools (one lockfile)
-npm run db:local         # starts a private MySQL on 127.0.0.1:3307, creates the database and two accounts, writes .env
-npm run db:migrate       # creates the tables and the write guards (triggers)
+npm run db:local         # starts a private Postgres on 127.0.0.1:5433 (leave this window open), creates the database and two roles, writes .env
+npm run db:migrate       # (in a second window) creates the tables and the write guards (triggers)
 npm start                # starts the gateway (8787), auth, portal, leads, admin, worker and the file server
 ```
 
-In a second terminal, the website:
+In a third terminal, the website:
 
 ```bash
 cd NFE
@@ -46,8 +46,8 @@ cp .env.example .env.local
 npm run dev              # http://localhost:5173
 ```
 
-`npm run db:local` never touches another MySQL on your machine. It expects MySQL under `C:/Program Files/MySQL/MySQL Server 9.1`; set `MYSQL_HOME` if yours is elsewhere.
-To use your own MySQL instead, create the accounts on it with `database/scripts/create-access.mjs` (see section 5) and put its addresses in `.env`.
+`npm run db:local` never touches another Postgres on your machine and installs nothing: the server comes from an npm package, and its data lives in `database/.postgres`. Press Ctrl+C in that window to stop it.
+To use your own Postgres instead (or Neon, see [05 Operations](05-Operations.md)), skip `db:local`, put its connection string in `.env` as `DATABASE_URL`, and run `npm run db:migrate`.
 
 Check the backend any time: http://127.0.0.1:8787/api/v1/health lists every service and its state.
 
@@ -70,7 +70,7 @@ http://127.0.0.1:8787/api/v1/dev/mailbox in development.
 | `AUTH_PORT`, `PORTAL_PORT`, `LEADS_PORT`, `ADMIN_PORT`, `FILES_PORT`, `WORKER_PORT` | Ports of the services | defaults 8801 to 8806 |
 | `AUTH_URL`, `PORTAL_URL`, `LEADS_URL`, `ADMIN_URL`, `FILES_URL`, `WORKER_URL` | Where the gateway finds each service | default `http://127.0.0.1:<port>` |
 | `HOST` | Address the services listen on (`0.0.0.0` in containers) | default `127.0.0.1` |
-| `DATABASE_URL` | Services connect as `neuravic_app`: `mysql://neuravic_app:<password>@host:3306/neuravic` | yes |
+| `DATABASE_URL` | Services connect as `neuravic_app`: `postgres://neuravic_app:<password>@host:5432/neuravic` (add `?sslmode=require` for a hosted database) | yes |
 | `MIGRATE_DATABASE_URL` | Migrations connect as `neuravic_migrator` | for `db:migrate` |
 | `DB_POOL_SIZE` | Connections per service | default 10 |
 | `APP_URL` | The website address (HTTPS outside development) | yes |
@@ -95,18 +95,18 @@ Generate strong values with `node security/scripts/generate-secrets.mjs`.
 
 | Account | Used by | Rights |
 |---|---|---|
-| `neuravic_app` | Every service | SELECT, INSERT, UPDATE, DELETE on the `neuravic` database only |
-| `neuravic_migrator` | `npm run db:migrate` and the migration job | The above plus CREATE, ALTER, DROP, INDEX, REFERENCES, TRIGGER |
+| `neuravic_app` | Every service | SELECT, INSERT, UPDATE, DELETE on the tables of the `neuravic` database only |
+| `neuravic_migrator` | `npm run db:migrate` and the migration job | Owns the tables, so it can also create and change tables, indexes, functions and triggers |
 
-On any MySQL 8+ server, create the database and both accounts (safe to repeat; it resets the two passwords):
+On a Postgres server you administer (not needed on Neon or Supabase, which give you a ready database), create the database and both roles (safe to repeat; it resets the two passwords):
 
 ```bash
-MYSQL_ADMIN_URL=mysql://root:secret@db.example.com:3306 \
+PG_ADMIN_URL=postgres://postgres:secret@db.example.com:5432/postgres \
 APP_DB_PASSWORD=<16+ characters> MIGRATE_DB_PASSWORD=<16+ characters> \
 node database/scripts/create-access.mjs
 ```
 
-Optional: `DB_NAME` (default `neuravic`) and `DB_USER_HOSTS` (default `%`, a comma list such as `10.0.%,localhost`).
+Optional: `DB_NAME` (default `neuravic`).
 
 ### Frontend: `nfe/.env.local`
 
@@ -123,7 +123,7 @@ Optional: `DB_NAME` (default `neuravic`) and `DB_USER_HOSTS` (default `%`, a com
 | Where | Command | What it does |
 |---|---|---|
 | repo root | `npm start` | Run the gateway, the services and the file server together (Ctrl+C stops all) |
-| repo root | `npm run db:local` | Start the private MySQL and create the database and accounts |
+| repo root | `npm run db:local` | Start the private Postgres and create the database and accounts |
 | repo root | `npm run db:migrate` | Apply new database migrations |
 | repo root | `npm test` | Unit tests, then integration tests (start the backend first, for the integration part) |
 | repo root | `npm run test:unit` | 101 unit tests; need no database or network |
@@ -148,7 +148,7 @@ To add an API route, put it in the right module under `nbe/core/src/modules`, mo
 | The site shows an error page such as "process is not defined" | The dev server cache is stale. Stop `npm run dev`, delete `nfe/.next`, start it again and hard-refresh the browser (Ctrl+Shift+R) |
 | "Sign-in is being set up and is not available" on the login page | The gateway is not running or not reachable. Run `npm start` at the repo root and check http://127.0.0.1:8787/api/v1/health |
 | `DATABASE_URL is not set` | Run `npm run db:local` at the repo root, or put your own `DATABASE_URL` in `.env` |
-| Cannot connect to MySQL | `npm run db:local` starts the private MySQL again; it keeps running until you stop it |
+| Cannot connect to Postgres | `npm run db:local` starts the private Postgres again; it keeps running while that window stays open |
 | Sign-up says the account already exists | That email is registered. Log in, or use the emailed link option |
 | "Too many attempts" | Rate limit reached; wait a few minutes. The smoke test clears its own limits in development |
 | Port already in use | Stop the old process on that port, or change `GATEWAY_PORT` and the service ports in `.env` |

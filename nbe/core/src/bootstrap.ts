@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { resolve } from "node:path";
 import { createApp, type AppEnv, type MountRoutes } from "./app";
 import { loadConfig } from "./config";
-import { createMysqlDatabase } from "./db";
+import { createDatabase } from "./db";
 import type { Deps } from "./deps";
 import type { Env } from "./env";
 import { jsonLogger } from "./lib/logger";
@@ -38,7 +38,7 @@ export function buildDeps(options: ServiceOptions) {
   if (!url) throw new Error("DATABASE_URL is not set. See docs/02-Getting-Started.md");
 
   const config = loadConfig(env);
-  const { db, pool } = createMysqlDatabase(url);
+  const { db, pool } = createDatabase(url);
   const development = config.environment === "development";
   // Development has no mail provider by default: keep messages in memory so sign-in links can be read from the dev mailbox.
   const devMailer = options.deliversMail && development && !config.resendApiKey && !config.smtpUrl ? new DevMailer() : null;

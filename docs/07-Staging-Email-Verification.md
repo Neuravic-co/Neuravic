@@ -11,7 +11,7 @@ Use this with [06 Contact email](06-Contact-Email.md) when the owners are ready 
 | `EMAIL_FROM` (an address on that domain) | | ☐ |
 | `NOTIFY_TO` (approved team mailbox) | | ☐ |
 | Visitor test address (approved mailbox) | | ☐ |
-| Isolated staging API, worker and MySQL | | ☐ |
+| Isolated staging API, worker and Postgres | | ☐ |
 | `TURNSTILE_SECRET` and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (a matching pair) | | ☐ |
 | `ALLOWED_ORIGINS` and `APP_URL` set to the exact staging website origin | | ☐ |
 | `API_ORIGIN` and matching `API_PROXY_SECRET` / `PROXY_SECRET` | | ☐ |

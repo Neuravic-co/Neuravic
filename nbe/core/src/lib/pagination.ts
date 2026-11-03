@@ -1,5 +1,5 @@
 import { and, eq, lt, or, type SQL } from "drizzle-orm";
-import type { MySqlColumn } from "drizzle-orm/mysql-core";
+import type { PgColumn } from "drizzle-orm/pg-core";
 import { z } from "zod";
 import { fromBase64Url, toBase64Url } from "./crypto";
 import { badRequest } from "./errors";
@@ -31,8 +31,8 @@ function decodeCursor(cursor: string): Cursor {
 
 /** WHERE fragment for "rows strictly older than the cursor" when ordering by (createdAt desc, id desc). */
 export function olderThan(
-  createdAt: MySqlColumn,
-  id: MySqlColumn,
+  createdAt: PgColumn,
+  id: PgColumn,
   cursor: string | undefined,
 ): SQL | undefined {
   if (!cursor) return undefined;

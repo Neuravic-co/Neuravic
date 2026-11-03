@@ -1,12 +1,12 @@
 ﻿# Contact enquiry email delivery
 
-The active application is Node.js + MySQL. The old Cloudflare Worker/D1 paths and browser suites in earlier PRs are no longer the active architecture. Resend HTTP remains the preferred provider; the existing SMTP alternative remains supported. No deployment is performed by these instructions.
+The active application is Node.js + PostgreSQL. The old Cloudflare Worker/D1 paths and browser suites in earlier PRs are no longer the active architecture. Resend HTTP remains the preferred provider; the existing SMTP alternative remains supported. No deployment is performed by these instructions.
 
 ## What happens
 
 The contact form calls `/api/v1/leads` through the frontend proxy. The leads service validates JSON, consent and email, applies rate limits, and verifies Turnstile before storage. Outside development, missing `TURNSTILE_SECRET` returns 503; invalid tokens, hostnames or actions are rejected. Verified hostnames must match `ALLOWED_ORIGINS` exactly and the action must be `contact`.
 
-A MySQL transaction saves the enquiry, audit record, team email, visitor acknowledgement and existing optional Slack alert. Duplicate email/message submissions within 24 hours reuse the original enquiry. A keyed lock row serializes concurrent inserts before the existing database duplicate guard runs. The independent worker polls every two seconds and maintenance runs every five minutes; the leads service does not send email inline.
+A Postgres transaction saves the enquiry, audit record, team email, visitor acknowledgement and existing optional Slack alert. Duplicate email/message submissions within 24 hours reuse the original enquiry. A keyed lock row serializes concurrent inserts before the existing database duplicate guard runs. The independent worker polls every two seconds and maintenance runs every five minutes; the leads service does not send email inline.
 
 The team notification contains the enquiry ID, name, email, company, services, budget and full plain-text message. The acknowledgement goes only to the normalized visitor address. Names in subjects cannot introduce new headers. Message text is never rendered as HTML.
 
@@ -21,7 +21,7 @@ Keep real values in ignored `.env` files for local use and your hosting/Kubernet
 | `APP_ENV` | `development` | `staging` / `production` |
 | `APP_URL` | `http://localhost:5173` | Exact HTTPS website origin |
 | `ALLOWED_ORIGINS` | Explicit local website origins | Only trusted HTTPS website origins, including `APP_URL` |
-| `DATABASE_URL` | Isolated local MySQL application user | Environment-specific MySQL application user |
+| `DATABASE_URL` | Isolated local Postgres application user | Environment-specific Postgres application user |
 | `MIGRATE_DATABASE_URL` | Local migration user | Restricted migration secret used only by migration job |
 | `EMAIL_FROM` | `Neuravic <contact@example.com>` | One sender on your verified domain |
 | `NOTIFY_TO` | `team@example.com` (local capture only) | One team mailbox or team distribution address |
@@ -62,17 +62,17 @@ npm run build --prefix nfe
 node security/scripts/security-check.mjs --history
 ```
 
-`test:email` uses real MySQL with injected Resend responses. It refuses remote hosts and any database name other than `neuravic_contact_test`, and clears its test fixtures. Never point it at real data. Create that disposable database on a local MySQL 8 server, then set `TEST_DATABASE_URL` privately:
+`test:email` uses real Postgres with injected Resend responses. It refuses remote hosts and any database name other than `neuravic_contact_test`, and clears its test fixtures. Never point it at real data. Create that disposable database on a local PostgreSQL server, then set `TEST_DATABASE_URL` privately:
 
 ```sh
 # Example only; use your isolated test database's actual credentials and port.
-# TEST_DATABASE_URL=mysql://test_user:<local-password>@127.0.0.1:3308/neuravic_contact_test
+# TEST_DATABASE_URL=postgres://test_user:<local-password>@127.0.0.1:5432/neuravic_contact_test
 npm run test:email
 ```
 
 The suite applies all migrations, including `003_email_delivery.sql`, inside that isolated database. It exercises saved enquiries, message content/recipients, duplicate intake, concurrent outbox claims, stale workers, backoff, expiration, permanent failure, missing provider configuration and scheduled retries. No real Resend key or SMTP URL is used by this suite.
 
-For the browser suite, build with a public dummy site key `NEXT_PUBLIC_TURNSTILE_SITE_KEY=contact-test-site-key` and `NEXT_PUBLIC_API_BASE_URL` unset/empty. Then run `npx playwright install chromium` and `npm run test:browser`. It starts the built frontend on port 5174, mocks Turnstile and API responses, and verifies validation, loading, duplicate clicks, failures, token expiry, mobile layout and accessibility. This UI-only suite does not prove MySQL or inbox delivery. After the same browser build, run `npm run test:contact-e2e` with `TEST_DATABASE_URL` to exercise the joined path: real browser -> frontend proxy -> API -> MySQL -> outbox worker -> mocked Resend -> acceptance metadata. It uses local ports 5174 and 8879. These suites are added to CI; CI has no real mail credentials.
+For the browser suite, build with a public dummy site key `NEXT_PUBLIC_TURNSTILE_SITE_KEY=contact-test-site-key` and `NEXT_PUBLIC_API_BASE_URL` unset/empty. Then run `npx playwright install chromium` and `npm run test:browser`. It starts the built frontend on port 5174, mocks Turnstile and API responses, and verifies validation, loading, duplicate clicks, failures, token expiry, mobile layout and accessibility. This UI-only suite does not prove Postgres or inbox delivery. After the same browser build, run `npm run test:contact-e2e` with `TEST_DATABASE_URL` to exercise the joined path: real browser -> frontend proxy -> API -> Postgres -> outbox worker -> mocked Resend -> acceptance metadata. It uses local ports 5174 and 8879. These suites are added to CI; CI has no real mail credentials.
 
 On this Windows machine, use `PLAYWRIGHT_BROWSERS_PATH` and `TEMP`/`TMP` under the ignored project `tmp/` directory on D: to avoid using C: for test downloads. Set environment variables using PowerShell `$env:NAME='value'` or your shell's equivalent; do not paste real secrets into shared terminals or reports.
 
@@ -102,7 +102,7 @@ SELECT id, lead_id, notification_kind, state, attempts, next_attempt_at,
 FROM outbox WHERE topic = 'email' ORDER BY created_at DESC LIMIT 50;
 ```
 
-The existing staff-only security status endpoint reports backlog aggregates. Alert on any dead email, old pending jobs and worker/timer failures. Investigate `mail_not_configured`, HTTP authentication/domain errors, rate limits, timeouts and worker health. Read provider logs using the stored message IDs, check bounces/suppression/delays and spam/junk folders, and ask mailbox owners for receipt evidence. No webhook is exposed by this change; downstream delivery state is verified in the provider account rather than inferred or automatically marked delivered in MySQL.
+The existing staff-only security status endpoint reports backlog aggregates. Alert on any dead email, old pending jobs and worker/timer failures. Investigate `mail_not_configured`, HTTP authentication/domain errors, rate limits, timeouts and worker health. Read provider logs using the stored message IDs, check bounces/suppression/delays and spam/junk folders, and ask mailbox owners for receipt evidence. No webhook is exposed by this change; downstream delivery state is verified in the provider account rather than inferred or automatically marked delivered in Postgres.
 
 Do not reset a dead/sent job or change its idempotency key to force another send. Payloads are intentionally scrubbed. Reconcile the provider history first; any intentional replacement must be reviewed and constructed from the saved enquiry. Notification failure does not delete the enquiry.
 
@@ -115,4 +115,4 @@ Do not reset a dead/sent job or change its idempotency key to force another send
 5. The owners of both approved mailboxes must confirm receipt, correct content and no unintended duplicates; check junk/spam if missing. Record separately: API accepted, provider accepted, recipient server delivered, and mailbox received.
 6. Stop the external test if account, deployment or mailbox access is missing. Never use production as a substitute. A queued/sent row or HTTP 200 from Resend is insufficient to declare real delivery working.
 
-Current owner prerequisites: provider account/key or SMTP credentials, verified sending domain and DNS access, approved sender/team/visitor addresses, accessible isolated staging backend and MySQL, matching Turnstile configuration, and access to provider logs and both mailboxes. None is assumed to exist.
+Current owner prerequisites: provider account/key or SMTP credentials, verified sending domain and DNS access, approved sender/team/visitor addresses, accessible isolated staging backend and Postgres, matching Turnstile configuration, and access to provider logs and both mailboxes. None is assumed to exist.

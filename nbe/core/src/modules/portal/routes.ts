@@ -293,12 +293,12 @@ portalRoutes.post("/requests/:id/approvals", async (c) => {
       .where(and(eq(schema.requests.id, request.id), eq(schema.requests.state, "open"))),
     // Queue the terminal notification in the same transaction, only for the transition we made.
     // A second approver cannot observe our result and queue a duplicate after its own batch.
-    deps.db.insert(schema.outbox).select(sql`select ${ulid(now)}, 'email',
-      json_object('to', u.email,
-        'subject', concat('Your request was ', r.state, ': ', ${oneLine(request.title)}),
-        'text', concat('Your request "', ${request.title}, '" is now ', r.state, '.',
-          ${input.comment ? `\n\nComment: ${input.comment}` : ""}, ${`\n\n${deps.config.appUrl}/portal`})),
-      'pending', 0, ${now}, null, ${now}, null, null, null, null, null
+    deps.db.insert(schema.outbox).select(sql`select ${ulid(now)}::varchar, 'email'::varchar,
+      json_build_object('to', u.email,
+        'subject', 'Your request was ' || r.state || ': ' || ${oneLine(request.title)}::text,
+        'text', 'Your request "' || ${request.title}::text || '" is now ' || r.state || '.' ||
+          ${input.comment ? `\n\nComment: ${input.comment}` : ""}::text || ${`\n\n${deps.config.appUrl}/portal`}::text)::text,
+      'pending'::varchar, 0, ${now}::bigint, null::varchar, ${now}::bigint, null::varchar, null::varchar, null::bigint, null::varchar, null::varchar
       from requests r join users u on u.id = r.requested_by
       where r.id = ${request.id} and r.state in ('approved', 'rejected') and row_count() > 0`),
     auditInsert(deps.db, { actorId: actor.user.id, orgId: request.orgId, action: `request.${input.decision}`, targetType: "request", targetId: request.id }, now),

@@ -72,7 +72,7 @@ export async function requestMagicLink(deps: Deps, email: string, ip: string): P
     await deps.db
       .insert(schema.users)
       .values({ id: ulid(now), email, status: "invited", staffRole: "admin", createdAt: now })
-      .onDuplicateKeyUpdate({ set: { email: sql`${schema.users.email}` } });
+      .onConflictDoNothing();
     user = await findUserByEmail(deps, email);
   }
   if (!user || user.status === "disabled") return;
@@ -103,7 +103,7 @@ export async function requestSignup(deps: Deps, input: { name: string; email: st
     await deps.db
       .insert(schema.users)
       .values({ id: ulid(now), email: input.email, name: input.name, status: "invited", staffRole: null, createdAt: now })
-      .onDuplicateKeyUpdate({ set: { email: sql`${schema.users.email}` } });
+      .onConflictDoNothing();
     user = await findUserByEmail(deps, input.email);
   }
   if (!user || user.status === "disabled") return;
@@ -154,14 +154,14 @@ export async function verifyMagicLink(
   await runBatch(deps.db, [
     deps.db.update(schema.authTokens).set({ usedAt: now, claimedSessionId: sessionId }).where(and(
       eq(schema.authTokens.id, tokenHash), isNull(schema.authTokens.usedAt), gt(schema.authTokens.expiresAt, now),
-      sql`exists (select 1 from users where id = ${user.id} and status <> 'disabled' and staff_role <=> ${user.staffRole})`,
+      sql`exists (select 1 from users where id = ${user.id} and status <> 'disabled' and staff_role is not distinct from ${user.staffRole}::varchar)`,
     )),
     deps.db.update(schema.users).set({ status: "active", lastLoginAt: now }).where(and(
       eq(schema.users.id, user.id), ne(schema.users.status, "disabled"), claimBelongsToUs,
     )),
     // The per-claim session hash distinguishes even simultaneous verifications at the same timestamp.
-    deps.db.insert(schema.sessions).select(sql`select ${sessionId}, ${user.id}, ${now + idleMs},
-      ${now + absoluteMs}, ${ipHash}, ${userAgentHash}, null, ${now} from dual where ${claimBelongsToUs}`),
+    deps.db.insert(schema.sessions).select(sql`select ${sessionId}::varchar, ${user.id}::varchar, ${now + idleMs}::bigint,
+      ${now + absoluteMs}::bigint, ${ipHash}::varchar, ${userAgentHash}::varchar, null::bigint, ${now}::bigint where ${claimBelongsToUs}`),
     ...(previousSessionId ? [deps.db.delete(schema.sessions).where(and(eq(schema.sessions.id, previousSessionId), claimBelongsToUs))] : []),
     auditInsert(deps.db, { actorId: user.id, action: "auth.login" }, now, ipHash, claimBelongsToUs),
   ]);
