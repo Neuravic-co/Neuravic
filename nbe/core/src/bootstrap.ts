@@ -25,6 +25,8 @@ export interface ServiceOptions {
   deliversMail?: boolean;
   /** Only the file host stores and scans files. */
   hostsFiles?: boolean;
+  /** How to run work that should finish after the response. The default fire-and-forgets; serverless hosts must keep the function alive (waitUntil). */
+  runInBackground?: Deps["runInBackground"];
   /** Repeating background work, run with the service's own dependencies. */
   timers?: { everyMs: number; run: (deps: Deps) => Promise<unknown> }[];
 }
@@ -62,9 +64,11 @@ export function buildDeps(options: ServiceOptions) {
     rateLimiter: new DbRateLimiter(db),
     deliversMail: options.deliversMail === true,
     now: () => Date.now(),
-    runInBackground: (task) => {
-      void task().catch(() => jsonLogger.error("background_task_failed"));
-    },
+    runInBackground:
+      options.runInBackground ??
+      ((task) => {
+        void task().catch(() => jsonLogger.error("background_task_failed"));
+      }),
   };
   return { deps, pool, devMailer };
 }

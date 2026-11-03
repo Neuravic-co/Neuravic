@@ -68,15 +68,36 @@ Compose starts MySQL (creating both accounts on first start), runs the migration
    The chart runs the migration job first (a Helm hook), then rolls out the deployments. Set `networkPolicy.databaseCidr` to your database's address range and `networkPolicy.ingressNamespace` to your ingress controller's namespace.
 4. Check: `kubectl -n neuravic get pods`, then `https://<host>/api/v1/health` shows every service as `ok`.
 
-### Website on Vercel
+### Hosting on Vercel
 
-The frontend (`nfe/`) can be hosted on Vercel on its own. In the Vercel project set **Root Directory** to `nfe`;
-`nfe/vercel.json` sets the framework and build. Set these environment variables:
+Both halves can run on Vercel as two projects from this repository. Vercel does not host MySQL: use a managed **MySQL 8 service that supports triggers** (the schema in `database/migrations/001_init.sql` relies on triggers for its integrity and security guards). Services built on Vitess, such as PlanetScale, do not support triggers and cannot run this schema as it is.
 
-- `API_ORIGIN`: HTTPS origin of the API (the backend is not hosted on Vercel). Without it the pages render, but
-  portal and form requests return 503.
-- `API_PROXY_SECRET`: must equal `PROXY_SECRET` on the backend.
-- Leave `NEXT_PUBLIC_API_BASE_URL` unset so the browser uses the built-in same-origin proxy.
+**Website** (`nfe/`): set **Root Directory** to `nfe` (`nfe/vercel.json` sets the build).
+
+| Variable | Value |
+|---|---|
+| `API_ORIGIN` | HTTPS origin of the backend project below |
+| `API_PROXY_SECRET` | Same value as the backend's `PROXY_SECRET` |
+| `TRUST_PROXY_HEADERS` | `true` (Vercel sets `x-real-ip` itself) |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Public Turnstile key; set it before the build |
+| `NEXT_PUBLIC_API_BASE_URL` | Leave unset so the browser uses the same-origin `/api/v1` proxy |
+
+**Backend** (`nbe/services/vercel/`): set **Root Directory** to `nbe/services/vercel`. `vercel.json` there installs from the repository root and runs `build.mjs`, which bundles every API service into one function and, on production builds, applies `database/migrations` first. It also registers a cron job that calls `/internal/cron` every minute to send queued email (and every fifth minute run the maintenance rules). A per-minute cron needs a Vercel plan that allows it.
+
+| Variable | Value |
+|---|---|
+| `APP_ENV` | `production` |
+| `APP_URL`, `ALLOWED_ORIGINS` | The exact HTTPS website origin |
+| `DATABASE_URL` | Application database user (add `?ssl=...` if the provider requires TLS) |
+| `MIGRATE_DATABASE_URL` | Optional separate migration user; used only during the build |
+| `PROXY_SECRET` | Shared with the website's `API_PROXY_SECRET` |
+| `PRIVACY_HASH_SECRET`, `MFA_ENCRYPTION_KEY` | Independent random keys (`node security/scripts/generate-secrets.mjs`) |
+| `CRON_SECRET` | Random value; Vercel sends it to the cron endpoint as a bearer token |
+| `EMAIL_FROM`, `NOTIFY_TO`, `RESEND_API_KEY` | See [06 Contact email](06-Contact-Email.md) |
+| `TURNSTILE_SECRET` | Private Turnstile key matching the website's site key |
+| `BOOTSTRAP_ADMIN_EMAIL` | First staff account |
+
+Not included in this deployment: file uploads (the file host stores files on disk, which functions do not keep), so `/api/v1/files` and request file paths answer 503; and the development mailbox. Everything else the multi-service setup offers is served by the one function. After the first deploy, `GET <backend>/api/v1/health` must return `{"status":"ok"}` before pointing the website at it.
 
 ### Release
 
