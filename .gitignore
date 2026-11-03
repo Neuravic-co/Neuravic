@@ -119,3 +119,6 @@ desktop.ini
 .agents/
 .codex/
 .openai/
+
+# Vercel build output
+.vercel/

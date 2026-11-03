@@ -1,11 +1,5 @@
 import { startService } from "@neuravic/core/bootstrap";
-import { adminRoutes } from "@neuravic/core/modules/admin/routes";
+import { mountAdmin } from "@neuravic/core/services";
 
 /** Staff tools: overview, users, staff accounts, audit log, security status and site content editing. */
-startService({
-  name: "admin",
-  defaultPort: 8804,
-  mount(api) {
-    api.route("/admin", adminRoutes);
-  },
-});
+startService({ name: "admin", defaultPort: 8804, mount: mountAdmin });
