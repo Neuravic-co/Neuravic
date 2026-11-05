@@ -1,12 +1,11 @@
-﻿import assert from "node:assert/strict";
+import assert from "node:assert/strict";
 import { after, before, it } from "node:test";
 import { spawn, type ChildProcess } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
 import { chromium, expect, type Browser } from "@playwright/test";
 import { emailHarness } from "../email/harness";
-import { schema } from "../../nbe/core/src/db";
-import { drainOutbox } from "../../nbe/core/src/modules/notifications/outbox";
+import { schema } from "../../nbe/src/db/client";
 
 let h: Awaited<ReturnType<typeof emailHarness>>;
 let apiServer: ReturnType<typeof serve>;
@@ -16,12 +15,14 @@ let timer: ReturnType<typeof setInterval>;
 let drain: Promise<unknown> = Promise.resolve();
 const origin = "http://localhost:5174";
 before(async () => {
-  h = await emailHarness(); await h.reset();
-  h.deps.config.turnstileSecret = "local-verification-secret";
-  h.deps.http = async (url) => {
-    assert.equal(url, "https://challenges.cloudflare.com/turnstile/v0/siteverify");
-    return Response.json({ success: true, hostname: "localhost", action: "contact" });
-  };
+  h = await emailHarness({
+    turnstile: true,
+    http: async (url) => {
+      assert.equal(url, "https://challenges.cloudflare.com/turnstile/v0/siteverify");
+      return Response.json({ success: true, hostname: "localhost", action: "contact" });
+    },
+  });
+  await h.reset();
   apiServer = serve({ fetch: h.app.fetch, hostname: "127.0.0.1", port: 8879 });
   const root = fileURLToPath(new URL("../../", import.meta.url));
   frontend = spawn(process.execPath, ["node_modules/next/dist/bin/next", "start", "-p", "5174", "-H", "127.0.0.1"], {
@@ -34,14 +35,14 @@ before(async () => {
     await new Promise(resolve => setTimeout(resolve, 200));
   }
   browser = await chromium.launch({ headless: true });
-  timer = setInterval(() => { drain = drain.then(() => drainOutbox(h.deps)); }, 100);
+  timer = setInterval(() => { drain = drain.then(() => h.outbox.drain()); }, 100);
 });
 after(async () => {
   clearInterval(timer); await drain; await browser?.close(); frontend?.kill();
   if (apiServer) await new Promise<void>(resolve => apiServer.close(() => resolve()));
-  await h?.pool.end();
+  await h?.close();
 });
-it("submits through the production frontend proxy, real API and MySQL into Resend acceptance tracking", async () => {
+it("submits through the production frontend proxy, real API and Postgres into Resend acceptance tracking", async () => {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();
   await page.route("https://challenges.cloudflare.com/**", route => route.fulfill({ contentType: "application/javascript", body: `window.turnstile={render:(_el,opts)=>{queueMicrotask(()=>{opts.callback('local-token');_el.dataset.ready='true'});return 'test'},reset:()=>{},remove:()=>{}}` }));

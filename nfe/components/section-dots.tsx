@@ -12,12 +12,10 @@ const SECTIONS = [
   { id: "contact", label: "Contact us" },
 ] as const;
 
-/** A dot rail on the right edge: one dot per section, the current one is a pill. */
 export function SectionDots() {
   const [active, setActive] = useState<string>(SECTIONS[0].id);
   const [overFooter, setOverFooter] = useState(false);
 
-  // The dots replace the browser scrollbar on this page (see .has-section-dots in globals.css).
   useEffect(() => {
     document.documentElement.classList.add("has-section-dots");
     return () => document.documentElement.classList.remove("has-section-dots");
@@ -38,7 +36,6 @@ export function SectionDots() {
     );
     nodes.forEach((node) => observer.observe(node));
 
-    // The footer is not a section: tuck the rail away so it never sits on top of the footer text.
     const footer = document.querySelector(".site-footer");
     const footerObserver = new IntersectionObserver(([entry]) =>
       setOverFooter(Boolean(entry?.isIntersecting)),

@@ -54,9 +54,9 @@ credentials.json
 secrets-output.txt
 
 # --- Local data (never share) -----------------------------------------------
-# The private MySQL server used for local development
-database/.mysql/
-.mysql/
+# The private Postgres server used for local development
+database/.postgres/
+.postgres/
 *.sql.gz
 *.dump
 *.bak
@@ -122,3 +122,5 @@ desktop.ini
 
 # Vercel build output
 .vercel/
+
+.mail-leads.log

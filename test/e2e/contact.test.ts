@@ -39,7 +39,6 @@ async function pageFor(width = 1280): Promise<Page> {
   });
   await page.goto(origin);
   await page.locator(".contact-form").scrollIntoViewIfNeeded();
-  // This assertion prevents silently skipping the challenge tests when the build omitted the site key.
   await expect.poll(() => page.evaluate(() => Boolean((window as any).contactChallenge))).toBe(true);
   return page;
 }

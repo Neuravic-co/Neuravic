@@ -1,12 +1,5 @@
 import type { NextConfig } from "next";
 
-/**
- * Baseline security headers for every page.
- *
- * `frame-ancestors 'none'` stops other sites embedding the portal (clickjacking), `base-uri` and
- * `form-action` limit injected markup, and `object-src` blocks plugins. proxy.ts adds a nonce-based
- * `script-src` policy for HTML documents.
- */
 const securityHeaders = [
   { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" },
   { key: "X-Frame-Options", value: "DENY" },
@@ -22,12 +15,6 @@ const nextConfig: NextConfig = {
     return [
       { source: "/", headers: securityHeaders },
       { source: "/:path*", headers: securityHeaders },
-      { source: "/portal/:path*", headers: [{ key: "Cache-Control", value: "no-store" }] },
-      { source: "/portal/verify", headers: [
-        { key: "Referrer-Policy", value: "no-referrer" },
-        { key: "Cache-Control", value: "no-store" },
-      ] },
-      // Brand images keep their file names, so they cannot be cached forever; a day, then refresh quietly.
       { source: "/assets/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }] },
     ];
   },

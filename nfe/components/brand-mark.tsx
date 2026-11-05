@@ -1,4 +1,3 @@
-/** The Neuravic mark as five pieces on a 256 grid, drawn as glowing glass like the main page. */
 const PIECES = [
   "128,0 64,64 128,128",
   "256,0 192,64 256,128",

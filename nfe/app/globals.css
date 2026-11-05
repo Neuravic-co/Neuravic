@@ -1,12 +1,5 @@
 @import "tailwindcss";
-@import "tw-animate-css";
-@import "../vendor/shadcn-tailwind-4.13.0.css";
 
-/*
- * Until the brand font (Termina) has loaded, text is drawn in a stand-in. Termina is about 38% wider than
- * Arial, so without this the headline would re-wrap and the page would jump when the real font arrives.
- * This stand-in is Arial stretched to Termina's width, so the layout barely moves.
- */
 @font-face {
   font-family: "termina-fallback";
   src: local("Arial"), local("Helvetica Neue"), local("Helvetica"), local("Liberation Sans"), local("Arimo"), local("Roboto"), local("Segoe UI");
@@ -22,17 +15,10 @@
   --page-gutter: clamp(1.5rem, 5.75vw, 6.5rem);
   --header-height: 5.5rem;
   --footer-height: 0px;
-  /* The full visible screen height. 100svh is the height with the browser toolbar showing, so on a phone or
-     tablet a section sized to it ends short once the toolbar slides away. 100dvh follows the toolbar. */
   --screen-h: 100vh;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --font-brand: "termina", "termina-fallback", sans-serif;
 }
-/*
- * Small text on dark surfaces. The approved muted gray (#667085) is about 3.9:1 on ink and
- * the electric blue (#365bff) about 3.9:1, both below the 4.5:1 minimum for small text.
- * On dark surfaces these resolve to mixes of the approved colours that reach 5.5:1 or more.
- */
 .section-dark,
 .site-header,
 .mobile-nav,
@@ -54,7 +40,6 @@
 }
 
 html {
-  /* Normal size up to about 2600px wide, then it grows with the screen so a 4K display is not left with tiny content. */
   font-size: max(100%, 0.62vw);
   background: var(--ink);
   color: var(--paper);
@@ -64,7 +49,6 @@ html {
 }
 
 body {
-  /* 280px is the narrowest phone in common use (a folded foldable); below that nothing is promised. */
   min-width: 17.5rem;
   margin: 0;
   overflow-x: clip;
@@ -84,10 +68,6 @@ body.menu-is-open {
   color: var(--paper);
 }
 
-/*
- * Headings are set with tight line spacing, so a boxed highlight on one line overlaps the line above
- * and hides the bottoms of its letters. Selected headings glow in the brand blue instead.
- */
 :is(h1, h2, h3)::selection,
 :is(h1, h2, h3) *::selection {
   background: transparent;
@@ -97,7 +77,6 @@ body.menu-is-open {
     0 0 0.9em color-mix(in srgb, var(--blue) 55%, transparent);
 }
 
-/* On the light sections the glow is a deeper blue so the letters stay readable. */
 .section-light :is(h1, h2, h3)::selection,
 .section-light :is(h1, h2, h3) *::selection {
   color: #1f35a8;
@@ -280,8 +259,6 @@ section {
   text-transform: uppercase;
 }
 
-/* Header */
-
 .site-header {
   position: fixed;
   z-index: 100;
@@ -363,34 +340,6 @@ section {
 .desktop-nav a.is-active::after {
   transform: scaleX(1);
   transform-origin: left;
-}
-
-
-
-.portal-button {
-  display: inline-flex;
-  justify-self: end;
-  align-items: center;
-  min-width: 6.6rem;
-  min-height: 3rem;
-  justify-content: center;
-  gap: 0;
-  padding: 0.75rem 1.35rem;
-  border: 1px solid color-mix(in srgb, var(--blue) 78%, transparent);
-  border-radius: 0.25rem;
-  background: transparent;
-  color: var(--paper);
-  cursor: pointer;
-  font-size: 0.9rem;
-  letter-spacing: 0.06em;
-  transition:
-    background-color 240ms var(--ease-out),
-    border-color 240ms var(--ease-out);
-}
-
-.portal-button:hover {
-  border-color: var(--blue);
-  background: color-mix(in srgb, var(--blue) 16%, transparent);
 }
 
 .menu-toggle {
@@ -485,8 +434,6 @@ section {
   text-transform: uppercase;
 }
 
-/* Hero */
-
 .hero {
   --hero-x: 0px;
   --hero-y: 0px;
@@ -516,7 +463,6 @@ section {
   inset: 0;
 }
 
-/* The glow behind the mark is a plain gradient, so there is no image to pixelate or grain to see. */
 .hero-art__halo {
   position: absolute;
   top: 50%;
@@ -539,7 +485,6 @@ section {
   right: 10%;
   width: var(--logo-size);
   aspect-ratio: 1;
-  /* Its own compositing layer: the still glow is drawn once; only the layers inside it move. */
   will-change: transform;
   transform: translateY(-50%);
 }
@@ -557,11 +502,6 @@ section {
   pointer-events: none;
 }
 
-/*
- * The beam of light. Every moving part below changes only `transform`, so the graphics chip slides ready-made
- * layers and nothing is redrawn. A cycle is 7 seconds: about 3 seconds of travel, then a rest. The strip starts
- * and ends outside the logo, so the restart cannot be seen. Distances are fractions of the logo size.
- */
 .hero-art__beam,
 .hero-art__core {
   position: absolute;
@@ -573,7 +513,6 @@ section {
   animation: hero-beam-move 7s ease-in-out infinite;
 }
 
-/* A soft-edged strip about half the logo wide; the fade is a fixed mask that travels with the strip. */
 .hero-art__beam {
   height: 47%;
   margin-top: -23.5%;
@@ -581,7 +520,6 @@ section {
   mask-image: linear-gradient(to bottom, transparent 0%, rgb(0 0 0 / 0.55) 38%, #000 50%, rgb(0 0 0 / 0.55) 62%, transparent 100%);
 }
 
-/* The lit copy of the logo slides the opposite way, so it stays exactly over the real logo. */
 .hero-art__lit {
   position: absolute;
   top: 50%;
@@ -627,7 +565,6 @@ section {
   }
 }
 
-/* Do not animate what nobody can see: scroll-effects.tsx marks the hero when it is off screen. */
 .hero.is-offscreen .hero-art__beam,
 .hero.is-offscreen .hero-art__lit,
 .hero.is-offscreen .hero-art__core {
@@ -641,7 +578,6 @@ section {
     animation: none;
   }
 
-  /* At rest the strip sits outside the logo, so the logo is shown still. */
   .hero-art__beam,
   .hero-art__core {
     transform: rotate(-45deg) translateY(calc(var(--logo-size) * -0.625));
@@ -751,10 +687,8 @@ section {
   font-size: 0.7rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  /* The line stands upright and ends at the bottom-right corner (it used to hang off the screen edge). */
   transform: rotate(90deg);
   transform-origin: right bottom;
-  /* After the turn this becomes width: it makes the link at least 24px wide to tap. */
   padding-block: 0.9rem;
 }
 
@@ -783,8 +717,6 @@ section {
   }
 }
 
-/* Services */
-
 .services {
   padding: clamp(8rem, 14vw, 13rem) 0 clamp(8rem, 12vw, 11rem);
 }
@@ -797,48 +729,9 @@ section {
   max-width: 50rem;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* Process */
-
 .process {
   padding: clamp(8rem, 14vw, 14rem) 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* Team */
 
 .team {
   padding: clamp(8rem, 14vw, 14rem) 0 clamp(7rem, 12vw, 11rem);
@@ -851,18 +744,6 @@ section {
 .team__heading h2 {
   max-width: 52rem;
 }
-
-
-
-
-
-
-
-
-
-
-
-/* Contact & footer */
 
 .contact {
   overflow: hidden;
@@ -885,15 +766,13 @@ section {
   padding-bottom: 0.6rem;
 }
 
-.contact__copy p {
+.contact__copy > p {
   max-width: 33rem;
   margin: 0 0 2.8rem;
   color: color-mix(in srgb, var(--paper) 65%, transparent);
   font-size: clamp(1rem, 1.25vw, 1.18rem);
   line-height: 1.65;
 }
-
-/* Contact form */
 
 .contact-form {
   display: grid;
@@ -988,13 +867,11 @@ section {
   border: 0;
 }
 
-/* A legend is not a grid item, so the fieldset's gap never applied to it: space it like the field labels. */
 .contact-form__services legend {
   padding: 0;
   margin-bottom: 0.9rem;
 }
 
-/* Two equal columns that line up with the two columns of fields above. */
 .contact-form__services > div {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1122,23 +999,10 @@ section {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  /* Keep the chips in two columns on phones too; only the gap tightens. */
   .contact-form__services > div {
     column-gap: 0.6rem;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-/* Motion */
 
 .js [data-reveal] {
   opacity: 0;
@@ -1169,8 +1033,6 @@ section {
   transition-delay: 290ms;
 }
 
-/* Responsive */
-
 @media (max-width: 72rem) {
   .desktop-nav {
     gap: 1.6rem;
@@ -1188,7 +1050,6 @@ section {
   .contact__inner {
     gap: 5rem;
   }
-
 
 }
 
@@ -1247,17 +1108,6 @@ section {
   .contact__inner {
     gap: 3.5rem;
   }
-
-
-
-
-
-
-
-
-
-
-
 
 }
 
@@ -1362,24 +1212,6 @@ section {
     gap: 2.5rem;
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   .contact__inner {
     gap: 4rem;
     padding-top: 8rem;
@@ -1398,13 +1230,8 @@ section {
     justify-content: space-between;
   }
 
-
-
-
 }
 
-/* Mobile is intentionally recomposed as its own interface rather than a
-   compressed desktop canvas. */
 @media (max-width: 58rem) {
   :root {
     --header-height: 4.75rem;
@@ -1495,12 +1322,10 @@ section {
     line-height: 1.05;
   }
   .section-lede,
-  .contact__copy p {
+  .contact__copy > p {
     font-size: 1rem;
     line-height: 1.7;
   }
-
-
 
 }
 
@@ -1686,37 +1511,6 @@ section {
     margin-bottom: 6rem;
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   .contact__inner {
     gap: 3.5rem;
     padding-top: 8rem;
@@ -1729,7 +1523,7 @@ section {
     line-height: 1.06;
   }
 
-  .contact__copy p {
+  .contact__copy > p {
     max-width: 22rem;
     margin-bottom: 2.75rem;
     font-size: 1rem;
@@ -1741,11 +1535,6 @@ section {
     min-height: 3.75rem;
     justify-content: space-between;
   }
-
-
-
-
-
 
 }
 
@@ -1759,7 +1548,6 @@ section {
     max-width: 13rem;
   }
 
-  /* On the narrowest phones a long word in a big heading must still fit the screen. */
   h1,
   h2 {
     overflow-wrap: break-word;
@@ -1790,14 +1578,12 @@ section {
   }
 }
 
-/* Folded foldables and other screens under about 300px wide: keep the biggest word of the headline on one line. */
 @media (max-width: 19rem) {
   .hero h1 {
     font-size: 1.85rem;
   }
 }
 
-/* Phones held sideways: the screen is wide but only about 300px tall, so size things by height, not width. */
 @media (max-height: 32rem) and (orientation: landscape) {
   .hero,
   .hero__inner {
@@ -1829,13 +1615,6 @@ section {
   }
 }
 
-/*
- * One screen per section on desktops and laptops.
- * Every section is about one screen tall (the same size as the first one), centred, with headings and spacing
- * sized by the screen height as well as its width, so nothing is huge or stretched. If a screen is too short for
- * a section (a small laptop window), the section simply grows a little instead of being cut off.
- * Phones and small tablets keep their own stacked layout.
- */
 @media (min-width: 58.01rem) and (min-height: 38rem) {
   .hero,
   .hero__inner {
@@ -1873,33 +1652,18 @@ section {
   .section-heading {
     gap: clamp(2rem, 6vw, 6rem);
   }
-/* Services and process: heading, then four rows */
   .services__heading,
   .team__heading {
     margin-bottom: var(--fit-gap);
   }
-/* Work: the opening slide, then one slide per project */
 
-
-
-
-
-
-
-
-
-  /* Team: three portraits sized by height, not by width */
-
-
-
-  /* Contact: the form fits beside its heading */
   .contact__inner {
     min-height: var(--screen-h);
     align-items: center;
     padding-block: var(--screen-pad-top) var(--screen-pad-bottom);
   }
 
-  .contact__copy p {
+  .contact__copy > p {
     margin-bottom: clamp(0.8rem, 2vh, 1.6rem);
     font-size: clamp(0.95rem, min(1.15vw, 2.2vh), 1.1rem);
   }
@@ -1917,7 +1681,6 @@ section {
     min-height: 0;
   }
 
-  /* Button and e-mail link share a row, and the options are a little shorter */
   .contact-form__actions {
     display: flex;
     flex-wrap: wrap;
@@ -1937,23 +1700,12 @@ section {
     margin-bottom: 0.6rem;
   }
 
-  /* The footer follows the contact screen as a slim strip */
-
-
   .contact-form input[type="text"],
   .contact-form input[type="email"],
   .contact-form textarea {
     padding-block: 0.5rem;
   }
 }
-
-
-
-
-
-
-
-/* Cookie notice: a full-width bar along the bottom edge */
 
 .cookie-notice {
   position: fixed;
@@ -2149,8 +1901,6 @@ section {
   }
 }
 
-/* Legal pages */
-
 .legal {
   min-height: var(--screen-h);
   padding-block: 2.2rem 5rem;
@@ -2273,8 +2023,6 @@ section {
     border-left: 0;
   }
 }
-
-/* Services: four cards */
 
 .services__heading {
   grid-template-columns: minmax(0, 1fr);
@@ -2399,7 +2147,6 @@ section {
   }
 }
 
-/* One screen: shorter cards that scale with the screen height */
 @media (min-width: 58.01rem) and (min-height: 38rem) {
   .services__heading h2 {
     font-size: clamp(2rem, min(4.2vw, 6.4vh), 4.4rem);
@@ -2452,8 +2199,6 @@ section {
   }
 }
 
-/* Team: three people */
-
 .team__heading {
   grid-template-columns: minmax(0, 1fr);
   justify-items: center;
@@ -2501,7 +2246,6 @@ section {
     linear-gradient(var(--slate), var(--ink));
 }
 
-/* A thin blue line along the bottom edge, like the rest of the site's accents */
 .person-card__portrait::after {
   position: absolute;
   right: 0;
@@ -2616,17 +2360,6 @@ section {
     padding-block: 0.9rem 1.05rem;
   }
 }
-/* Footer: logo and four legal tabs */
-
-
-
-
-
-
-
-
-
-/* Popup */
 
 .has-popup {
   overflow: hidden;
@@ -2814,21 +2547,7 @@ section {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 @media (max-width: 40rem) {
-
 
 }
 
@@ -2836,7 +2555,6 @@ section {
 
 }
 
-/* Services and process on tablet and phone: one compact screen, two cards across */
 @media (max-width: 58rem) {
   .services,
   .process {
@@ -2909,8 +2627,6 @@ section {
     display: none;
   }
 }
-
-/* Work: one navy screen, two product cards */
 
 .work {
   display: flex;
@@ -3126,14 +2842,7 @@ section {
   }
 }
 
-/* Every page is one full screen, the same size as the hero */
-
 @media (min-width: 58.01rem) and (min-height: 38rem) {
-/* Footer: a slim row, so the contact screen and the footer together fill one screen */
-
-
-
-
 
   .contact__inner {
     min-height: calc(var(--screen-h) - var(--footer-height));
@@ -3164,7 +2873,6 @@ section {
   .hero__inner {
     min-height: var(--screen-h);
   }
-
 
   .team {
     padding-block: calc(var(--header-height) + 1rem) 1.5rem;
@@ -3210,13 +2918,13 @@ section {
 }
 
 @media (min-width: 58.01rem) and (min-height: 38rem) and (max-height: 60rem) {
-  .contact__copy p {
+  .contact__copy > p {
     display: none;
   }
 }
 
 @media (max-width: 58rem) {
-  .contact__copy p {
+  .contact__copy > p {
     display: none;
   }
 
@@ -3255,7 +2963,6 @@ section {
   }
 }
 
-/* Contact on tablet and phone: compact so the form and footer fill one screen */
 @media (max-width: 58rem) {
   .contact__inner {
     min-height: 0;
@@ -3307,7 +3014,6 @@ section {
 
 @media (max-width: 58rem) {
 
-
   .contact-form textarea {
     height: 3rem;
   }
@@ -3323,15 +3029,7 @@ section {
     align-content: center;
   }
 }
-/* Footer: a large faded wordmark with the copyright line and the legal tabs along the bottom *//* Footer: a faded gradient wordmark, rounded legal tabs and the copyright line, centred with room to breathe */
 
-
-
-
-
-
-
-/* The contact screen is never shorter than the viewport, so the page above cannot show through at the end. */
 .contact {
   display: flex;
   min-height: var(--screen-h);
@@ -3341,8 +3039,6 @@ section {
 .contact > .contact__inner {
   flex: 1 0 auto;
 }
-
-/* About: the same flat navy as the rest of the site, a faint pattern on the right and two slate cards */
 
 .about {
   position: relative;
@@ -3526,14 +3222,6 @@ section {
     display: none;
   }
 }
-/* Footer polish: layered blue gradients, a glowing top edge and glass pills */
-
-
-
-
-
-
-/* Footer: brand and company card, services and navigation, legal, contact */
 
 .site-footer {
   border-top: 1px solid color-mix(in srgb, var(--paper) 12%, transparent);
@@ -3708,8 +3396,6 @@ section {
   }
 }
 
-/* Section dots: a rail on the right edge, one dot per section */
-
 .section-dots {
   position: fixed;
   z-index: 40;
@@ -3783,7 +3469,6 @@ section {
   outline-offset: 3px;
 }
 
-/* With the dot rail showing, the native scrollbar is hidden; scrolling still works as normal. */
 @media (min-width: 58.01rem) and (min-height: 30rem) {
   html.has-section-dots {
     scrollbar-width: none;

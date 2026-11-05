@@ -15,7 +15,6 @@ const patterns = [
   ["private signing JWK", /"d"\s*:\s*"[A-Za-z0-9_-]{40,}"/g],
 ];
 
-/** Return metadata only. Callers must never print matched source text. */
 export function scanText(text, filename) {
   const results = [];
   for (const [kind, pattern] of patterns) {
@@ -46,7 +45,7 @@ function dependencyAudit(folder) {
     cwd: path.join(root, folder), encoding: "utf8", timeout: 90_000, maxBuffer: 8 * 1024 * 1024,
   });
   let report;
-  try { report = JSON.parse(result.stdout); } catch { /* Fail closed on network/tool errors. */ }
+  try { report = JSON.parse(result.stdout); } catch { }
   const counts = report?.metadata?.vulnerabilities;
   if (result.error || report?.error || !counts || ![0, 1].includes(result.status)) {
     console.error(`FAIL ${folder}: dependency audit unavailable; check registry connectivity and rerun`);

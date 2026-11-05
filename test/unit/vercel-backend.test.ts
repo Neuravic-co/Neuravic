@@ -1,47 +1,49 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createBackend, shouldDrainAfter } from "../../nbe/services/vercel/src/app";
+import { createApp } from "../../nbe/src/app";
+import { createBackend } from "../../nbe/services/vercel/src/app";
+import { productionEnv, secret, testContainer } from "./fixtures";
 
-const CRON = "c".repeat(40);
+const call = (backend: ReturnType<typeof createBackend>, path: string, headers: Record<string, string> = {}) =>
+  backend.fetch(new Request(`https://api.example.com${path}`, { headers }));
 
-function backend(env: Record<string, string> = {}, makeDeps: () => never = () => { throw new Error("no database"); }) {
-  return createBackend({ waitUntil: () => undefined, env: { CRON_SECRET: CRON, ...env } as NodeJS.ProcessEnv, makeDeps });
-}
-const call = (b: ReturnType<typeof backend>, path: string, headers: Record<string, string> = {}) =>
-  b.fetch(new Request(`https://api.example.com${path}`, { headers }));
-
-describe("one-process backend", () => {
-  it("answers file paths with 503 because file hosting is not part of it", async () => {
-    const res = await call(backend(), "/api/v1/requests/abc/files");
-    assert.equal(res.status, 503);
-    assert.equal((await res.json() as { code: string }).code, "service_unavailable");
-    assert.equal((await call(backend(), "/api/v1/files/abc")).status, 503);
-  });
-
-  it("does not expose the development mailbox", async () => {
-    assert.equal((await call(backend(), "/api/v1/dev/mailbox")).status, 404);
-  });
-
+describe("one-process backend on Vercel", () => {
   it("rejects cron calls without the right secret", async () => {
-    assert.equal((await call(backend(), "/internal/cron")).status, 401);
-    assert.equal((await call(backend(), "/internal/cron", { authorization: "Bearer wrong" })).status, 401);
-    assert.equal((await call(backend({ CRON_SECRET: "" }), "/internal/cron", { authorization: "Bearer " })).status, 401);
+    const backend = createBackend({ waitUntil: () => undefined, env: productionEnv, container: testContainer(productionEnv) });
+    assert.equal((await call(backend, "/internal/cron")).status, 401);
+    assert.equal((await call(backend, "/internal/cron", { authorization: "Bearer wrong" })).status, 401);
   });
 
   it("answers 503 instead of crashing when the backend cannot start", async () => {
-    const res = await call(backend(), "/internal/cron", { authorization: `Bearer ${CRON}` });
-    assert.equal(res.status, 503);
-    const api = await call(backend(), "/api/v1/health");
-    assert.equal(api.status, 503);
-    assert.equal(api.headers.get("retry-after"), "5");
+    const backend = createBackend({ waitUntil: () => undefined, env: {} });
+    const response = await call(backend, "/api/v1/health");
+    assert.equal(response.status, 503);
+    assert.equal(response.headers.get("retry-after"), "5");
   });
 
-  it("sends queued email right after an accepted enquiry, and only then", () => {
-    const post = (path: string, method = "POST") => new Request(`https://api.example.com${path}`, { method });
-    assert.equal(shouldDrainAfter(post("/api/v1/leads"), new Response(null, { status: 202 })), true);
-    assert.equal(shouldDrainAfter(post("/api/v1/leads/"), new Response(null, { status: 202 })), true);
-    assert.equal(shouldDrainAfter(post("/api/v1/leads"), new Response(null, { status: 422 })), false);
-    assert.equal(shouldDrainAfter(post("/api/v1/leads", "GET"), new Response(null, { status: 202 })), false);
-    assert.equal(shouldDrainAfter(post("/api/v1/auth/login"), new Response(null, { status: 202 })), false);
+  it("serves the API once it can start", async () => {
+    const backend = createBackend({ waitUntil: () => undefined, env: productionEnv, container: testContainer(productionEnv) });
+    assert.equal((await call(backend, "/api/v1/health")).status, 200);
+  });
+
+  it("only believes the visitor address that the website proxy signed", async () => {
+    const seen: string[] = [];
+    const container = testContainer(productionEnv, { botCheck: { verify: async (_token, ip) => (seen.push(ip), false) } });
+    const backend = createBackend({ waitUntil: () => undefined, env: productionEnv, container });
+    const post = (headers: Record<string, string>) =>
+      backend.fetch(new Request("https://api.example.com/api/v1/leads", {
+        method: "POST",
+        headers: { origin: "https://www.example.com", "content-type": "application/json", ...headers },
+        body: JSON.stringify({ name: "Sara", email: "sara@example.com", message: "A valid contact enquiry.", consent: true }),
+      }));
+
+    await post({ "x-client-ip": "203.0.113.9", "x-proxy-secret": secret("x") });
+    await post({ "x-client-ip": "203.0.113.10", "x-proxy-secret": "wrong".repeat(10), "x-real-ip": "198.51.100.4" });
+    await post({ "x-client-ip": "203.0.113.11" });
+    assert.deepEqual(seen, ["203.0.113.9", "198.51.100.4", "unknown"]);
+  });
+
+  it("builds the same application the Node server runs", () => {
+    assert.equal(typeof createApp(testContainer(productionEnv)).fetch, "function");
   });
 });

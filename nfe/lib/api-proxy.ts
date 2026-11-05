@@ -1,12 +1,3 @@
-/**
- * Server-side proxy from the website to the Neuravic API (Server).
- *
- * The browser only ever talks to its own domain, so the login cookie stays first-party.
- * The proxy also forwards the visitor's real address, signed with a shared secret, because the API
- * would otherwise see this server's address for every visitor and rate-limit them all together.
- */
-
-/** Headers that describe one connection and must not be copied to the next one. */
 const HOP_BY_HOP = [
   "connection",
   "keep-alive",
@@ -18,7 +9,6 @@ const HOP_BY_HOP = [
   "upgrade",
   "host",
   "content-length",
-  // Set by this proxy, never by the caller.
   "x-client-ip",
   "x-proxy-secret",
   "x-forwarded-for",
@@ -30,7 +20,6 @@ const HOP_BY_HOP = [
   "authorization",
 ];
 
-/** Headers fetch() has already decoded, so they no longer describe the body. */
 const DECODED_RESPONSE_HEADERS = ["content-encoding", "content-length", "transfer-encoding", "connection"];
 
 function problem(status: number, code: string, title: string): Response {
@@ -40,8 +29,6 @@ function problem(status: number, code: string, title: string): Response {
 }
 
 function visitorAddress(request: Request): string | undefined {
-  // Only an edge that overwrites these headers may be believed. Portable servers must not sign caller input.
-  // Behind a Kubernetes ingress that sets X-Real-IP itself (ingress-nginx does), set TRUST_PROXY_HEADERS=true.
   if (process.env.TRUST_PROXY_HEADERS === "true") return request.headers.get("x-real-ip")?.trim() || undefined;
   return undefined;
 }
@@ -61,12 +48,10 @@ export async function proxyToApi(request: Request): Promise<Response> {
   const target = `${origin}${incoming.pathname}${incoming.search}`;
 
   const headers = new Headers(request.headers);
-  // Honour connection-specific nominations as well as the fixed list.
   for (const name of (request.headers.get("connection") ?? "").split(",")) {
     if (/^[a-z0-9-]+$/i.test(name.trim())) headers.delete(name.trim());
   }
   for (const name of HOP_BY_HOP) headers.delete(name);
-  // Preserve the browser's origin evidence even if a non-browser caller nominates it for removal.
   for (const name of ["origin", "referer"]) {
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
@@ -82,7 +67,6 @@ export async function proxyToApi(request: Request): Promise<Response> {
       method: request.method,
       headers,
       body: hasBody ? request.body : undefined,
-      // Required by Node when streaming a request body.
       ...(hasBody ? { duplex: "half" } : {}),
       redirect: "manual",
       signal: AbortSignal.timeout(25_000),

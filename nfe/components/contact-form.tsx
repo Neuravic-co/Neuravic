@@ -23,7 +23,6 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
   const [services, setServices] = useState<ServiceValue[]>([]);
   const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
-  /** A ready-to-send email with what the person typed, offered when the form cannot reach the server. */
   const [emailInstead, setEmailInstead] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [sentTo, setSentTo] = useState("");
@@ -34,14 +33,12 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
   const onToken = useCallback((token: string) => { verification.current.token = token; }, []);
   const onResetReady = useCallback((reset: () => void) => { verification.current.reset = reset; }, []);
 
-  // The form collapses on success: bring the confirmation into view and announce it.
   useEffect(() => {
     if (status !== "sent") return;
     confirmation.current?.scrollIntoView({ block: "center", behavior: "smooth" });
     confirmation.current?.focus({ preventScroll: true });
   }, [status]);
 
-  /** Clears a field's error as soon as the person edits it. */
   const clearError = (name: string | undefined) =>
     setErrors((current) => {
       if (!name || (!current[name as FieldName] && !current.form)) return current;
@@ -89,7 +86,6 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
         method: "POST",
         body: {
           ...details,
-          // The API stores one full name.
           name: `${firstName} ${lastName}`,
           serviceInterest: services,
           turnstileToken: verification.current.token || undefined,
@@ -104,7 +100,6 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
       if (error instanceof ApiError && error.status === 400 && error.fieldErrors.length) {
         const next: Errors = {};
         for (const item of error.fieldErrors) {
-          // The API has one "name" field; show its message under the first name box.
           const key = (item.path === "name" ? "firstName" : item.path) as FieldName;
           next[key] ??= item.message;
         }
@@ -210,7 +205,6 @@ export function ContactForm({ fallbackEmail }: { fallbackEmail: string }) {
         {fieldError("message")}
       </div>
 
-      {/* Honeypot: hidden from people and assistive technology, bots fill it in. */}
       <div className="contact-form__trap" aria-hidden="true">
         <label>
           Website

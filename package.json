@@ -2,22 +2,23 @@
   "name": "neuravic",
   "version": "0.1.0",
   "private": true,
-  "description": "Neuravic: website and client portal (nfe), backend microservices (nbe), file server (server), database (database) and deployment (deployment).",
+  "description": "Neuravic: marketing website (nfe), backend API (nbe), database migrations (database) and deployment (deployment).",
   "engines": {
     "node": ">=22.13.0"
   },
   "workspaces": [
-    "nbe/core",
-    "nbe/services/*",
-    "server",
+    "nbe",
     "database",
     "test"
   ],
   "scripts": {
-    "db:local": "npm run mysql:local -w @neuravic/database",
+    "app": "node scripts/run.mjs",
+    "db:local": "npm run postgres:local -w @neuravic/database",
     "db:migrate": "npm run migrate -w @neuravic/database",
-    "start": "node deployment/scripts/local.mjs",
+    "start": "npm run start -w @neuravic/nbe",
+    "dev": "npm run dev -w @neuravic/nbe",
     "smoke": "tsx --env-file-if-exists=.env nbe/scripts/smoke.mts",
+    "mail:leads": "tsx --env-file-if-exists=.env nbe/scripts/mail-leads.mts",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "security": "node security/scripts/security-check.mjs",
     "test": "npm run test:unit && npm run test:integration",
