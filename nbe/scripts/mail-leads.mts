@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import { appendFileSync, readFileSync } from "node:fs";
 import pg from "pg";
 import { SmtpMailer } from "../src/modules/mail/smtp";
 
@@ -32,10 +32,17 @@ if (!databaseUrl || !from || (send && !smtpUrl)) {
 
 const template = readFileSync(bodyFile, "utf8").trim();
 const campaign = createHash("sha256").update(`${subject}\n${template}`).digest("hex").slice(0, 16);
+function readSentLog(): string {
+  try {
+    return readFileSync(LOG_FILE, "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return "";
+    throw error;
+  }
+}
+
 const alreadySent = new Set(
-  existsSync(LOG_FILE)
-    ? readFileSync(LOG_FILE, "utf8").split(/\r?\n/).filter((line) => line.startsWith(`${campaign} `)).map((line) => line.slice(campaign.length + 1))
-    : [],
+  readSentLog().split(/\r?\n/).filter((line) => line.startsWith(`${campaign} `)).map((line) => line.slice(campaign.length + 1)),
 );
 
 const render = (name: string) => `${template.replaceAll("{name}", name.split(/\s+/)[0] || "there")}${FOOTER}`;

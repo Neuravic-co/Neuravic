@@ -85,7 +85,7 @@ try {
     const origin = env.VERCEL_API_ORIGIN;
     if (!origin) throw new Error("Set VERCEL_API_ORIGIN (the deployed backend URL) in .env or the environment.");
     run("web", "npm run dev --prefix nfe", { API_ORIGIN: origin, API_PROXY_SECRET: env.PROXY_SECRET ?? "" });
-    console.log(`\nWebsite: http://localhost:5173 -> ${origin}   Ctrl+C stops it\n`);
+    console.log("\nWebsite: http://localhost:5173 (using the deployed API)   Ctrl+C stops it\n");
   }
 } catch (error) {
   console.error(error.message);
