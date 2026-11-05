@@ -1,0 +1,27 @@
+{
+  "name": "@neuravic/nbe",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Neuravic backend: one Hono application for website enquiries, a durable email outbox and health checks.",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../.env src/index.ts",
+    "start": "tsx --env-file-if-exists=../.env src/index.ts",
+    "build:vercel": "node services/vercel/build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.1.5",
+    "@vercel/functions": "^3.10.6",
+    "drizzle-orm": "0.45.4",
+    "hono": "^4.13.14",
+    "nodemailer": "^10.3.1",
+    "pg": "^8.23.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^8.0.2",
+    "@types/pg": "^8.11.0",
+    "esbuild": "^0.28.2"
+  }
+}

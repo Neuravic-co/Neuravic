@@ -21,15 +21,14 @@ export const LEGAL_DOCUMENTS: LegalDocument[] = [
       {
         heading: "Who we are",
         body: [
-          "Neuravic (“we”, “us”) designs and builds AI systems, software and product experiences from offices in Dubai and Cairo. This policy explains how we handle personal data on this website and in the Neuravic client portal.",
+          "Neuravic (“we”, “us”) designs and builds AI systems, software and product experiences from offices in Dubai and Cairo. This policy explains how we handle personal data on this website.",
         ],
       },
       {
         heading: "What we collect",
         body: [
           "Contact form: your first and last name, email address, optional company name, the services you are interested in and your message.",
-          "Portal sign-in: your email address, so we can send a one-time sign-in link, plus the organisation, project and request details you create while using the portal.",
-          "Technical data: your IP address and basic request information, used only to keep the service secure (for example, to limit repeated sign-in attempts).",
+          "Technical data: your IP address and basic request information, used only to keep the service secure (for example, to limit repeated form submissions).",
           "We do not run advertising trackers and we do not sell personal data.",
         ],
       },
@@ -37,20 +36,19 @@ export const LEGAL_DOCUMENTS: LegalDocument[] = [
         heading: "How we use it",
         body: [
           "To reply to your enquiry and to deliver, support and improve our work for you.",
-          "To sign you in to the portal and keep your account and organisation data secure.",
           "To prevent abuse, investigate security incidents and meet our legal obligations.",
         ],
       },
       {
         heading: "Who we share it with",
         body: [
-          "Only with service providers that help us run the site and portal (hosting, database and email delivery), under terms that limit them to acting on our instructions. We may also disclose data when the law requires it.",
+          "Only with service providers that help us run the site (hosting, database and email delivery), under terms that limit them to acting on our instructions. We may also disclose data when the law requires it.",
         ],
       },
       {
         heading: "How long we keep it",
         body: [
-          "Contact enquiries are kept for as long as needed to respond and for a reasonable period afterwards. Portal data is kept while your organisation has an account, then deleted or anonymised on request or when the engagement ends, unless the law requires us to keep it longer.",
+          "Contact enquiries are kept for as long as needed to respond and for a reasonable period afterwards. Messages flagged as spam are deleted automatically after 90 days. Data is deleted or anonymised on request unless the law requires us to keep it longer.",
         ],
       },
       {
@@ -62,7 +60,7 @@ export const LEGAL_DOCUMENTS: LegalDocument[] = [
       {
         heading: "Security",
         body: [
-          "Traffic is encrypted in transit, sign-in is passwordless and time-limited, and access to organisation data is restricted by role. No system is perfectly secure, so please tell us at once if you suspect a problem.",
+          "Traffic is encrypted in transit, access to stored enquiries is restricted, and secrets are kept out of the code. No system is perfectly secure, so please tell us at once if you suspect a problem.",
         ],
       },
       {
@@ -76,21 +74,21 @@ export const LEGAL_DOCUMENTS: LegalDocument[] = [
   {
     slug: "terms",
     title: "Terms of Use",
-    summary: "The rules for using this website and the client portal.",
+    summary: "The rules for using this website.",
     updated: UPDATED,
     sections: [
       {
         heading: "Agreement",
         body: [
-          "By using this website or the Neuravic client portal you agree to these terms. If you do not agree, please do not use them. Work we carry out for clients is governed by a separate written agreement, which takes priority over these terms where they differ.",
+          "By using this website you agree to these terms. If you do not agree, please do not use them. Work we carry out for clients is governed by a separate written agreement, which takes priority over these terms where they differ.",
         ],
       },
       {
-        heading: "Using the site and portal",
+        heading: "Using the site",
         body: [
           "You agree to use them lawfully and to give accurate information.",
           "You must not attempt to gain unauthorised access, probe or disrupt the service, scrape it at scale, or upload malicious code.",
-          "You are responsible for activity under your account and for keeping your sign-in email secure. Tell us promptly if you think it has been compromised.",
+          "Tell us promptly if you believe you have found a security problem.",
         ],
       },
       {
@@ -108,13 +106,13 @@ export const LEGAL_DOCUMENTS: LegalDocument[] = [
       {
         heading: "Availability",
         body: [
-          "We work to keep the service running but provide it “as is” and “as available”. We may change, suspend or withdraw features, including the portal, at any time.",
+          "We work to keep the service running but provide it “as is” and “as available”. We may change, suspend or withdraw features, at any time.",
         ],
       },
       {
         heading: "Liability",
         body: [
-          "To the fullest extent permitted by law, we are not liable for indirect or consequential loss arising from your use of the website or portal. Nothing here limits liability that cannot be limited by law.",
+          "To the fullest extent permitted by law, we are not liable for indirect or consequential loss arising from your use of the website. Nothing here limits liability that cannot be limited by law.",
         ],
       },
       {
@@ -140,16 +138,13 @@ export const LEGAL_DOCUMENTS: LegalDocument[] = [
       {
         heading: "What we store",
         body: [
-          "Sign-in session cookie (portal only): keeps you signed in after you open your one-time link. It is first-party, secure, not readable by scripts, and removed when you sign out or it expires. Essential.",
-          "sidebar_state cookie (portal only): remembers whether the portal sidebar is open, for 7 days. Preference.",
-          "Local storage (portal only): remembers the organisation you last selected. Preference.",
           "Local storage, notice choice: remembers that you dismissed the cookie notice so it does not appear again. Essential.",
         ],
       },
       {
         heading: "Managing storage",
         body: [
-          "You can clear or block cookies and site data in your browser settings. Blocking the sign-in cookie will stop you from using the portal, but the public website will keep working.",
+          "You can clear or block cookies and site data in your browser settings. The website will keep working.",
         ],
       },
       {
@@ -173,7 +168,7 @@ export const LEGAL_DOCUMENTS: LegalDocument[] = [
       {
         heading: "Copyright",
         body: [
-          "© 2026 Neuravic. All rights reserved. The website, portal, brand, logo, artwork, copy and source code are proprietary. No part may be copied, modified, distributed or used to build a competing service without our written permission.",
+          "© 2026 Neuravic. All rights reserved. The website, brand, logo, artwork, copy and source code are proprietary. No part may be copied, modified, distributed or used to build a competing service without our written permission.",
         ],
       },
       {

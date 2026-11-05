@@ -1,9 +1,4 @@
--- Neuravic PostgreSQL schema (PostgreSQL 14+; works on Neon, Supabase and any other host).
--- Statements are separated by lines that read "-- @@" (run by scripts/migrate.ts).
--- Text is compared byte for byte, and all timestamps are UTC epoch milliseconds stored in bigint columns.
 
--- Reports how many rows the statement just before it touched, inside one atomic batch (see runBatch in nbe/core/src/db).
--- This is how an audit row is written only when the change it describes really happened.
 CREATE FUNCTION row_count() RETURNS bigint LANGUAGE sql VOLATILE AS $$
   SELECT coalesce(nullif(current_setting('app.row_count', true), '')::bigint, 0)
 $$
@@ -88,7 +83,6 @@ CREATE INDEX privacy_requests_user ON privacy_requests (user_id, created_at, id)
 -- @@
 CREATE INDEX privacy_requests_created ON privacy_requests (created_at, id)
 -- @@
--- A person can have only one open request of each kind. Closed requests do not count.
 CREATE UNIQUE INDEX privacy_requests_open ON privacy_requests (user_id, kind) WHERE state IN ('pending', 'in_review')
 -- @@
 CREATE TABLE auth_tokens (
@@ -240,7 +234,6 @@ CREATE TABLE content_items (
 -- @@
 CREATE UNIQUE INDEX content_kind_slug ON content_items (kind, slug)
 -- @@
--- Column order matters: the portal inserts into outbox with INSERT ... SELECT.
 CREATE TABLE outbox (
   id varchar(64) NOT NULL PRIMARY KEY,
   topic varchar(16) NOT NULL,
@@ -254,7 +247,6 @@ CREATE TABLE outbox (
 -- @@
 CREATE INDEX outbox_due ON outbox (state, next_attempt_at)
 -- @@
--- Column order matters: audit rows are also written with INSERT ... SELECT.
 CREATE TABLE audit_log (
   id varchar(64) NOT NULL PRIMARY KEY,
   at bigint NOT NULL,
@@ -281,8 +273,6 @@ CREATE TABLE rate_limits (
 -- @@
 CREATE INDEX rate_limits_expires ON rate_limits (expires_at)
 -- @@
--- Write guards. They run inside the same transaction as the write that trips them. The error message is the marker
--- the application looks for (see lib/errors.ts).
 CREATE FUNCTION users_revoke_credentials() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   IF (NEW.status = 'disabled' AND OLD.status IS DISTINCT FROM NEW.status) OR NEW.staff_role IS DISTINCT FROM OLD.staff_role THEN

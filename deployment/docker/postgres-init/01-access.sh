@@ -1,8 +1,4 @@
 #!/bin/sh
-# Runs once, the first time the Postgres container starts with an empty data folder.
-# Creates the two roles the system uses (the official image already created the database):
-#   neuravic_app       reads and writes rows only
-#   neuravic_migrator  owns the tables, so it can also create and change them (and their triggers)
 set -eu
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<SQL

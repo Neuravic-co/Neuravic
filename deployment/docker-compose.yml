@@ -1,6 +1,3 @@
-# The whole system in containers: docker compose -f deployment/docker-compose.yml --env-file deployment/.env up --build
-# Copy deployment/.env.example to deployment/.env first and fill in the secrets (generate them with security/scripts/generate-secrets.mjs).
-
 x-backend: &backend
   build:
     context: ..
@@ -17,20 +14,14 @@ x-backend: &backend
     ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:?set ALLOWED_ORIGINS}
     EMAIL_FROM: ${EMAIL_FROM:-Neuravic <no-reply@neuravic.com>}
     NOTIFY_TO: ${NOTIFY_TO:?set NOTIFY_TO}
-    BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
-    DATABASE_URL: postgres://neuravic_app:${APP_DB_PASSWORD}@postgres:5432/neuravic
+    DATABASE_URL: postgres://neuravic_app:${APP_DB_PASSWORD:?set APP_DB_PASSWORD}@postgres:5432/neuravic
     PRIVACY_HASH_SECRET: ${PRIVACY_HASH_SECRET:?set PRIVACY_HASH_SECRET}
-    MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:?set MFA_ENCRYPTION_KEY}
     PROXY_SECRET: ${PROXY_SECRET:?set PROXY_SECRET}
+    CRON_SECRET: ${CRON_SECRET:-}
     RESEND_API_KEY: ${RESEND_API_KEY:-}
     SMTP_URL: ${SMTP_URL:-}
+    SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
     TURNSTILE_SECRET: ${TURNSTILE_SECRET:-}
-    AUTH_URL: http://auth:8801
-    PORTAL_URL: http://portal:8802
-    LEADS_URL: http://leads:8803
-    ADMIN_URL: http://admin:8804
-    FILES_URL: http://files:8805
-    WORKER_URL: http://worker:8806
   depends_on:
     migrate:
       condition: service_completed_successfully
@@ -57,45 +48,22 @@ services:
   migrate:
     <<: *backend
     restart: "no"
+    command: ["node", "--import", "tsx", "database/scripts/migrate.ts"]
     depends_on:
       postgres:
         condition: service_healthy
     environment:
       <<: *backend-env
-      ENTRY: database/scripts/migrate.ts
-      MIGRATE_DATABASE_URL: postgres://neuravic_migrator:${MIGRATE_DB_PASSWORD}@postgres:5432/neuravic
+      DATABASE_URL_UNPOOLED: postgres://neuravic_migrator:${MIGRATE_DB_PASSWORD}@postgres:5432/neuravic
 
-  auth:
+  backend:
     <<: *backend
-    environment: { <<: *backend-env, ENTRY: nbe/services/auth/src/index.ts }
-  portal:
-    <<: *backend
-    environment: { <<: *backend-env, ENTRY: nbe/services/portal/src/index.ts }
-  leads:
-    <<: *backend
-    environment: { <<: *backend-env, ENTRY: nbe/services/leads/src/index.ts }
-  admin:
-    <<: *backend
-    environment: { <<: *backend-env, ENTRY: nbe/services/admin/src/index.ts }
-  worker:
-    <<: *backend
-    environment: { <<: *backend-env, ENTRY: nbe/services/worker/src/index.ts }
-  files:
-    <<: *backend
-    environment: { <<: *backend-env, ENTRY: server/src/index.ts, MALWARE_SCANNER_URL: "${MALWARE_SCANNER_URL:-}" }
-    volumes:
-      - uploads:/data/uploads
-  gateway:
-    <<: *backend
-    environment: { <<: *backend-env, ENTRY: nbe/services/gateway/src/index.ts }
-    depends_on: [auth, portal, leads, admin, worker, files]
 
   frontend:
     build:
       context: ..
       dockerfile: deployment/docker/frontend.Dockerfile
       args:
-        NEXT_PUBLIC_PORTAL_OPEN: ${NEXT_PUBLIC_PORTAL_OPEN:-true}
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
     image: neuravic-frontend:local
     restart: unless-stopped
@@ -104,13 +72,12 @@ services:
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     environment:
-      API_ORIGIN: http://gateway:8787
+      API_ORIGIN: http://backend:8787
       ALLOW_INSECURE_API_ORIGIN: "true"
       API_PROXY_SECRET: ${PROXY_SECRET}
-    depends_on: [gateway]
+    depends_on: [backend]
     ports:
       - "5173:5173"
 
 volumes:
   postgres-data:
-  uploads:

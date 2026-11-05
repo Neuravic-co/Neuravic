@@ -1,4 +1,3 @@
-/** Nonce policy applied to every HTML document by proxy.ts. */
 export function contentSecurityPolicy(nonce: string, development: boolean, apiBase?: string, turnstile = false): string {
   const connect = ["'self'", "https://use.typekit.net", "https://p.typekit.net"];
   if (apiBase && /^https?:\/\//.test(apiBase)) {
@@ -11,7 +10,6 @@ export function contentSecurityPolicy(nonce: string, development: boolean, apiBa
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${development ? " 'unsafe-eval'" : ""}`,
-    // The UI uses inline style properties; scripts remain nonce-only in production.
     "style-src 'self' 'unsafe-inline' https://use.typekit.net https://p.typekit.net",
     "font-src 'self' data: https://use.typekit.net https://p.typekit.net",
     "img-src 'self' data: blob: https://p.typekit.net",

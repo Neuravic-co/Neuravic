@@ -1,13 +1,5 @@
-/**
- * Light checks that run in the browser before a form is sent, so mistakes are caught instantly.
- * They mirror the API's rules and messages. The API validates everything again and stays the authority;
- * this file is deliberately tiny so the website does not have to ship a validation library.
- */
-
-/** Same shape of address the API accepts: no leading or doubled dots, a real domain with a 2+ letter ending. */
 const EMAIL_PATTERN = /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9-]*\.)+[A-Za-z]{2,}$/;
 
-/** Returns a message when the address is not valid, otherwise undefined. */
 export function emailError(value: string): string | undefined {
   const email = value.trim();
   return email.length <= 254 && EMAIL_PATTERN.test(email) ? undefined : "Enter a valid email address";
@@ -27,7 +19,6 @@ export type ContactResult =
   | { ok: true; data: ContactValues }
   | { ok: false; errors: Partial<Record<ContactField, string>> };
 
-/** Checks the contact form. Values come back trimmed. Errors are listed in the order the fields appear. */
 export function validateContact(values: ContactValues): ContactResult {
   const data: ContactValues = {
     ...values,

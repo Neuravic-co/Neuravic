@@ -1,4 +1,3 @@
--- Password sign-in. Hashes live in their own table so no user listing can ever return them.
 CREATE TABLE user_passwords (
   user_id varchar(64) NOT NULL PRIMARY KEY,
   password_hash varchar(255) NOT NULL,

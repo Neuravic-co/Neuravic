@@ -1,6 +1,3 @@
-# A single Postgres for testing and staging clusters. For production use a managed Postgres (Neon, Supabase, RDS...) with
-# backups and point-in-time recovery, and put its address in the DATABASE_URL secret instead of deploying this.
-# Needs a Secret named neuravic-postgres with: admin-password, app-password, migrate-password.
 apiVersion: v1
 kind: Service
 metadata:
@@ -82,7 +79,6 @@ spec:
         accessModes: ["ReadWriteOnce"]
         resources: { requests: { storage: 20Gi } }
 ---
-# Only the backend pods may reach this Postgres (the chart's default-deny policy would otherwise block it).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

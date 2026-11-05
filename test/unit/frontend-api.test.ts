@@ -13,7 +13,6 @@ for (const [setting, target] of [
     const env = { ...process.env };
     if (setting === undefined) delete env.NEXT_PUBLIC_API_BASE_URL;
     else env.NEXT_PUBLIC_API_BASE_URL = setting;
-    // Each process imports the client with a fresh environment, just as a new build does.
     const output = execFileSync(process.execPath, ["--import", "tsx", "--input-type=module", "-e", `
       const { api } = await import(${JSON.stringify(clientUrl)});
       globalThis.fetch = async (url) => {

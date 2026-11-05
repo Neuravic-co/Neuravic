@@ -1,16 +1,3 @@
-// Creates the database and the two Postgres roles Neuravic uses on a server you administer. Safe to run again: it only
-// creates what is missing and always resets the two passwords to the values you give it.
-//
-//   neuravic_app       runs the services. Can read and write rows, nothing else (no DDL, no other database).
-//   neuravic_migrator  runs `npm run db:migrate`. Owns the tables, so it can also create and change them.
-//
-// Not needed on Neon, Supabase and similar hosts: they give you a ready database and a role. Put that connection
-// string in DATABASE_URL (and in MIGRATE_DATABASE_URL if you have a separate one) and run `npm run db:migrate`.
-//
-// Usage (against any PostgreSQL 14+ server, with an administrator account):
-//   PG_ADMIN_URL=postgres://postgres:secret@db.example.com:5432/postgres \
-//   APP_DB_PASSWORD=... MIGRATE_DB_PASSWORD=... node database/scripts/create-access.mjs
-// Optional: DB_NAME (default neuravic).
 import pg from "pg";
 import { pathToFileURL } from "node:url";
 
@@ -23,7 +10,6 @@ const identifier = (name) => {
 };
 const literal = (value) => `'${String(value).replace(/'/g, "''")}'`;
 
-/** `adminUrl` must point at any database on the server (usually `postgres`) and `connect(database)` at a given one. */
 export async function createAccess({ adminUrl, database = "neuravic", appPassword, migratorPassword }) {
   if (!appPassword || !migratorPassword) throw new Error("Both passwords are required");
   if (appPassword.length < 16 || migratorPassword.length < 16) throw new Error("Passwords must be at least 16 characters");
@@ -45,7 +31,6 @@ export async function createAccess({ adminUrl, database = "neuravic", appPasswor
     await admin.end();
   }
 
-  // Schema-level rights are set inside the new database.
   const target = new URL(adminUrl);
   target.pathname = `/${database}`;
   const inside = new pg.Client({ connectionString: target.toString() });
@@ -54,7 +39,6 @@ export async function createAccess({ adminUrl, database = "neuravic", appPasswor
     await inside.query("REVOKE CREATE ON SCHEMA public FROM PUBLIC");
     await inside.query(`GRANT USAGE, CREATE ON SCHEMA public TO ${identifier(MIGRATOR_USER)}`);
     await inside.query(`GRANT USAGE ON SCHEMA public TO ${identifier(APP_USER)}`);
-    // Tables the migrator creates later are readable and writable by the app role, and nothing more.
     await inside.query(`ALTER DEFAULT PRIVILEGES FOR ROLE ${identifier(MIGRATOR_USER)} IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ${identifier(APP_USER)}`);
     await inside.query(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${identifier(APP_USER)}`);
   } finally {

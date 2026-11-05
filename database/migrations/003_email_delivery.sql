@@ -1,4 +1,3 @@
--- Provider acceptance is separate from inbox delivery. No message text or recipients in metadata.
 ALTER TABLE outbox
   ADD COLUMN provider varchar(16) NULL,
   ADD COLUMN provider_message_id varchar(255) NULL,
@@ -8,7 +7,6 @@ ALTER TABLE outbox
 -- @@
 CREATE INDEX outbox_lead ON outbox (lead_id)
 -- @@
--- Acquire this unique row before inserting a lead; the existing trigger then sees the winning transaction.
 CREATE TABLE lead_intake_locks (
   key varchar(64) NOT NULL PRIMARY KEY,
   expires_at bigint NOT NULL

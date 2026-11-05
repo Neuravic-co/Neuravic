@@ -13,7 +13,6 @@ const TAB_LABELS: Record<string, string> = {
   license: "Licence",
 };
 
-/** A rich footer: brand and company card, service and project links, legal links (popups), contact details and the copyright line; each tab opens its document in a popup. */
 export function SiteFooter({
   contactEmail,
   locations,
@@ -38,7 +37,6 @@ export function SiteFooter({
 
   const close = useCallback(() => dialogRef.current?.close(), []);
 
-  // Lock page scrolling while the popup is open.
   useEffect(() => {
     document.documentElement.classList.toggle("has-popup", active !== null);
     return () => document.documentElement.classList.remove("has-popup");
@@ -132,7 +130,6 @@ export function SiteFooter({
         aria-labelledby="legal-popup-title"
         onClose={() => setActive(null)}
         onClick={(event) => {
-          // A click on the backdrop lands on the dialog element itself.
           if (event.target === dialogRef.current) close();
         }}
       >

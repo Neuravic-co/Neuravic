@@ -122,3 +122,5 @@ desktop.ini
 
 # Vercel build output
 .vercel/
+
+.mail-leads.log

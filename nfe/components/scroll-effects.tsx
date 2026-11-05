@@ -17,7 +17,6 @@ export function ScrollEffects() {
           observer.unobserve(entry.target);
         });
       },
-      // threshold 0: a tall block (the contact form on a phone) can never show 8% of itself, and stayed invisible.
       { rootMargin: "0px 0px -8%", threshold: 0 },
     );
 
@@ -26,7 +25,6 @@ export function ScrollEffects() {
     const hero = document.querySelector<HTMLElement>(".hero");
     let frame = 0;
 
-    // Pause the hero's looping light animation while the hero is scrolled out of view.
     const heroObserver = new IntersectionObserver(([entry]) => {
       hero?.classList.toggle("is-offscreen", !entry?.isIntersecting);
     });

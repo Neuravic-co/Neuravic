@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Cookie, X } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "neuravic-notice-dismissed";
-/** Fired by the footer's "Cookie Settings" link to reopen the settings. */
 export const COOKIE_SETTINGS_EVENT = "neuravic:cookie-settings";
 const listeners = new Set<() => void>();
 
@@ -23,12 +21,8 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
-/** Tells visitors the site only uses essential storage; shown once, no tracking to opt out of. */
 export function CookieNotice() {
-  // Server and first client render treat it as dismissed, so nothing flashes or shifts.
   const dismissed = useSyncExternalStore(subscribe, readDismissed, () => true);
-  // The portal is a work screen; its storage is covered by the cookie policy linked from the site footer.
-  const inPortal = usePathname().startsWith("/portal");
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -44,9 +38,7 @@ export function CookieNotice() {
   function dismiss() {
     try {
       window.localStorage.setItem(STORAGE_KEY, "1");
-    } catch {
-      // Storage blocked: hide for this page view only.
-    }
+    } catch {}
     listeners.forEach((listener) => listener());
     dialogRef.current?.close();
   }
@@ -58,7 +50,7 @@ export function CookieNotice() {
 
   return (
     <>
-      {dismissed || inPortal ? null : (
+      {dismissed ? null : (
         <aside className="cookie-notice" role="region" aria-label="Cookie notice">
           <div className="cookie-notice__copy">
             <p className="cookie-notice__title">
@@ -114,8 +106,7 @@ export function CookieNotice() {
               <div>
                 <h3>Essential storage</h3>
                 <p>
-                  Remembers this choice and temporary project selections, and keeps portal
-                  sign-in working. Always on.
+                  Remembers this choice so the notice is not shown again. Always on.
                 </p>
               </div>
               <span className="cookie-settings__badge">Always on</span>

@@ -1,18 +1,16 @@
 # Neuravic
 
-Neuravic is a technology company's website and client portal. Visitors read about the company and send enquiries. Clients sign up, log in and, once invited to an organisation, follow their projects, make requests, approve work, comment and share files. Neuravic staff manage enquiries, people, site content and security.
+Neuravic is a technology company's website. Visitors read about the company and send an enquiry; the team receives it by email (and optionally Slack). There are no accounts or logins.
 
 | Folder | What it is |
 |---|---|
-| `nfe/` | Frontend: the website and the client portal |
-| `nbe/` | Backend: small services behind one gateway (sign-in, portal, enquiries, staff tools, background worker) |
-| `server/` | File server: stores, scans and serves uploaded files |
-| `database/` | PostgreSQL: access setup and migrations |
-| `security/` | Security tools: secret generator, secret and dependency scan |
-| `deployment/` | Docker, Kubernetes and Helm |
-| `images/` | Brand and documentation images |
-| `test/` | Unit tests and integration tests |
-| `docs/` | The documentation, start with [01 Architecture](docs/01-Architecture.md) |
+| `nfe/` | Frontend: the Next.js website and its same-origin API proxy |
+| `nbe/` | Backend: one Hono API process (enquiries, durable email outbox, health) |
+| `database/` | PostgreSQL migrations, migration runner and a private local database |
+| `security/` | Secret generator and the secret/dependency scan |
+| `deployment/` | Docker, Docker Compose, Kubernetes and Helm |
+| `test/` | Unit, Postgres, live-server and browser tests |
+| `docs/` | Documentation. Start with [Architecture](docs/Architecture.md) |
 
 ## Run it
 
@@ -20,20 +18,28 @@ Needs Node.js 22.13+. The local database runs from an npm package, so there is n
 
 ```bash
 npm install
-npm run db:local        # private local Postgres (leave it running), writes .env
+npm run db:local        # private local Postgres (leave it running); writes .env with fresh secrets
 npm run db:migrate
-npm start               # backend on http://127.0.0.1:8787
+npm start               # API on http://127.0.0.1:8787
 ```
 
 ```bash
-cd NFE
+cd nfe
 npm install
 cp .env.example .env.local
 npm run dev             # website on http://localhost:5173
 ```
 
-The website has no sign-in for now: `/portal` shows an "under construction" page. The accounts API still exists in the backend.
+Configuration is environment-only. Settings live in `.env` (created by `db:local`; never committed). Copy [`.env.example`](.env.example) for the full list; secrets are never committed.
+
+## Check it
+
+```bash
+npm run typecheck
+npm run test:unit
+npm run smoke           # with the API running
+```
 
 ## Documentation
 
-[01 Architecture](docs/01-Architecture.md) · [02 Getting started](docs/02-Getting-Started.md) · [03 API reference](docs/03-API.md) · [04 Security](docs/04-Security.md) · [05 Operations](docs/05-Operations.md) · [06 Contact email](docs/06-Contact-Email.md) · [07 Staging email check](docs/07-Staging-Email-Verification.md)
+[Architecture](docs/Architecture.md) · [Getting started](docs/Getting-Started.md) · [API](docs/API.md) · [Security](docs/Security.md) · [Operations](docs/Operations.md) · [Contact email](docs/Contact-Email.md) · [Staging email check](docs/Staging-Email-Verification.md)
