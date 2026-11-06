@@ -4,6 +4,7 @@ import { ulid } from "../../core/ids";
 import type { Logger } from "../../core/logger";
 import type { Db } from "../../db/client";
 import type { OutboxRepository, NewJob } from "../outbox/repository";
+import { acknowledgementText, teamText } from "./emails";
 import type { LeadRepository } from "./repository";
 import type { CreateLeadInput } from "./schema";
 import { SPAM_THRESHOLD, spamScore } from "./spam";
@@ -81,15 +82,7 @@ export class LeadService {
           to: config.notifyTo,
           from: config.emailFrom,
           subject: `New enquiry: ${name}`,
-          text: [
-            `Enquiry: ${id}`,
-            `Name: ${name}`,
-            `Email: ${input.email}`,
-            `Company: ${oneLine(input.company ?? "-")}`,
-            `Services: ${input.serviceInterest.join(", ") || "not specified"}`,
-            "",
-            input.message,
-          ].join("\n"),
+          text: teamText(id, name, input.email, oneLine(input.company ?? "-"), input.serviceInterest, input.message),
         },
       },
       {
@@ -100,7 +93,7 @@ export class LeadService {
           to: input.email,
           from: config.emailFrom,
           subject: "We received your message - Neuravic",
-          text: `Hi ${name},\n\nThanks for reaching out. We received your message and will reply shortly.\n\nNeuravic\nDubai / Cairo`,
+          text: acknowledgementText(name, input.serviceInterest),
         },
       },
       { topic: "slack", text: `New enquiry from ${name} (${input.email})` },
