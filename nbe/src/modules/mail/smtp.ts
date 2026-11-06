@@ -2,6 +2,8 @@ import { createTransport, type Transporter } from "nodemailer";
 import { DeliveryError } from "../../core/errors";
 import { assertSafeMessage, type EmailMessage, type EmailReceipt, type Mailer, type SendOptions } from "./mailer";
 
+const senderDomain = (from: string) => /@([^>\s]+)>?$/.exec(from)?.[1] ?? "localhost";
+
 export class SmtpMailer implements Mailer {
   private readonly transport: Transporter;
 
@@ -17,7 +19,7 @@ export class SmtpMailer implements Mailer {
         to: message.to,
         subject: message.subject,
         text: message.text,
-        messageId: `<${options.idempotencyKey.replace(/[^A-Za-z0-9._-]/g, "-")}@neuravic.invalid>`,
+        messageId: `<${options.idempotencyKey.replace(/[^A-Za-z0-9._-]/g, "-")}@${senderDomain(message.from)}>`,
         disableFileAccess: true,
         disableUrlAccess: true,
       });

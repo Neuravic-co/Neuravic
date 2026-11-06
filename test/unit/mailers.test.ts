@@ -166,7 +166,7 @@ describe("SMTP delivery", () => {
     try {
       const first = await smtp.mailer.send(message, { idempotencyKey: "outbox/test-job" });
       const second = await smtp.mailer.send(message, { idempotencyKey: "outbox/test-job" });
-      assert.deepEqual(first, { provider: "smtp", messageId: "<outbox-test-job@neuravic.invalid>" });
+      assert.deepEqual(first, { provider: "smtp", messageId: "<outbox-test-job@example.com>" });
       assert.deepEqual(second, first);
       assert.equal(smtp.messages.length, 2);
     } finally {
