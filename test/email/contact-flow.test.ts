@@ -46,9 +46,12 @@ describe("contact API, real Postgres and mocked Resend", () => {
     const team = h.requests.find((request) => request.body.to[0] === "team@example.com")!;
     const ack = h.requests.find((request) => request.body.to[0] === "visitor@example.com")!;
     assert.equal(team.body.subject, "New enquiry: Sara Ali");
-    for (const part of [receipt.id, "Example", "visitor@example.com", "ai, software", enquiry.message]) assert.ok(team.body.text.includes(part));
+    for (const part of [receipt.id, "Example", "visitor@example.com", "AI systems, Software", enquiry.message]) assert.ok(team.body.text.includes(part));
     assert.equal(team.body.html, undefined);
-    assert.match(ack.body.text, /received your message/);
+    assert.match(ack.body.text, /^Hi Sara,/);
+    assert.match(ack.body.text, /Thank you for getting in touch/);
+    assert.match(ack.body.text, /AI systems:/);
+    assert.match(ack.body.text, /Software:/);
 
     const sent = await emailRows();
     assert.equal(sent.length, 2);
