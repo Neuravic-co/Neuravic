@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { TeamMember } from "@/lib/site-content";
 
@@ -49,10 +50,14 @@ function PersonCard({ person }: { person: TeamMember }) {
         <div className="person-card__face person-card__front" inert={flipped}>
           <div className="person-card__portrait">
             <span className="person-card__city">{person.city}</span>
-            <svg className="person-card__figure" viewBox="0 0 100 100" aria-hidden="true">
-              <circle cx="50" cy="36" r="17" />
-              <path d="M14 100c0-25 16-40 36-40s36 15 36 40z" />
-            </svg>
+            <Image
+              className="person-card__photo"
+              src={person.photo}
+              alt={person.name}
+              fill
+              style={{ objectPosition: person.photoFocus }}
+              sizes="(max-width: 58rem) 40vw, 28rem"
+            />
           </div>
           <div className="person-card__meta">
             <h3>{person.name}</h3>

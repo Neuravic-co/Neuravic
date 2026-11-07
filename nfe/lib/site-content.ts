@@ -19,6 +19,8 @@ export interface TeamMember {
   city: string;
   name: string;
   role: string;
+  photo: string;
+  photoFocus: string;
   summary: string;
   skills: string[];
   cv: string;
@@ -85,6 +87,8 @@ export const SITE_CONTENT: SiteContent = {
       city: "Dubai",
       name: "Mohamed Bassam",
       role: "AI Engineer",
+      photo: "/assets/team/mohamed-bassam.jpg",
+      photoFocus: "center 28%",
       summary: "Builds end-to-end AI systems: multi-agent workflows, retrieval, computer vision and NLP.",
       skills: ["Python", "LangGraph", "PyTorch", "FastAPI"],
       cv: "/assets/cv/mohamed-bassam-cv.pdf",
@@ -93,6 +97,8 @@ export const SITE_CONTENT: SiteContent = {
       city: "Cairo",
       name: "Zeyad Wael",
       role: "Software Engineer",
+      photo: "/assets/team/zeyad-wael.jpg",
+      photoFocus: "center 8%",
       summary: "Software Engineer at Orange Business, building Go services and Grafana observability plugins.",
       skills: ["Go", "Java", "Docker", "Grafana"],
       cv: "/assets/cv/zeyad-wael-cv.pdf",
