@@ -2393,6 +2393,7 @@ section {
 
 .person-card__portrait::after {
   position: absolute;
+  z-index: 1;
   right: 0;
   bottom: 0;
   left: 0;
@@ -2404,6 +2405,7 @@ section {
 
 .person-card__city {
   position: absolute;
+  z-index: 1;
   top: 1rem;
   left: 1rem;
   display: inline-flex;
@@ -2412,7 +2414,8 @@ section {
   padding: 0.35rem 0.8rem;
   border: 1px solid color-mix(in srgb, var(--paper) 22%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--paper) 8%, transparent);
+  background: color-mix(in srgb, var(--ink) 55%, transparent);
+  backdrop-filter: blur(6px);
   color: var(--paper);
   font-size: 0.7rem;
   letter-spacing: 0.14em;
@@ -2428,19 +2431,13 @@ section {
   box-shadow: 0 0 0.6rem 0.1rem var(--blue);
 }
 
-.person-card__figure {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: auto;
-  height: 72%;
-  transform: translateX(-50%);
-  fill: color-mix(in srgb, var(--paper) 11%, transparent);
-  transition: fill 350ms var(--ease-out);
+.person-card__photo {
+  object-fit: cover;
+  transition: transform 600ms var(--ease-out);
 }
 
-.person-card:hover .person-card__figure {
-  fill: color-mix(in srgb, var(--blue-text) 40%, transparent);
+.person-card:hover .person-card__photo {
+  transform: scale(1.04);
 }
 
 .person-card__meta {
