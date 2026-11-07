@@ -2219,15 +2219,17 @@ section {
 
 .person-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 56rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(1rem, 2vw, 1.6rem);
+  margin-inline: auto;
 }
 
 .person-card {
-  overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--muted) 38%, transparent);
   border-radius: 1.1rem;
   background: #fff;
+  perspective: 80rem;
   transition:
     transform 350ms var(--ease-out),
     border-color 350ms var(--ease-out),
@@ -2240,6 +2242,142 @@ section {
     0 1.25rem 3rem -1.25rem color-mix(in srgb, var(--blue) 55%, transparent),
     0 0 0 1px var(--blue);
   transform: translateY(-0.5rem);
+}
+
+.person-card__inner {
+  display: grid;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 700ms var(--ease-out);
+}
+
+.person-card[data-flipped="true"] .person-card__inner {
+  transform: rotateY(180deg);
+}
+
+.person-card__face {
+  position: relative;
+  grid-area: 1 / 1;
+  overflow: hidden;
+  border-radius: calc(1.1rem - 1px);
+  backface-visibility: hidden;
+}
+
+.person-card__front {
+  background: #fff;
+}
+
+.person-card__toggle {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  cursor: pointer;
+}
+
+.person-card__toggle:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -4px;
+}
+
+.person-card__back {
+  --muted: color-mix(in srgb, var(--paper) 62%, var(--ink));
+  --blue-text: color-mix(in srgb, var(--blue) 72%, var(--paper));
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 3.6rem 1.4rem 1.3rem;
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--blue) 42%, transparent), transparent 62%),
+    linear-gradient(var(--slate), var(--ink));
+  color: var(--paper);
+  transform: rotateY(180deg);
+}
+
+.person-card__info h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.person-card__role {
+  margin: 0.3rem 0 0;
+  color: var(--blue-text);
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.person-card__summary {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.person-card__skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person-card__skills li {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--paper) 20%, transparent);
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
+
+.person-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.person-card__cv {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.65rem 1.2rem;
+  border-radius: 999px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: background 250ms var(--ease-out);
+}
+
+.person-card__cv:hover {
+  background: color-mix(in srgb, var(--blue) 82%, #fff);
+}
+
+.person-card__back-button {
+  padding: 0.5rem 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.person-card__back-button:hover {
+  color: var(--paper);
+}
+
+.person-card__cv:focus-visible,
+.person-card__back-button:focus-visible {
+  outline: 2px solid var(--blue-text);
+  outline-offset: 3px;
 }
 
 .person-card__portrait {
@@ -2343,6 +2481,12 @@ section {
 @media (hover: none) {
   .person-card:hover {
     transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .person-card__inner {
+    transition: none;
   }
 }
 
@@ -2901,10 +3045,34 @@ section {
     gap: 0.7rem;
   }
 
-  .person-card {
+  .person-card__front {
     display: grid;
     grid-template-columns: 38% minmax(0, 1fr);
     align-items: stretch;
+  }
+
+  .person-card__back {
+    gap: 0.6rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .person-card__back .person-card__city,
+  .person-card__summary,
+  .person-card__skills {
+    display: none;
+  }
+
+  .person-card__info h3 {
+    font-size: 1.1rem;
+  }
+
+  .person-card__role {
+    font-size: 0.65rem;
+  }
+
+  .person-card__cv {
+    padding: 0.45rem 0.95rem;
+    font-size: 0.8rem;
   }
 
   .person-card__portrait {
