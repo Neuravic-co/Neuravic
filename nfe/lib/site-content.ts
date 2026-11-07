@@ -19,6 +19,9 @@ export interface TeamMember {
   city: string;
   name: string;
   role: string;
+  summary: string;
+  skills: string[];
+  cv: string;
 }
 
 export interface Location {
@@ -78,9 +81,22 @@ export const SITE_CONTENT: SiteContent = {
     { title: "Deploy & Support", description: "Launch safely, watch performance and keep improving." },
   ]),
   team: numbered([
-    { city: "Cairo", name: "Name", role: "Role to be added" },
-    { city: "Cairo", name: "Name", role: "Role to be added" },
-    { city: "Dubai", name: "Name", role: "Role to be added" },
+    {
+      city: "Dubai",
+      name: "Mohamed Bassam",
+      role: "AI Engineer",
+      summary: "Builds end-to-end AI systems: multi-agent workflows, retrieval, computer vision and NLP.",
+      skills: ["Python", "LangGraph", "PyTorch", "FastAPI"],
+      cv: "/assets/cv/mohamed-bassam-cv.pdf",
+    },
+    {
+      city: "Cairo",
+      name: "Zeyad Wael",
+      role: "Software Engineer",
+      summary: "Software Engineer at Orange Business, building Go services and Grafana observability plugins.",
+      skills: ["Go", "Java", "Docker", "Grafana"],
+      cv: "/assets/cv/zeyad-wael-cv.pdf",
+    },
   ]),
   company: {
     headline: "We turn complex operations into intelligent systems.",
