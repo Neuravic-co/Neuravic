@@ -11,11 +11,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@hono/node-server": "2.1.5",
-    "@vercel/functions": "^3.10.6",
+    "@hono/node-server": "2.1.8",
+    "@vercel/functions": "^3.11.2",
     "drizzle-orm": "0.45.4",
-    "hono": "^4.13.14",
-    "nodemailer": "^10.3.1",
+    "hono": "^4.13.18",
+    "nodemailer": "^10.5.0",
     "pg": "^8.23.1",
     "zod": "^4.6.7"
   },
