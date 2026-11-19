@@ -13,6 +13,12 @@ const patterns = [
   ["live payment key", /sk_live_[0-9A-Za-z]{16,}/g],
   ["email provider key", /re_[0-9A-Za-z]{20,}_[0-9A-Za-z]{10,}/g],
   ["private signing JWK", /"d"\s*:\s*"[A-Za-z0-9_-]{40,}"/g],
+  ["Google API key", /AIza[0-9A-Za-z_-]{35}/g],
+  ["Slack webhook URL", /https:\/\/hooks\.slack\.com\/services\/T[0-9A-Z]+\/B[0-9A-Z]+\/[0-9A-Za-z]{20,}/g],
+  ["npm token", /npm_[0-9A-Za-z]{36}/g],
+  ["Stripe restricted key", /rk_live_[0-9A-Za-z]{16,}/g],
+  ["JSON web token", /eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g],
+  ["URL with embedded password", /\b(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|amqp|smtps?):\/\/[^\s:@\/"\x27]+:(?!(?:password|pass|secret|test-only|APP_PASSWORD|\$|\{|%7B|<|\*)[^@]*@)[^\s@\/"\x27]{6,}@(?!(?:localhost|127\.0\.0\.1|[a-z0-9-]+)(?:[:\/\s"\x27\x60]|$)|[^\s"\x27\/]*\.(?:example|internal|local|test|invalid)\b)[^\s"\x27\/]+/gi],
 ];
 
 export function scanText(text, filename) {
@@ -65,7 +71,8 @@ export function main(args = process.argv.slice(2)) {
     const history = execFileSync("git", ["log", "--all", "-p", "--format=", "--no-ext-diff", "--no-textconv", "--", ".", ":(exclude)*package-lock.json"], {
       cwd: root, maxBuffer: 32 * 1024 * 1024,
     }).toString();
-    for (const finding of scanText(history, "repository history")) {
+    // The generic URL pattern is too noisy for old template and docs text, so history uses only the high-confidence patterns.
+    for (const finding of scanText(history, "repository history").filter((f) => f.kind !== "URL with embedded password")) {
       console.error(`FAIL ${finding.kind} in repository history (value redacted; investigate privately and rotate if real)`);
       passed = false;
     }
