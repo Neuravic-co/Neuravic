@@ -63,11 +63,12 @@ function dependencyAudit(folder) {
 
 export function main(args = process.argv.slice(2)) {
   let passed = true;
-  for (const finding of scanFiles(root)) {
+  const depsOnly = args.includes("--deps-only");
+  if (!depsOnly) for (const finding of scanFiles(root)) {
     console.error(`FAIL ${finding.kind} at ${JSON.stringify(finding.file)}:${finding.line} (value redacted)`);
     passed = false;
   }
-  if (args.includes("--history")) {
+  if (!depsOnly && args.includes("--history")) {
     const history = execFileSync("git", ["log", "--all", "-p", "--format=", "--no-ext-diff", "--no-textconv", "--", ".", ":(exclude)*package-lock.json"], {
       cwd: root, maxBuffer: 32 * 1024 * 1024,
     }).toString();
