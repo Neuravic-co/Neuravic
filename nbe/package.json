@@ -1,6 +1,6 @@
 {
   "name": "@neuravic/nbe",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Neuravic backend: one Hono application for website enquiries, a durable email outbox and health checks.",
