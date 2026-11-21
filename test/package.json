@@ -1,6 +1,6 @@
 {
   "name": "@neuravic/tests",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Unit tests (no database, no network) and integration tests (the running backend and database).",
