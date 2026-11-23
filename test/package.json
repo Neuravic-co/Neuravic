@@ -13,7 +13,7 @@
     "contact-e2e": "node --import tsx --test \"contact-e2e/**/*.test.ts\""
   },
   "devDependencies": {
-    "@hono/node-server": "2.1.9",
+    "@hono/node-server": "2.1.11",
     "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "^1.64.1"
   }
